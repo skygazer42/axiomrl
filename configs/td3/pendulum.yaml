@@ -1,0 +1,20 @@
+algo: td3
+env_id: Pendulum-v1
+seed: 79
+total_timesteps: 5000
+output_dir: runs
+device: auto
+num_envs: 1
+eval_episodes: 5
+algo_kwargs:
+  buffer_capacity: 100000
+  batch_size: 256
+  learning_starts: 1000
+  train_frequency: 1
+  hidden_sizes: [256, 256]
+  learning_rate: 0.0003
+  gamma: 0.99
+  tau: 0.005
+  policy_noise: 0.2
+  noise_clip: 0.5
+  policy_delay: 2
