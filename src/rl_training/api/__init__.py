@@ -1,3 +1,33 @@
-from rl_training.api.algorithms import A2C, DQN, PPO, SAC, TD3
+from rl_training.api.algorithms import (
+    A2C,
+    C51DQN,
+    DDPG,
+    DQN,
+    DoubleDQN,
+    DuelingDQN,
+    NStepDQN,
+    NoisyDQN,
+    PPO,
+    PrioritizedDQN,
+    QRDQN,
+    RainbowDQN,
+    SAC,
+    TD3,
+)
 
-__all__ = ["A2C", "DQN", "PPO", "SAC", "TD3"]
+__all__ = [
+    "A2C",
+    "C51DQN",
+    "DDPG",
+    "DQN",
+    "DoubleDQN",
+    "DuelingDQN",
+    "NStepDQN",
+    "NoisyDQN",
+    "PPO",
+    "PrioritizedDQN",
+    "QRDQN",
+    "RainbowDQN",
+    "SAC",
+    "TD3",
+]

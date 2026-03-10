@@ -7,7 +7,7 @@ packages while staying modular, readable, and practical to extend.
 
 The package is intended to provide a stable core API for multiple algorithm
 families, including on-policy and off-policy methods. The long-term direction
-includes support for algorithms such as PPO, DQN, SAC, TD3, and related
+includes support for algorithms such as PPO, DQN, Double DQN, Dueling DQN, Noisy DQN, Prioritized DQN, Rainbow DQN, C51-DQN, N-Step DQN, QR-DQN, DDPG, SAC, TD3, and related
 training patterns, together with reusable abstractions for policies, rollout
 buffers, replay buffers, collectors, trainers, evaluators, and experiment
 management.

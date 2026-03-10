@@ -15,6 +15,7 @@ algo_kwargs:
   learning_rate: 0.0003
   gamma: 0.99
   tau: 0.005
+  exploration_noise: 0.1
   policy_noise: 0.2
   noise_clip: 0.5
   policy_delay: 2

@@ -70,6 +70,7 @@ Expected: FAIL because TD3 modules do not exist
 - target policy smoothing
 - delayed actor updates
 - replay-buffer-driven continuous trainer
+- exploration action noise during data collection via `algo_kwargs.exploration_noise` (default: `0.0`)
 
 **Step 4: Run tests to verify they pass**
 

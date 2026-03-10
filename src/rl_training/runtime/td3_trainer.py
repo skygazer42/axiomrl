@@ -47,6 +47,13 @@ def _scale_actions(normalized_actions: torch.Tensor, *, low: torch.Tensor, high:
     return torch.max(torch.min(scaled, high), low)
 
 
+def _apply_exploration_noise(actions: torch.Tensor, *, std: float) -> torch.Tensor:
+    if std <= 0:
+        return actions
+    noise = torch.randn_like(actions) * float(std)
+    return (actions + noise).clamp(-1.0, 1.0)
+
+
 def _evaluate_td3_policy(
     model: MLPTD3Model,
     config: TrainConfig,
@@ -111,6 +118,7 @@ def train_td3(
     learning_rate = float(config.algo_kwargs.get("learning_rate", 3e-4))
     gamma = float(config.algo_kwargs.get("gamma", 0.99))
     tau = float(config.algo_kwargs.get("tau", 0.005))
+    exploration_noise = float(config.algo_kwargs.get("exploration_noise", 0.0))
     policy_noise = float(config.algo_kwargs.get("policy_noise", 0.2))
     noise_clip = float(config.algo_kwargs.get("noise_clip", 0.5))
     policy_delay = int(config.algo_kwargs.get("policy_delay", 2))
@@ -165,6 +173,7 @@ def train_td3(
             obs_tensor = torch.as_tensor(obs, dtype=torch.float32, device=device)
             with torch.no_grad():
                 normalized_actions = model.actor(obs_tensor)
+                normalized_actions = _apply_exploration_noise(normalized_actions, std=exploration_noise)
                 env_actions = _scale_actions(normalized_actions, low=low, high=high)
 
             next_obs, rewards, terminated, truncated, _ = envs.step(env_actions.cpu().numpy())

@@ -1,0 +1,84 @@
+from __future__ import annotations
+
+from collections.abc import Sequence
+
+import torch
+from torch import nn
+
+from rl_training.models.mlp_noisy_q_network import NoisyLinear
+
+
+def _build_noisy_mlp(
+    *,
+    input_dim: int,
+    hidden_sizes: Sequence[int],
+    output_dim: int,
+    activation: type[nn.Module],
+    sigma_init: float,
+) -> nn.Sequential:
+    layers: list[nn.Module] = []
+    last_dim = int(input_dim)
+
+    for hidden_dim in hidden_sizes:
+        layers.append(NoisyLinear(last_dim, int(hidden_dim), sigma_init=sigma_init))
+        layers.append(activation())
+        last_dim = int(hidden_dim)
+
+    layers.append(NoisyLinear(last_dim, int(output_dim), sigma_init=sigma_init))
+    return nn.Sequential(*layers)
+
+
+class MLPDuelingNoisyQNetwork(nn.Module):
+    def __init__(
+        self,
+        *,
+        obs_dim: int,
+        action_dim: int,
+        hidden_sizes: Sequence[int] = (64, 64),
+        activation: type[nn.Module] = nn.ReLU,
+        sigma_init: float = 0.5,
+    ) -> None:
+        super().__init__()
+        self.action_dim = int(action_dim)
+
+        if hidden_sizes:
+            trunk_hidden_sizes = tuple(hidden_sizes[:-1])
+            head_input_dim = int(hidden_sizes[-1])
+            self.trunk = _build_noisy_mlp(
+                input_dim=obs_dim,
+                hidden_sizes=trunk_hidden_sizes,
+                output_dim=head_input_dim,
+                activation=activation,
+                sigma_init=sigma_init,
+            )
+            self.trunk_activation = activation()
+        else:
+            head_input_dim = int(obs_dim)
+            self.trunk = nn.Identity()
+            self.trunk_activation = nn.Identity()
+
+        self.value_head = NoisyLinear(head_input_dim, 1, sigma_init=sigma_init)
+        self.advantage_head = NoisyLinear(head_input_dim, self.action_dim, sigma_init=sigma_init)
+
+    def forward(self, obs: torch.Tensor) -> torch.Tensor:
+        obs_tensor = torch.as_tensor(obs, dtype=torch.float32)
+        if obs_tensor.ndim == 1:
+            obs_tensor = obs_tensor.unsqueeze(0)
+
+        features = self.trunk_activation(self.trunk(obs_tensor))
+        values = self.value_head(features)
+        advantages = self.advantage_head(features)
+        centered_advantages = advantages - advantages.mean(dim=-1, keepdim=True)
+        return values + centered_advantages
+
+    def act(self, obs: object, *, epsilon: float = 0.0) -> torch.Tensor:
+        q_values = self.forward(torch.as_tensor(obs, dtype=torch.float32))
+        greedy_actions = q_values.argmax(dim=-1)
+
+        if epsilon <= 0.0:
+            return greedy_actions
+
+        random_actions = torch.randint(0, self.action_dim, greedy_actions.shape, device=greedy_actions.device)
+        explore_mask = torch.rand(greedy_actions.shape, device=greedy_actions.device) < epsilon
+        return torch.where(explore_mask, random_actions, greedy_actions)
+

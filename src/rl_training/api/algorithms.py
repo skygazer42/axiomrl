@@ -107,8 +107,44 @@ class A2C(ManagedAlgorithm):
     algo_name = "a2c"
 
 
+class DDPG(ManagedAlgorithm):
+    algo_name = "ddpg"
+
+
 class DQN(ManagedAlgorithm):
     algo_name = "dqn"
+
+
+class C51DQN(ManagedAlgorithm):
+    algo_name = "c51_dqn"
+
+
+class NStepDQN(ManagedAlgorithm):
+    algo_name = "n_step_dqn"
+
+
+class QRDQN(ManagedAlgorithm):
+    algo_name = "qr_dqn"
+
+
+class DoubleDQN(ManagedAlgorithm):
+    algo_name = "double_dqn"
+
+
+class DuelingDQN(ManagedAlgorithm):
+    algo_name = "dueling_dqn"
+
+
+class NoisyDQN(ManagedAlgorithm):
+    algo_name = "noisy_dqn"
+
+
+class PrioritizedDQN(ManagedAlgorithm):
+    algo_name = "prioritized_dqn"
+
+
+class RainbowDQN(ManagedAlgorithm):
+    algo_name = "rainbow_dqn"
 
 
 class SAC(ManagedAlgorithm):

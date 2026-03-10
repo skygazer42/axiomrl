@@ -40,6 +40,7 @@ def main(argv: list[str] | None = None) -> int:
             "train_frequency": 1,
             "hidden_sizes": (32, 32),
             "tau": 0.005,
+            "exploration_noise": 0.1,
             "policy_noise": 0.2,
             "noise_clip": 0.5,
             "policy_delay": 2,
