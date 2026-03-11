@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from rl_training.api import A2C, C51DQN, DDPG, DQN, DoubleDQN, DuelingDQN, NoisyDQN, NStepDQN, PPO, PrioritizedDQN, QRDQN, RainbowDQN, SAC, TD3
+from rl_training.api import A2C, C51DQN, DDPG, DQN, DoubleDQN, DuelingDQN, IQN, NoisyDQN, NStepDQN, PPO, PrioritizedDQN, QRDQN, RainbowDQN, SAC, TD3, TQC
 from rl_training.experiment.config import TrainConfig
 
 
@@ -232,6 +232,28 @@ def test_off_policy_public_apis_support_learn_and_evaluate(tmp_path: Path) -> No
             },
         )
     )
+    iqn = IQN(
+        TrainConfig(
+            algo="iqn",
+            env_id="CartPole-v1",
+            seed=60,
+            total_timesteps=96,
+            output_dir=tmp_path / "iqn-runs",
+            eval_episodes=1,
+            algo_kwargs={
+                "buffer_capacity": 256,
+                "batch_size": 32,
+                "learning_starts": 32,
+                "train_frequency": 1,
+                "target_update_interval": 16,
+                "hidden_sizes": (16, 16),
+                "gamma": 0.99,
+                "num_quantiles": 16,
+                "embedding_dim": 32,
+                "kappa": 1.0,
+            },
+        )
+    )
     sac = SAC(
         TrainConfig(
             algo="sac",
@@ -248,6 +270,29 @@ def test_off_policy_public_apis_support_learn_and_evaluate(tmp_path: Path) -> No
                 "hidden_sizes": (32, 32),
                 "alpha": 0.2,
                 "tau": 0.005,
+            },
+        )
+    )
+    tqc = TQC(
+        TrainConfig(
+            algo="tqc",
+            env_id="Pendulum-v1",
+            seed=62,
+            total_timesteps=96,
+            output_dir=tmp_path / "tqc-runs",
+            eval_episodes=1,
+            algo_kwargs={
+                "buffer_capacity": 512,
+                "batch_size": 32,
+                "learning_starts": 32,
+                "train_frequency": 1,
+                "hidden_sizes": (32, 32),
+                "alpha": 0.2,
+                "tau": 0.005,
+                "num_critics": 3,
+                "num_quantiles": 7,
+                "top_quantiles_to_drop_per_net": 1,
+                "kappa": 1.0,
             },
         )
     )
@@ -301,7 +346,9 @@ def test_off_policy_public_apis_support_learn_and_evaluate(tmp_path: Path) -> No
     c51_dqn.learn()
     n_step_dqn.learn()
     qr_dqn.learn()
+    iqn.learn()
     sac.learn()
+    tqc.learn()
     ddpg.learn()
     td3.learn()
 
@@ -315,7 +362,9 @@ def test_off_policy_public_apis_support_learn_and_evaluate(tmp_path: Path) -> No
     c51_dqn_action = c51_dqn.predict([0.0, 0.0, 0.0, 0.0])
     n_step_dqn_action = n_step_dqn.predict([0.0, 0.0, 0.0, 0.0])
     qr_dqn_action = qr_dqn.predict([0.0, 0.0, 0.0, 0.0])
+    iqn_action = iqn.predict([0.0, 0.0, 0.0, 0.0])
     sac_action = sac.predict([0.0, 0.0, 0.0])
+    tqc_action = tqc.predict([0.0, 0.0, 0.0])
     ddpg_action = ddpg.predict([0.0, 0.0, 0.0])
     td3_action = td3.predict([0.0, 0.0, 0.0])
 
@@ -329,7 +378,9 @@ def test_off_policy_public_apis_support_learn_and_evaluate(tmp_path: Path) -> No
     assert isinstance(c51_dqn_action, int)
     assert isinstance(n_step_dqn_action, int)
     assert isinstance(qr_dqn_action, int)
+    assert isinstance(iqn_action, int)
     assert len(sac_action) == 1
+    assert len(tqc_action) == 1
     assert len(ddpg_action) == 1
     assert len(td3_action) == 1
     assert "eval_return_mean" in a2c.evaluate(num_episodes=1)
@@ -342,6 +393,8 @@ def test_off_policy_public_apis_support_learn_and_evaluate(tmp_path: Path) -> No
     assert "eval_return_mean" in c51_dqn.evaluate(num_episodes=1)
     assert "eval_return_mean" in n_step_dqn.evaluate(num_episodes=1)
     assert "eval_return_mean" in qr_dqn.evaluate(num_episodes=1)
+    assert "eval_return_mean" in iqn.evaluate(num_episodes=1)
     assert "eval_return_mean" in sac.evaluate(num_episodes=1)
+    assert "eval_return_mean" in tqc.evaluate(num_episodes=1)
     assert "eval_return_mean" in ddpg.evaluate(num_episodes=1)
     assert "eval_return_mean" in td3.evaluate(num_episodes=1)

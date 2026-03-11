@@ -14,12 +14,14 @@ from rl_training.algorithms.ddpg import DDPG as DDPGAlgorithm
 from rl_training.algorithms.dqn import DQN as DQNAlgorithm
 from rl_training.algorithms.dqn import DoubleDQN as DoubleDQNAlgorithm
 from rl_training.algorithms.dqn import DuelingDQN as DuelingDQNAlgorithm
+from rl_training.algorithms.iqn import IQN as IQNAlgorithm
 from rl_training.algorithms.dqn import NoisyDQN as NoisyDQNAlgorithm
 from rl_training.algorithms.dqn import PrioritizedDQN as PrioritizedDQNAlgorithm
 from rl_training.algorithms.dqn import RainbowDQN as RainbowDQNAlgorithm
 from rl_training.algorithms.ppo import PPO as PPOAlgorithm
 from rl_training.algorithms.qr_dqn import QRDQN as QRDQNAlgorithm
 from rl_training.algorithms.sac import SAC as SACAlgorithm
+from rl_training.algorithms.tqc import TQC as TQCAlgorithm
 from rl_training.algorithms.td3 import TD3 as TD3Algorithm
 from rl_training.experiment.checkpointing import CheckpointState
 from rl_training.experiment.config import TrainConfig
@@ -28,10 +30,12 @@ from rl_training.models.mlp_c51_q_network import MLPC51QNetwork
 from rl_training.models.mlp_ddpg import MLPDDPGModel
 from rl_training.models.mlp_dueling_noisy_q_network import MLPDuelingNoisyQNetwork
 from rl_training.models.mlp_dueling_q_network import MLPDuelingQNetwork
+from rl_training.models.mlp_iqn_network import MLPIQNetwork
 from rl_training.models.mlp_noisy_q_network import MLPNoisyQNetwork
 from rl_training.models.mlp_q_network import MLPQNetwork
 from rl_training.models.mlp_qr_q_network import MLPQRQNetwork
 from rl_training.models.mlp_sac import MLPSACModel
+from rl_training.models.mlp_tqc import MLPTQCModel
 from rl_training.models.mlp_td3 import MLPTD3Model
 from rl_training.runtime.a2c_trainer import _evaluate_policy as _evaluate_a2c_policy
 from rl_training.runtime.a2c_trainer import train_a2c
@@ -39,6 +43,7 @@ from rl_training.runtime.ddpg_trainer import _evaluate_ddpg_policy, train_ddpg
 from rl_training.runtime.dqn_trainer import _evaluate_q_policy, train_dqn
 from rl_training.runtime.ppo_trainer import _evaluate_policy, train_ppo
 from rl_training.runtime.sac_trainer import _evaluate_sac_policy, train_sac
+from rl_training.runtime.tqc_trainer import _evaluate_tqc_policy, train_tqc
 from rl_training.runtime.td3_trainer import _evaluate_td3_policy, train_td3
 from rl_training.runtime.trainer import TrainResult
 from rl_training.runtime.types import MetricDict
@@ -247,6 +252,32 @@ def _load_qr_dqn_algorithm(config: TrainConfig, checkpoint_state: CheckpointStat
     return algorithm
 
 
+def _load_iqn_algorithm(config: TrainConfig, checkpoint_state: CheckpointState, *, device: torch.device) -> IQNAlgorithm:
+    obs_dim, action_dim = _infer_discrete_env_spaces(config)
+    hidden_sizes = tuple(config.algo_kwargs.get("hidden_sizes", (64, 64)))
+    num_quantiles = int(config.algo_kwargs.get("num_quantiles", 32))
+    embedding_dim = int(config.algo_kwargs.get("embedding_dim", 64))
+    kappa = float(config.algo_kwargs.get("kappa", 1.0))
+
+    q_network = MLPIQNetwork(
+        obs_dim=obs_dim,
+        action_dim=action_dim,
+        num_quantiles=num_quantiles,
+        hidden_sizes=hidden_sizes,
+        embedding_dim=embedding_dim,
+    ).to(device)
+    algorithm = IQNAlgorithm(
+        q_network=q_network,
+        learning_rate=float(config.algo_kwargs.get("learning_rate", 1e-3)),
+        gamma=float(config.algo_kwargs.get("gamma", 0.99)),
+        target_update_interval=int(config.algo_kwargs.get("target_update_interval", 250)),
+        num_quantiles=num_quantiles,
+        kappa=kappa,
+    )
+    algorithm.load_state_dict(checkpoint_state.algorithm_state)
+    return algorithm
+
+
 def _load_sac_algorithm(config: TrainConfig, checkpoint_state: CheckpointState, *, device: torch.device) -> SACAlgorithm:
     obs_dim, action_dim = _infer_continuous_env_spaces(config)
     hidden_sizes = tuple(config.algo_kwargs.get("hidden_sizes", (256, 256)))
@@ -256,6 +287,34 @@ def _load_sac_algorithm(config: TrainConfig, checkpoint_state: CheckpointState, 
         gamma=float(config.algo_kwargs.get("gamma", 0.99)),
         alpha=float(config.algo_kwargs.get("alpha", 0.2)),
         tau=float(config.algo_kwargs.get("tau", 0.005)),
+    )
+    algorithm.load_state_dict(checkpoint_state.algorithm_state)
+    return algorithm
+
+
+def _load_tqc_algorithm(config: TrainConfig, checkpoint_state: CheckpointState, *, device: torch.device) -> TQCAlgorithm:
+    obs_dim, action_dim = _infer_continuous_env_spaces(config)
+    hidden_sizes = tuple(config.algo_kwargs.get("hidden_sizes", (256, 256)))
+    num_critics = int(config.algo_kwargs.get("num_critics", 2))
+    num_quantiles = int(config.algo_kwargs.get("num_quantiles", 25))
+    top_quantiles_to_drop_per_net = int(config.algo_kwargs.get("top_quantiles_to_drop_per_net", 2))
+    kappa = float(config.algo_kwargs.get("kappa", 1.0))
+
+    algorithm = TQCAlgorithm(
+        model=MLPTQCModel(
+            obs_dim=obs_dim,
+            action_dim=action_dim,
+            hidden_sizes=hidden_sizes,
+            num_critics=num_critics,
+            num_quantiles=num_quantiles,
+        ).to(device),
+        learning_rate=float(config.algo_kwargs.get("learning_rate", 3e-4)),
+        gamma=float(config.algo_kwargs.get("gamma", 0.99)),
+        alpha=float(config.algo_kwargs.get("alpha", 0.2)),
+        tau=float(config.algo_kwargs.get("tau", 0.005)),
+        top_quantiles_to_drop_per_net=top_quantiles_to_drop_per_net,
+        num_quantiles=num_quantiles,
+        kappa=kappa,
     )
     algorithm.load_state_dict(checkpoint_state.algorithm_state)
     return algorithm
@@ -320,9 +379,20 @@ def _evaluate_qr_dqn(config: TrainConfig, checkpoint_state: CheckpointState, dev
     return _evaluate_q_policy(algorithm.q_network, config, device=device, num_episodes=num_episodes)
 
 
+def _evaluate_iqn(config: TrainConfig, checkpoint_state: CheckpointState, device: torch.device, num_episodes: int) -> MetricDict:
+    algorithm = _load_iqn_algorithm(config, checkpoint_state, device=device)
+    algorithm.set_eval_mode()
+    return _evaluate_q_policy(algorithm.q_network, config, device=device, num_episodes=num_episodes)
+
+
 def _evaluate_sac(config: TrainConfig, checkpoint_state: CheckpointState, device: torch.device, num_episodes: int) -> MetricDict:
     algorithm = _load_sac_algorithm(config, checkpoint_state, device=device)
     return _evaluate_sac_policy(algorithm.model, config, device=device, num_episodes=num_episodes)
+
+
+def _evaluate_tqc(config: TrainConfig, checkpoint_state: CheckpointState, device: torch.device, num_episodes: int) -> MetricDict:
+    algorithm = _load_tqc_algorithm(config, checkpoint_state, device=device)
+    return _evaluate_tqc_policy(algorithm.model, config, device=device, num_episodes=num_episodes)
 
 
 def _evaluate_ddpg(config: TrainConfig, checkpoint_state: CheckpointState, device: torch.device, num_episodes: int) -> MetricDict:
@@ -411,6 +481,22 @@ def _predict_qr_dqn(
     return _format_action_output(actions, discrete=True)
 
 
+def _predict_iqn(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    obs: object,
+    deterministic: bool,
+) -> int | np.ndarray:
+    del deterministic
+    algorithm = _load_iqn_algorithm(config, checkpoint_state, device=device)
+    algorithm.set_eval_mode()
+    obs_tensor = _prepare_observation(obs, device=device)
+    with torch.no_grad():
+        actions = algorithm.q_network.act(obs_tensor, epsilon=0.0)
+    return _format_action_output(actions, discrete=True)
+
+
 def _predict_sac(
     config: TrainConfig,
     checkpoint_state: CheckpointState,
@@ -419,6 +505,22 @@ def _predict_sac(
     deterministic: bool,
 ) -> int | np.ndarray:
     algorithm = _load_sac_algorithm(config, checkpoint_state, device=device)
+    obs_tensor = _prepare_observation(obs, device=device)
+    low, high = _continuous_action_bounds(config, device=device)
+    with torch.no_grad():
+        normalized_actions = algorithm.model.sample_actions(obs_tensor, deterministic=deterministic).actions
+        actions = _scale_continuous_actions(normalized_actions, low=low, high=high)
+    return _format_action_output(actions, discrete=False)
+
+
+def _predict_tqc(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    obs: object,
+    deterministic: bool,
+) -> int | np.ndarray:
+    algorithm = _load_tqc_algorithm(config, checkpoint_state, device=device)
     obs_tensor = _prepare_observation(obs, device=device)
     low, high = _continuous_action_bounds(config, device=device)
     with torch.no_grad():
@@ -516,6 +618,12 @@ _ALGORITHM_REGISTRY: dict[str, AlgorithmSpec] = {
         evaluate_fn=_evaluate_qr_dqn,
         predict_fn=_predict_qr_dqn,
     ),
+    "iqn": AlgorithmSpec(
+        name="iqn",
+        train_fn=train_dqn,
+        evaluate_fn=_evaluate_iqn,
+        predict_fn=_predict_iqn,
+    ),
     "ddpg": AlgorithmSpec(
         name="ddpg",
         train_fn=train_ddpg,
@@ -539,6 +647,12 @@ _ALGORITHM_REGISTRY: dict[str, AlgorithmSpec] = {
         train_fn=train_sac,
         evaluate_fn=_evaluate_sac,
         predict_fn=_predict_sac,
+    ),
+    "tqc": AlgorithmSpec(
+        name="tqc",
+        train_fn=train_tqc,
+        evaluate_fn=_evaluate_tqc,
+        predict_fn=_predict_tqc,
     ),
     "td3": AlgorithmSpec(
         name="td3",

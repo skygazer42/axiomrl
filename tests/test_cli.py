@@ -168,6 +168,40 @@ def test_train_command_runs_for_sac_config(tmp_path: Path) -> None:
     assert any((tmp_path / "sac-runs").iterdir())
 
 
+def test_train_command_runs_for_tqc_config(tmp_path: Path) -> None:
+    config_file = tmp_path / "tqc-config.yaml"
+    config_file.write_text(
+        "\n".join(
+            [
+                "algo: tqc",
+                "env_id: Pendulum-v1",
+                "seed: 42",
+                "total_timesteps: 32",
+                f"output_dir: {tmp_path / 'tqc-runs'}",
+                "eval_episodes: 0",
+                "algo_kwargs:",
+                "  buffer_capacity: 256",
+                "  batch_size: 32",
+                "  learning_starts: 32",
+                "  train_frequency: 1",
+                "  hidden_sizes: [32, 32]",
+                "  alpha: 0.2",
+                "  tau: 0.005",
+                "  num_critics: 3",
+                "  num_quantiles: 7",
+                "  top_quantiles_to_drop_per_net: 1",
+                "  kappa: 1.0",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    exit_code = main(["train", "--config", str(config_file)])
+
+    assert exit_code == 0
+    assert any((tmp_path / "tqc-runs").iterdir())
+
+
 def test_train_command_runs_for_double_dqn_config(tmp_path: Path) -> None:
     config_file = tmp_path / "double-dqn-config.yaml"
     config_file.write_text(
@@ -407,6 +441,39 @@ def test_train_command_runs_for_qr_dqn_config(tmp_path: Path) -> None:
 
     assert exit_code == 0
     assert any((tmp_path / "qr-dqn-runs").iterdir())
+
+
+def test_train_command_runs_for_iqn_config(tmp_path: Path) -> None:
+    config_file = tmp_path / "iqn-config.yaml"
+    config_file.write_text(
+        "\n".join(
+            [
+                "algo: iqn",
+                "env_id: CartPole-v1",
+                "seed: 69",
+                "total_timesteps: 96",
+                f"output_dir: {tmp_path / 'iqn-runs'}",
+                "eval_episodes: 1",
+                "algo_kwargs:",
+                "  buffer_capacity: 512",
+                "  batch_size: 32",
+                "  learning_starts: 32",
+                "  train_frequency: 1",
+                "  target_update_interval: 16",
+                "  hidden_sizes: [32, 32]",
+                "  gamma: 0.99",
+                "  num_quantiles: 16",
+                "  embedding_dim: 32",
+                "  kappa: 1.0",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    exit_code = main(["train", "--config", str(config_file)])
+
+    assert exit_code == 0
+    assert any((tmp_path / "iqn-runs").iterdir())
 
 
 def test_train_command_runs_for_rainbow_dqn_config(tmp_path: Path) -> None:

@@ -4,6 +4,7 @@ from rl_training.experiment.config import TrainConfig
 from rl_training.runtime.dqn_trainer import train_dqn
 from rl_training.runtime.ppo_trainer import train_ppo
 from rl_training.runtime.sac_trainer import train_sac
+from rl_training.runtime.tqc_trainer import train_tqc
 from rl_training.runtime.workflows import evaluate_checkpoint, resume_training
 
 
@@ -80,6 +81,35 @@ def test_evaluate_checkpoint_returns_metrics_for_sac(tmp_path: Path) -> None:
     )
 
     train_result = train_sac(config, run_suffix="sac-eval-source")
+    metrics = evaluate_checkpoint(train_result.checkpoint_path, num_episodes=1)
+
+    assert set(metrics) >= {"eval_return_mean", "eval_return_std", "eval_episodes"}
+
+
+def test_evaluate_checkpoint_returns_metrics_for_tqc(tmp_path: Path) -> None:
+    config = TrainConfig(
+        algo="tqc",
+        env_id="Pendulum-v1",
+        seed=43,
+        total_timesteps=96,
+        output_dir=tmp_path,
+        eval_episodes=1,
+        algo_kwargs={
+            "buffer_capacity": 512,
+            "batch_size": 32,
+            "learning_starts": 32,
+            "train_frequency": 1,
+            "hidden_sizes": (32, 32),
+            "alpha": 0.2,
+            "tau": 0.005,
+            "num_critics": 3,
+            "num_quantiles": 7,
+            "top_quantiles_to_drop_per_net": 1,
+            "kappa": 1.0,
+        },
+    )
+
+    train_result = train_tqc(config, run_suffix="tqc-eval-source")
     metrics = evaluate_checkpoint(train_result.checkpoint_path, num_episodes=1)
 
     assert set(metrics) >= {"eval_return_mean", "eval_return_std", "eval_episodes"}

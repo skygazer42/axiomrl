@@ -8,6 +8,8 @@ from rl_training.algorithms.ddpg import ddpg_loss
 from rl_training.algorithms.dqn import DQN as DQNAlgorithm
 from rl_training.algorithms.dqn import DoubleDQN as DoubleDQNAlgorithm
 from rl_training.algorithms.dqn import DuelingDQN as DuelingDQNAlgorithm
+from rl_training.algorithms.iqn import IQN as IQNAlgorithm
+from rl_training.algorithms.iqn import iqn_loss
 from rl_training.algorithms.dqn import NoisyDQN as NoisyDQNAlgorithm
 from rl_training.algorithms.dqn import PrioritizedDQN as PrioritizedDQNAlgorithm
 from rl_training.algorithms.dqn import RainbowDQN as RainbowDQNAlgorithm
@@ -18,6 +20,8 @@ from rl_training.algorithms.qr_dqn import QRDQN as QRDQNAlgorithm
 from rl_training.algorithms.qr_dqn import qr_loss
 from rl_training.algorithms.sac import SAC as SACAlgorithm
 from rl_training.algorithms.sac import sac_loss
+from rl_training.algorithms.tqc import TQC as TQCAlgorithm
+from rl_training.algorithms.tqc import tqc_loss
 from rl_training.algorithms.td3 import TD3 as TD3Algorithm
 from rl_training.algorithms.td3 import td3_loss
 
@@ -34,6 +38,8 @@ __all__ = [
     "DoubleDQNAlgorithm",
     "DuelingDQN",
     "DuelingDQNAlgorithm",
+    "IQN",
+    "IQNAlgorithm",
     "NoisyDQN",
     "NoisyDQNAlgorithm",
     "NStepDQN",
@@ -47,6 +53,8 @@ __all__ = [
     "PPOAlgorithm",
     "SAC",
     "SACAlgorithm",
+    "TQC",
+    "TQCAlgorithm",
     "TD3",
     "TD3Algorithm",
     "UpdateResult",
@@ -54,9 +62,11 @@ __all__ = [
     "c51_loss",
     "ddpg_loss",
     "dqn_loss",
+    "iqn_loss",
     "ppo_loss",
     "qr_loss",
     "sac_loss",
+    "tqc_loss",
     "td3_loss",
 ]
 
@@ -70,12 +80,14 @@ def __getattr__(name: str):
         "DQN",
         "DoubleDQN",
         "DuelingDQN",
+        "IQN",
         "NoisyDQN",
         "NStepDQN",
         "PrioritizedDQN",
         "QRDQN",
         "RainbowDQN",
         "SAC",
+        "TQC",
         "TD3",
     }:
         from rl_training.api import (
@@ -85,6 +97,7 @@ def __getattr__(name: str):
             DQN,
             DoubleDQN,
             DuelingDQN,
+            IQN,
             NoisyDQN,
             NStepDQN,
             PPO,
@@ -92,6 +105,7 @@ def __getattr__(name: str):
             QRDQN,
             RainbowDQN,
             SAC,
+            TQC,
             TD3,
         )
 
@@ -103,12 +117,14 @@ def __getattr__(name: str):
             "DQN": DQN,
             "DoubleDQN": DoubleDQN,
             "DuelingDQN": DuelingDQN,
+            "IQN": IQN,
             "NoisyDQN": NoisyDQN,
             "NStepDQN": NStepDQN,
             "PrioritizedDQN": PrioritizedDQN,
             "QRDQN": QRDQN,
             "RainbowDQN": RainbowDQN,
             "SAC": SAC,
+            "TQC": TQC,
             "TD3": TD3,
         }
         return mapping[name]

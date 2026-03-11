@@ -5,6 +5,7 @@ from rl_training import DDPG as RootDDPG
 from rl_training import DQN as RootDQN
 from rl_training import DoubleDQN as RootDoubleDQN
 from rl_training import DuelingDQN as RootDuelingDQN
+from rl_training import IQN as RootIQN
 from rl_training import NStepDQN as RootNStepDQN
 from rl_training import NoisyDQN as RootNoisyDQN
 from rl_training import PrioritizedDQN as RootPrioritizedDQN
@@ -12,6 +13,7 @@ from rl_training import PPO as RootPPO
 from rl_training import QRDQN as RootQRDQN
 from rl_training import RainbowDQN as RootRainbowDQN
 from rl_training import SAC as RootSAC
+from rl_training import TQC as RootTQC
 from rl_training import TrainConfig
 from rl_training.algorithms import (
     C51DQN,
@@ -24,6 +26,8 @@ from rl_training.algorithms import (
     DoubleDQNAlgorithm,
     DuelingDQN,
     DuelingDQNAlgorithm,
+    IQN,
+    IQNAlgorithm,
     NStepDQN,
     NoisyDQN,
     NoisyDQNAlgorithm,
@@ -37,6 +41,8 @@ from rl_training.algorithms import (
     RainbowDQNAlgorithm,
     SAC,
     SACAlgorithm,
+    TQC,
+    TQCAlgorithm,
 )
 from rl_training.data import NStepAccumulator, RunningMeanStd, TransitionDataset
 from rl_training.experiment import JsonlLogger, RunLogger
@@ -49,12 +55,14 @@ def test_package_exports_high_level_algorithms_and_config() -> None:
     assert RootDQN is DQN
     assert RootDoubleDQN is DoubleDQN
     assert RootDuelingDQN is DuelingDQN
+    assert RootIQN is IQN
     assert RootNoisyDQN is NoisyDQN
     assert RootPrioritizedDQN is PrioritizedDQN
     assert RootRainbowDQN is RainbowDQN
     assert RootNStepDQN is NStepDQN
     assert RootQRDQN is QRDQN
     assert RootSAC is SAC
+    assert RootTQC is TQC
     assert TrainConfig.__name__ == "TrainConfig"
 
 
@@ -65,23 +73,27 @@ def test_algorithms_package_exposes_high_level_and_low_level_names() -> None:
     assert DQN.__name__ == "DQN"
     assert DoubleDQN.__name__ == "DoubleDQN"
     assert DuelingDQN.__name__ == "DuelingDQN"
+    assert IQN.__name__ == "IQN"
     assert NoisyDQN.__name__ == "NoisyDQN"
     assert PrioritizedDQN.__name__ == "PrioritizedDQN"
     assert RainbowDQN.__name__ == "RainbowDQN"
     assert NStepDQN.__name__ == "NStepDQN"
     assert QRDQN.__name__ == "QRDQN"
     assert SAC.__name__ == "SAC"
+    assert TQC.__name__ == "TQC"
     assert C51DQNAlgorithm.__name__ == "C51DQN"
     assert PPOAlgorithm.__name__ == "PPO"
     assert DDPGAlgorithm.__name__ == "DDPG"
     assert DQNAlgorithm.__name__ == "DQN"
     assert DoubleDQNAlgorithm.__name__ == "DoubleDQN"
     assert DuelingDQNAlgorithm.__name__ == "DuelingDQN"
+    assert IQNAlgorithm.__name__ == "IQN"
     assert NoisyDQNAlgorithm.__name__ == "NoisyDQN"
     assert PrioritizedDQNAlgorithm.__name__ == "PrioritizedDQN"
     assert RainbowDQNAlgorithm.__name__ == "RainbowDQN"
     assert QRDQNAlgorithm.__name__ == "QRDQN"
     assert SACAlgorithm.__name__ == "SAC"
+    assert TQCAlgorithm.__name__ == "TQC"
 
 
 def test_data_package_exposes_processing_utilities() -> None:

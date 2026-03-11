@@ -305,3 +305,31 @@ def test_train_qr_dqn_checkpoint_can_be_evaluated(tmp_path: Path) -> None:
 
     assert result.checkpoint_path is not None
     assert "eval_return_mean" in metrics
+
+
+def test_train_iqn_checkpoint_can_be_evaluated(tmp_path: Path) -> None:
+    config = TrainConfig(
+        algo="iqn",
+        env_id="CartPole-v1",
+        seed=47,
+        total_timesteps=96,
+        output_dir=tmp_path,
+        eval_episodes=1,
+        algo_kwargs={
+            "buffer_capacity": 256,
+            "batch_size": 32,
+            "learning_starts": 32,
+            "train_frequency": 1,
+            "target_update_interval": 16,
+            "hidden_sizes": (32, 32),
+            "num_quantiles": 16,
+            "embedding_dim": 32,
+            "kappa": 1.0,
+        },
+    )
+
+    result = train_dqn(config, run_suffix="iqn-smoke")
+    metrics = evaluate_checkpoint(result.checkpoint_path, num_episodes=1)
+
+    assert result.checkpoint_path is not None
+    assert "eval_return_mean" in metrics

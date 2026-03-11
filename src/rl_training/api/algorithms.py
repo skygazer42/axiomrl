@@ -127,6 +127,10 @@ class QRDQN(ManagedAlgorithm):
     algo_name = "qr_dqn"
 
 
+class IQN(ManagedAlgorithm):
+    algo_name = "iqn"
+
+
 class DoubleDQN(ManagedAlgorithm):
     algo_name = "double_dqn"
 
@@ -149,6 +153,10 @@ class RainbowDQN(ManagedAlgorithm):
 
 class SAC(ManagedAlgorithm):
     algo_name = "sac"
+
+
+class TQC(ManagedAlgorithm):
+    algo_name = "tqc"
 
 
 class TD3(ManagedAlgorithm):

@@ -9,6 +9,7 @@ import torch
 
 from rl_training.algorithms.c51_dqn import C51DQN
 from rl_training.algorithms.dqn import DQN, DoubleDQN, DuelingDQN, PrioritizedDQN, RainbowDQN
+from rl_training.algorithms.iqn import IQN
 from rl_training.algorithms.qr_dqn import QRDQN
 from rl_training.data.n_step import NStepAccumulator
 from rl_training.data.prioritized_replay_buffer import PrioritizedReplayBuffer
@@ -19,6 +20,7 @@ from rl_training.experiment.config import TrainConfig
 from rl_training.models.mlp_c51_q_network import MLPC51QNetwork
 from rl_training.models.mlp_dueling_noisy_q_network import MLPDuelingNoisyQNetwork
 from rl_training.models.mlp_dueling_q_network import MLPDuelingQNetwork
+from rl_training.models.mlp_iqn_network import MLPIQNetwork
 from rl_training.models.mlp_noisy_q_network import MLPNoisyQNetwork
 from rl_training.models.mlp_q_network import MLPQNetwork
 from rl_training.models.mlp_qr_q_network import MLPQRQNetwork
@@ -77,7 +79,15 @@ def _build_q_network(
     obs_dim: int,
     action_dim: int,
     hidden_sizes: tuple[int, ...],
-) -> MLPQNetwork | MLPDuelingQNetwork | MLPNoisyQNetwork | MLPDuelingNoisyQNetwork | MLPC51QNetwork | MLPQRQNetwork:
+) -> (
+    MLPQNetwork
+    | MLPDuelingQNetwork
+    | MLPNoisyQNetwork
+    | MLPDuelingNoisyQNetwork
+    | MLPC51QNetwork
+    | MLPQRQNetwork
+    | MLPIQNetwork
+):
     if config.algo == "dueling_dqn":
         return MLPDuelingQNetwork(
             obs_dim=obs_dim,
@@ -112,6 +122,14 @@ def _build_q_network(
             num_quantiles=int(config.algo_kwargs.get("num_quantiles", 51)),
             hidden_sizes=hidden_sizes,
         )
+    if config.algo == "iqn":
+        return MLPIQNetwork(
+            obs_dim=obs_dim,
+            action_dim=action_dim,
+            num_quantiles=int(config.algo_kwargs.get("num_quantiles", 32)),
+            hidden_sizes=hidden_sizes,
+            embedding_dim=int(config.algo_kwargs.get("embedding_dim", 64)),
+        )
     return MLPQNetwork(
         obs_dim=obs_dim,
         action_dim=action_dim,
@@ -127,11 +145,12 @@ def _build_algorithm(
     | MLPNoisyQNetwork
     | MLPDuelingNoisyQNetwork
     | MLPC51QNetwork
-    | MLPQRQNetwork,
+    | MLPQRQNetwork
+    | MLPIQNetwork,
     learning_rate: float,
     gamma: float,
     target_update_interval: int,
-) -> DQN | C51DQN | QRDQN:
+) -> DQN | C51DQN | QRDQN | IQN:
     if config.algo == "c51_dqn":
         if not isinstance(q_network, MLPC51QNetwork):
             raise TypeError(f"expected MLPC51QNetwork for c51_dqn, got {type(q_network)!r}")
@@ -149,6 +168,18 @@ def _build_algorithm(
             raise TypeError(f"expected MLPQRQNetwork for qr_dqn, got {type(q_network)!r}")
         num_quantiles = int(config.algo_kwargs.get("num_quantiles", q_network.num_quantiles))
         return QRDQN(
+            q_network=q_network,
+            learning_rate=learning_rate,
+            gamma=gamma,
+            target_update_interval=target_update_interval,
+            num_quantiles=num_quantiles,
+            kappa=float(config.algo_kwargs.get("kappa", 1.0)),
+        )
+    if config.algo == "iqn":
+        if not isinstance(q_network, MLPIQNetwork):
+            raise TypeError(f"expected MLPIQNetwork for iqn, got {type(q_network)!r}")
+        num_quantiles = int(config.algo_kwargs.get("num_quantiles", q_network.num_quantiles))
+        return IQN(
             q_network=q_network,
             learning_rate=learning_rate,
             gamma=gamma,
@@ -181,7 +212,8 @@ def _evaluate_q_policy(
     | MLPNoisyQNetwork
     | MLPDuelingNoisyQNetwork
     | MLPC51QNetwork
-    | MLPQRQNetwork,
+    | MLPQRQNetwork
+    | MLPIQNetwork,
     config: TrainConfig,
     *,
     device: torch.device,

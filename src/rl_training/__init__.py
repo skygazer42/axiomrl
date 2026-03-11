@@ -5,6 +5,7 @@ from rl_training.api import (
     DQN,
     DoubleDQN,
     DuelingDQN,
+    IQN,
     NStepDQN,
     NoisyDQN,
     PPO,
@@ -12,6 +13,7 @@ from rl_training.api import (
     QRDQN,
     RainbowDQN,
     SAC,
+    TQC,
     TD3,
 )
 from rl_training.experiment.config import TrainConfig
@@ -25,6 +27,7 @@ __all__ = [
     "DQN",
     "DoubleDQN",
     "DuelingDQN",
+    "IQN",
     "NStepDQN",
     "NoisyDQN",
     "PPO",
@@ -32,6 +35,7 @@ __all__ = [
     "QRDQN",
     "RainbowDQN",
     "SAC",
+    "TQC",
     "TD3",
     "TrainConfig",
 ]
