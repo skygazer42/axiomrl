@@ -269,6 +269,41 @@ def test_train_command_runs_for_iql_config(tmp_path: Path) -> None:
     assert any((tmp_path / "iql-runs").iterdir())
 
 
+def test_train_command_runs_for_td3_bc_config(tmp_path: Path) -> None:
+    config_file = tmp_path / "td3-bc-config.yaml"
+    config_file.write_text(
+        "\n".join(
+            [
+                "algo: td3_bc",
+                "env_id: Pendulum-v1",
+                "seed: 45",
+                "total_timesteps: 32",
+                f"output_dir: {tmp_path / 'td3-bc-runs'}",
+                "eval_episodes: 0",
+                "algo_kwargs:",
+                "  dataset_kind: random",
+                "  dataset_size: 128",
+                "  dataset_seed: 19",
+                "  batch_size: 32",
+                "  hidden_sizes: [32, 32]",
+                "  learning_rate: 0.0003",
+                "  gamma: 0.99",
+                "  tau: 0.005",
+                "  policy_noise: 0.2",
+                "  noise_clip: 0.5",
+                "  policy_delay: 2",
+                "  bc_alpha: 2.5",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    exit_code = main(["train", "--config", str(config_file)])
+
+    assert exit_code == 0
+    assert any((tmp_path / "td3-bc-runs").iterdir())
+
+
 def test_train_command_runs_for_double_dqn_config(tmp_path: Path) -> None:
     config_file = tmp_path / "double-dqn-config.yaml"
     config_file.write_text(

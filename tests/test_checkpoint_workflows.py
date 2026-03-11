@@ -6,6 +6,7 @@ from rl_training.runtime.iql_trainer import train_iql
 from rl_training.runtime.ppo_trainer import train_ppo
 from rl_training.runtime.redq_trainer import train_redq
 from rl_training.runtime.sac_trainer import train_sac
+from rl_training.runtime.td3_bc_trainer import train_td3_bc
 from rl_training.runtime.tqc_trainer import train_tqc
 from rl_training.runtime.workflows import evaluate_checkpoint, resume_training
 
@@ -236,6 +237,72 @@ def test_resume_training_advances_global_step_for_iql(tmp_path: Path) -> None:
         train_result.checkpoint_path,
         total_timesteps=160,
         run_suffix="iql-resume-target",
+    )
+
+    assert resumed.checkpoint_path is not None
+    assert resumed.checkpoint_path.exists()
+    assert resumed.metrics["global_step"] >= 160
+
+
+def test_evaluate_checkpoint_returns_metrics_for_td3_bc(tmp_path: Path) -> None:
+    config = TrainConfig(
+        algo="td3_bc",
+        env_id="Pendulum-v1",
+        seed=67,
+        total_timesteps=96,
+        output_dir=tmp_path,
+        eval_episodes=1,
+        algo_kwargs={
+            "dataset_kind": "random",
+            "dataset_size": 192,
+            "dataset_seed": 41,
+            "batch_size": 32,
+            "hidden_sizes": (32, 32),
+            "learning_rate": 3e-4,
+            "gamma": 0.99,
+            "tau": 0.005,
+            "policy_noise": 0.2,
+            "noise_clip": 0.5,
+            "policy_delay": 2,
+            "bc_alpha": 2.5,
+        },
+    )
+
+    train_result = train_td3_bc(config, run_suffix="td3-bc-eval-source")
+    metrics = evaluate_checkpoint(train_result.checkpoint_path, num_episodes=1)
+
+    assert set(metrics) >= {"eval_return_mean", "eval_return_std", "eval_episodes"}
+
+
+def test_resume_training_advances_global_step_for_td3_bc(tmp_path: Path) -> None:
+    config = TrainConfig(
+        algo="td3_bc",
+        env_id="Pendulum-v1",
+        seed=71,
+        total_timesteps=96,
+        output_dir=tmp_path,
+        eval_episodes=1,
+        algo_kwargs={
+            "dataset_kind": "random",
+            "dataset_size": 192,
+            "dataset_seed": 43,
+            "batch_size": 32,
+            "hidden_sizes": (32, 32),
+            "learning_rate": 3e-4,
+            "gamma": 0.99,
+            "tau": 0.005,
+            "policy_noise": 0.2,
+            "noise_clip": 0.5,
+            "policy_delay": 2,
+            "bc_alpha": 2.5,
+        },
+    )
+
+    train_result = train_td3_bc(config, run_suffix="td3-bc-resume-source")
+    resumed = resume_training(
+        train_result.checkpoint_path,
+        total_timesteps=160,
+        run_suffix="td3-bc-resume-target",
     )
 
     assert resumed.checkpoint_path is not None

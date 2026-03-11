@@ -169,3 +169,7 @@ class REDQ(ManagedAlgorithm):
 
 class TD3(ManagedAlgorithm):
     algo_name = "td3"
+
+
+class TD3BC(ManagedAlgorithm):
+    algo_name = "td3_bc"

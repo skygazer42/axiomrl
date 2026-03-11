@@ -25,6 +25,7 @@ from rl_training.algorithms.redq import REDQ as REDQAlgorithm
 from rl_training.algorithms.sac import SAC as SACAlgorithm
 from rl_training.algorithms.tqc import TQC as TQCAlgorithm
 from rl_training.algorithms.td3 import TD3 as TD3Algorithm
+from rl_training.algorithms.td3_bc import TD3BC as TD3BCAlgorithm
 from rl_training.experiment.checkpointing import CheckpointState
 from rl_training.experiment.config import TrainConfig
 from rl_training.models.mlp_actor_critic import MLPActorCritic
@@ -51,6 +52,7 @@ from rl_training.runtime.redq_trainer import _evaluate_redq_policy, train_redq
 from rl_training.runtime.sac_trainer import _evaluate_sac_policy, train_sac
 from rl_training.runtime.tqc_trainer import _evaluate_tqc_policy, train_tqc
 from rl_training.runtime.td3_trainer import _evaluate_td3_policy, train_td3
+from rl_training.runtime.td3_bc_trainer import train_td3_bc
 from rl_training.runtime.trainer import TrainResult
 from rl_training.runtime.types import MetricDict
 
@@ -395,6 +397,25 @@ def _load_td3_algorithm(config: TrainConfig, checkpoint_state: CheckpointState, 
     return algorithm
 
 
+def _load_td3_bc_algorithm(
+    config: TrainConfig, checkpoint_state: CheckpointState, *, device: torch.device
+) -> TD3BCAlgorithm:
+    obs_dim, action_dim = _infer_continuous_env_spaces(config)
+    hidden_sizes = tuple(config.algo_kwargs.get("hidden_sizes", (256, 256)))
+    algorithm = TD3BCAlgorithm(
+        model=MLPTD3Model(obs_dim=obs_dim, action_dim=action_dim, hidden_sizes=hidden_sizes).to(device),
+        learning_rate=float(config.algo_kwargs.get("learning_rate", 3e-4)),
+        gamma=float(config.algo_kwargs.get("gamma", 0.99)),
+        tau=float(config.algo_kwargs.get("tau", 0.005)),
+        policy_noise=float(config.algo_kwargs.get("policy_noise", 0.2)),
+        noise_clip=float(config.algo_kwargs.get("noise_clip", 0.5)),
+        policy_delay=int(config.algo_kwargs.get("policy_delay", 2)),
+        bc_alpha=float(config.algo_kwargs.get("bc_alpha", 2.5)),
+    )
+    algorithm.load_state_dict(checkpoint_state.algorithm_state)
+    return algorithm
+
+
 def _evaluate_a2c(config: TrainConfig, checkpoint_state: CheckpointState, device: torch.device, num_episodes: int) -> MetricDict:
     algorithm = _load_a2c_algorithm(config, checkpoint_state, device=device)
     return _evaluate_a2c_policy(algorithm.policy, config, device=device, num_episodes=num_episodes)
@@ -458,6 +479,13 @@ def _evaluate_ddpg(config: TrainConfig, checkpoint_state: CheckpointState, devic
 
 def _evaluate_td3(config: TrainConfig, checkpoint_state: CheckpointState, device: torch.device, num_episodes: int) -> MetricDict:
     algorithm = _load_td3_algorithm(config, checkpoint_state, device=device)
+    return _evaluate_td3_policy(algorithm.model, config, device=device, num_episodes=num_episodes)
+
+
+def _evaluate_td3_bc(
+    config: TrainConfig, checkpoint_state: CheckpointState, device: torch.device, num_episodes: int
+) -> MetricDict:
+    algorithm = _load_td3_bc_algorithm(config, checkpoint_state, device=device)
     return _evaluate_td3_policy(algorithm.model, config, device=device, num_episodes=num_episodes)
 
 
@@ -651,6 +679,23 @@ def _predict_td3(
     return _format_action_output(actions, discrete=False)
 
 
+def _predict_td3_bc(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    obs: object,
+    deterministic: bool,
+) -> int | np.ndarray:
+    del deterministic
+    algorithm = _load_td3_bc_algorithm(config, checkpoint_state, device=device)
+    obs_tensor = _prepare_observation(obs, device=device)
+    low, high = _continuous_action_bounds(config, device=device)
+    with torch.no_grad():
+        normalized_actions = algorithm.model.actor(obs_tensor)
+        actions = _scale_continuous_actions(normalized_actions, low=low, high=high)
+    return _format_action_output(actions, discrete=False)
+
+
 _ALGORITHM_REGISTRY: dict[str, AlgorithmSpec] = {
     "a2c": AlgorithmSpec(
         name="a2c",
@@ -759,6 +804,12 @@ _ALGORITHM_REGISTRY: dict[str, AlgorithmSpec] = {
         train_fn=train_td3,
         evaluate_fn=_evaluate_td3,
         predict_fn=_predict_td3,
+    ),
+    "td3_bc": AlgorithmSpec(
+        name="td3_bc",
+        train_fn=train_td3_bc,
+        evaluate_fn=_evaluate_td3_bc,
+        predict_fn=_predict_td3_bc,
     ),
 }
 

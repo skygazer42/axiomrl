@@ -17,6 +17,7 @@ from rl_training.api.algorithms import (
     SAC,
     TQC,
     TD3,
+    TD3BC,
 )
 
 __all__ = [
@@ -38,4 +39,5 @@ __all__ = [
     "SAC",
     "TQC",
     "TD3",
+    "TD3BC",
 ]

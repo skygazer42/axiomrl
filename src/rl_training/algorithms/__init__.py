@@ -28,6 +28,8 @@ from rl_training.algorithms.tqc import TQC as TQCAlgorithm
 from rl_training.algorithms.tqc import tqc_loss
 from rl_training.algorithms.td3 import TD3 as TD3Algorithm
 from rl_training.algorithms.td3 import td3_loss
+from rl_training.algorithms.td3_bc import TD3BC as TD3BCAlgorithm
+from rl_training.algorithms.td3_bc import td3_bc_loss
 
 __all__ = [
     "Algorithm",
@@ -65,6 +67,8 @@ __all__ = [
     "TQCAlgorithm",
     "TD3",
     "TD3Algorithm",
+    "TD3BC",
+    "TD3BCAlgorithm",
     "UpdateResult",
     "a2c_loss",
     "c51_loss",
@@ -78,6 +82,7 @@ __all__ = [
     "sac_loss",
     "tqc_loss",
     "td3_loss",
+    "td3_bc_loss",
 ]
 
 
@@ -101,6 +106,7 @@ def __getattr__(name: str):
         "SAC",
         "TQC",
         "TD3",
+        "TD3BC",
     }:
         from rl_training.api import (
             A2C,
@@ -121,6 +127,7 @@ def __getattr__(name: str):
             SAC,
             TQC,
             TD3,
+            TD3BC,
         )
 
         mapping = {
@@ -142,6 +149,7 @@ def __getattr__(name: str):
             "SAC": SAC,
             "TQC": TQC,
             "TD3": TD3,
+            "TD3BC": TD3BC,
         }
         return mapping[name]
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

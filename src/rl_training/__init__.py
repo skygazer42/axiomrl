@@ -17,6 +17,7 @@ from rl_training.api import (
     SAC,
     TQC,
     TD3,
+    TD3BC,
 )
 from rl_training.experiment.config import TrainConfig
 from rl_training.version import __version__
@@ -41,5 +42,6 @@ __all__ = [
     "SAC",
     "TQC",
     "TD3",
+    "TD3BC",
     "TrainConfig",
 ]
