@@ -131,6 +131,10 @@ class IQN(ManagedAlgorithm):
     algo_name = "iqn"
 
 
+class IQL(ManagedAlgorithm):
+    algo_name = "iql"
+
+
 class DoubleDQN(ManagedAlgorithm):
     algo_name = "double_dqn"
 

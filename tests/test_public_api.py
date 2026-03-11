@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from rl_training.api import A2C, C51DQN, DDPG, DQN, DoubleDQN, DuelingDQN, IQN, NoisyDQN, NStepDQN, PPO, PrioritizedDQN, QRDQN, RainbowDQN, REDQ, SAC, TD3, TQC
+from rl_training.api import A2C, C51DQN, DDPG, DQN, DoubleDQN, DuelingDQN, IQL, IQN, NoisyDQN, NStepDQN, PPO, PrioritizedDQN, QRDQN, RainbowDQN, REDQ, SAC, TD3, TQC
 from rl_training.experiment.config import TrainConfig
 
 
@@ -318,6 +318,29 @@ def test_off_policy_public_apis_support_learn_and_evaluate(tmp_path: Path) -> No
             },
         )
     )
+    iql = IQL(
+        TrainConfig(
+            algo="iql",
+            env_id="Pendulum-v1",
+            seed=64,
+            total_timesteps=96,
+            output_dir=tmp_path / "iql-runs",
+            eval_episodes=1,
+            algo_kwargs={
+                "dataset_kind": "random",
+                "dataset_size": 192,
+                "dataset_seed": 21,
+                "batch_size": 32,
+                "hidden_sizes": (32, 32),
+                "learning_rate": 3e-4,
+                "gamma": 0.99,
+                "tau": 0.005,
+                "expectile": 0.7,
+                "beta": 3.0,
+                "max_advantage_weight": 100.0,
+            },
+        )
+    )
     ddpg = DDPG(
         TrainConfig(
             algo="ddpg",
@@ -372,6 +395,7 @@ def test_off_policy_public_apis_support_learn_and_evaluate(tmp_path: Path) -> No
     sac.learn()
     tqc.learn()
     redq.learn()
+    iql.learn()
     ddpg.learn()
     td3.learn()
 
@@ -389,6 +413,7 @@ def test_off_policy_public_apis_support_learn_and_evaluate(tmp_path: Path) -> No
     sac_action = sac.predict([0.0, 0.0, 0.0])
     tqc_action = tqc.predict([0.0, 0.0, 0.0])
     redq_action = redq.predict([0.0, 0.0, 0.0])
+    iql_action = iql.predict([0.0, 0.0, 0.0])
     ddpg_action = ddpg.predict([0.0, 0.0, 0.0])
     td3_action = td3.predict([0.0, 0.0, 0.0])
 
@@ -406,6 +431,7 @@ def test_off_policy_public_apis_support_learn_and_evaluate(tmp_path: Path) -> No
     assert len(sac_action) == 1
     assert len(tqc_action) == 1
     assert len(redq_action) == 1
+    assert len(iql_action) == 1
     assert len(ddpg_action) == 1
     assert len(td3_action) == 1
     assert "eval_return_mean" in a2c.evaluate(num_episodes=1)
@@ -422,5 +448,6 @@ def test_off_policy_public_apis_support_learn_and_evaluate(tmp_path: Path) -> No
     assert "eval_return_mean" in sac.evaluate(num_episodes=1)
     assert "eval_return_mean" in tqc.evaluate(num_episodes=1)
     assert "eval_return_mean" in redq.evaluate(num_episodes=1)
+    assert "eval_return_mean" in iql.evaluate(num_episodes=1)
     assert "eval_return_mean" in ddpg.evaluate(num_episodes=1)
     assert "eval_return_mean" in td3.evaluate(num_episodes=1)

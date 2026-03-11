@@ -3,6 +3,7 @@ from rl_training.models.mlp_c51_q_network import MLPC51QNetwork
 from rl_training.models.mlp_ddpg import MLPDDPGModel
 from rl_training.models.mlp_dueling_noisy_q_network import MLPDuelingNoisyQNetwork
 from rl_training.models.mlp_dueling_q_network import MLPDuelingQNetwork
+from rl_training.models.mlp_iql import MLPIQLModel, IQLSample
 from rl_training.models.mlp_iqn_network import MLPIQNetwork
 from rl_training.models.mlp_noisy_q_network import MLPNoisyQNetwork
 from rl_training.models.mlp_q_network import MLPQNetwork
@@ -17,7 +18,9 @@ __all__ = [
     "MLPDDPGModel",
     "MLPDuelingNoisyQNetwork",
     "MLPDuelingQNetwork",
+    "MLPIQLModel",
     "MLPIQNetwork",
+    "IQLSample",
     "MLPNoisyQNetwork",
     "MLPQNetwork",
     "MLPREDQModel",

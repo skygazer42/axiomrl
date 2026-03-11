@@ -8,6 +8,8 @@ from rl_training.algorithms.ddpg import ddpg_loss
 from rl_training.algorithms.dqn import DQN as DQNAlgorithm
 from rl_training.algorithms.dqn import DoubleDQN as DoubleDQNAlgorithm
 from rl_training.algorithms.dqn import DuelingDQN as DuelingDQNAlgorithm
+from rl_training.algorithms.iql import IQL as IQLAlgorithm
+from rl_training.algorithms.iql import iql_loss
 from rl_training.algorithms.iqn import IQN as IQNAlgorithm
 from rl_training.algorithms.iqn import iqn_loss
 from rl_training.algorithms.dqn import NoisyDQN as NoisyDQNAlgorithm
@@ -40,6 +42,8 @@ __all__ = [
     "DoubleDQNAlgorithm",
     "DuelingDQN",
     "DuelingDQNAlgorithm",
+    "IQL",
+    "IQLAlgorithm",
     "IQN",
     "IQNAlgorithm",
     "NoisyDQN",
@@ -66,6 +70,7 @@ __all__ = [
     "c51_loss",
     "ddpg_loss",
     "dqn_loss",
+    "iql_loss",
     "iqn_loss",
     "ppo_loss",
     "qr_loss",
@@ -85,6 +90,7 @@ def __getattr__(name: str):
         "DQN",
         "DoubleDQN",
         "DuelingDQN",
+        "IQL",
         "IQN",
         "NoisyDQN",
         "NStepDQN",
@@ -103,6 +109,7 @@ def __getattr__(name: str):
             DQN,
             DoubleDQN,
             DuelingDQN,
+            IQL,
             IQN,
             NoisyDQN,
             NStepDQN,
@@ -124,6 +131,7 @@ def __getattr__(name: str):
             "DQN": DQN,
             "DoubleDQN": DoubleDQN,
             "DuelingDQN": DuelingDQN,
+            "IQL": IQL,
             "IQN": IQN,
             "NoisyDQN": NoisyDQN,
             "NStepDQN": NStepDQN,

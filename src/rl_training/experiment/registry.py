@@ -14,6 +14,7 @@ from rl_training.algorithms.ddpg import DDPG as DDPGAlgorithm
 from rl_training.algorithms.dqn import DQN as DQNAlgorithm
 from rl_training.algorithms.dqn import DoubleDQN as DoubleDQNAlgorithm
 from rl_training.algorithms.dqn import DuelingDQN as DuelingDQNAlgorithm
+from rl_training.algorithms.iql import IQL as IQLAlgorithm
 from rl_training.algorithms.iqn import IQN as IQNAlgorithm
 from rl_training.algorithms.dqn import NoisyDQN as NoisyDQNAlgorithm
 from rl_training.algorithms.dqn import PrioritizedDQN as PrioritizedDQNAlgorithm
@@ -31,6 +32,7 @@ from rl_training.models.mlp_c51_q_network import MLPC51QNetwork
 from rl_training.models.mlp_ddpg import MLPDDPGModel
 from rl_training.models.mlp_dueling_noisy_q_network import MLPDuelingNoisyQNetwork
 from rl_training.models.mlp_dueling_q_network import MLPDuelingQNetwork
+from rl_training.models.mlp_iql import MLPIQLModel
 from rl_training.models.mlp_iqn_network import MLPIQNetwork
 from rl_training.models.mlp_noisy_q_network import MLPNoisyQNetwork
 from rl_training.models.mlp_q_network import MLPQNetwork
@@ -43,6 +45,7 @@ from rl_training.runtime.a2c_trainer import _evaluate_policy as _evaluate_a2c_po
 from rl_training.runtime.a2c_trainer import train_a2c
 from rl_training.runtime.ddpg_trainer import _evaluate_ddpg_policy, train_ddpg
 from rl_training.runtime.dqn_trainer import _evaluate_q_policy, train_dqn
+from rl_training.runtime.iql_trainer import _evaluate_iql_policy, train_iql
 from rl_training.runtime.ppo_trainer import _evaluate_policy, train_ppo
 from rl_training.runtime.redq_trainer import _evaluate_redq_policy, train_redq
 from rl_training.runtime.sac_trainer import _evaluate_sac_policy, train_sac
@@ -281,6 +284,22 @@ def _load_iqn_algorithm(config: TrainConfig, checkpoint_state: CheckpointState, 
     return algorithm
 
 
+def _load_iql_algorithm(config: TrainConfig, checkpoint_state: CheckpointState, *, device: torch.device) -> IQLAlgorithm:
+    obs_dim, action_dim = _infer_continuous_env_spaces(config)
+    hidden_sizes = tuple(config.algo_kwargs.get("hidden_sizes", (256, 256)))
+    algorithm = IQLAlgorithm(
+        model=MLPIQLModel(obs_dim=obs_dim, action_dim=action_dim, hidden_sizes=hidden_sizes).to(device),
+        learning_rate=float(config.algo_kwargs.get("learning_rate", 3e-4)),
+        gamma=float(config.algo_kwargs.get("gamma", 0.99)),
+        tau=float(config.algo_kwargs.get("tau", 0.005)),
+        expectile=float(config.algo_kwargs.get("expectile", 0.7)),
+        beta=float(config.algo_kwargs.get("beta", 3.0)),
+        max_advantage_weight=float(config.algo_kwargs.get("max_advantage_weight", 100.0)),
+    )
+    algorithm.load_state_dict(checkpoint_state.algorithm_state)
+    return algorithm
+
+
 def _load_sac_algorithm(config: TrainConfig, checkpoint_state: CheckpointState, *, device: torch.device) -> SACAlgorithm:
     obs_dim, action_dim = _infer_continuous_env_spaces(config)
     hidden_sizes = tuple(config.algo_kwargs.get("hidden_sizes", (256, 256)))
@@ -412,6 +431,11 @@ def _evaluate_iqn(config: TrainConfig, checkpoint_state: CheckpointState, device
     return _evaluate_q_policy(algorithm.q_network, config, device=device, num_episodes=num_episodes)
 
 
+def _evaluate_iql(config: TrainConfig, checkpoint_state: CheckpointState, device: torch.device, num_episodes: int) -> MetricDict:
+    algorithm = _load_iql_algorithm(config, checkpoint_state, device=device)
+    return _evaluate_iql_policy(algorithm.model, config, device=device, num_episodes=num_episodes)
+
+
 def _evaluate_sac(config: TrainConfig, checkpoint_state: CheckpointState, device: torch.device, num_episodes: int) -> MetricDict:
     algorithm = _load_sac_algorithm(config, checkpoint_state, device=device)
     return _evaluate_sac_policy(algorithm.model, config, device=device, num_episodes=num_episodes)
@@ -527,6 +551,22 @@ def _predict_iqn(
     with torch.no_grad():
         actions = algorithm.q_network.act(obs_tensor, epsilon=0.0)
     return _format_action_output(actions, discrete=True)
+
+
+def _predict_iql(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    obs: object,
+    deterministic: bool,
+) -> int | np.ndarray:
+    algorithm = _load_iql_algorithm(config, checkpoint_state, device=device)
+    obs_tensor = _prepare_observation(obs, device=device)
+    low, high = _continuous_action_bounds(config, device=device)
+    with torch.no_grad():
+        normalized_actions = algorithm.model.sample_actions(obs_tensor, deterministic=deterministic).actions
+        actions = _scale_continuous_actions(normalized_actions, low=low, high=high)
+    return _format_action_output(actions, discrete=False)
 
 
 def _predict_sac(
@@ -671,6 +711,12 @@ _ALGORITHM_REGISTRY: dict[str, AlgorithmSpec] = {
         train_fn=train_dqn,
         evaluate_fn=_evaluate_iqn,
         predict_fn=_predict_iqn,
+    ),
+    "iql": AlgorithmSpec(
+        name="iql",
+        train_fn=train_iql,
+        evaluate_fn=_evaluate_iql,
+        predict_fn=_predict_iql,
     ),
     "ddpg": AlgorithmSpec(
         name="ddpg",

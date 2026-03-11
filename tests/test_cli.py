@@ -235,6 +235,40 @@ def test_train_command_runs_for_redq_config(tmp_path: Path) -> None:
     assert any((tmp_path / "redq-runs").iterdir())
 
 
+def test_train_command_runs_for_iql_config(tmp_path: Path) -> None:
+    config_file = tmp_path / "iql-config.yaml"
+    config_file.write_text(
+        "\n".join(
+            [
+                "algo: iql",
+                "env_id: Pendulum-v1",
+                "seed: 44",
+                "total_timesteps: 32",
+                f"output_dir: {tmp_path / 'iql-runs'}",
+                "eval_episodes: 0",
+                "algo_kwargs:",
+                "  dataset_kind: random",
+                "  dataset_size: 128",
+                "  dataset_seed: 13",
+                "  batch_size: 32",
+                "  hidden_sizes: [32, 32]",
+                "  learning_rate: 0.0003",
+                "  gamma: 0.99",
+                "  tau: 0.005",
+                "  expectile: 0.7",
+                "  beta: 3.0",
+                "  max_advantage_weight: 100.0",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    exit_code = main(["train", "--config", str(config_file)])
+
+    assert exit_code == 0
+    assert any((tmp_path / "iql-runs").iterdir())
+
+
 def test_train_command_runs_for_double_dqn_config(tmp_path: Path) -> None:
     config_file = tmp_path / "double-dqn-config.yaml"
     config_file.write_text(

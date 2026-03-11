@@ -9,6 +9,7 @@ def test_builtin_algorithm_specs_are_registered() -> None:
     a2c = get_algorithm_spec("a2c")
     ppo = get_algorithm_spec("ppo")
     dqn = get_algorithm_spec("dqn")
+    iql = get_algorithm_spec("iql")
     sac = get_algorithm_spec("sac")
     tqc = get_algorithm_spec("tqc")
     redq = get_algorithm_spec("redq")
@@ -17,6 +18,7 @@ def test_builtin_algorithm_specs_are_registered() -> None:
     assert a2c.name == "a2c"
     assert ppo.name == "ppo"
     assert dqn.name == "dqn"
+    assert iql.name == "iql"
     assert sac.name == "sac"
     assert tqc.name == "tqc"
     assert redq.name == "redq"
@@ -30,6 +32,9 @@ def test_builtin_algorithm_specs_are_registered() -> None:
     assert callable(dqn.train_fn)
     assert callable(dqn.evaluate_fn)
     assert callable(dqn.predict_fn)
+    assert callable(iql.train_fn)
+    assert callable(iql.evaluate_fn)
+    assert callable(iql.predict_fn)
     assert callable(sac.train_fn)
     assert callable(sac.evaluate_fn)
     assert callable(sac.predict_fn)

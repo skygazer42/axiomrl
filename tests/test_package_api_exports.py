@@ -5,6 +5,7 @@ from rl_training import DDPG as RootDDPG
 from rl_training import DQN as RootDQN
 from rl_training import DoubleDQN as RootDoubleDQN
 from rl_training import DuelingDQN as RootDuelingDQN
+from rl_training import IQL as RootIQL
 from rl_training import IQN as RootIQN
 from rl_training import NStepDQN as RootNStepDQN
 from rl_training import NoisyDQN as RootNoisyDQN
@@ -27,6 +28,8 @@ from rl_training.algorithms import (
     DoubleDQNAlgorithm,
     DuelingDQN,
     DuelingDQNAlgorithm,
+    IQL,
+    IQLAlgorithm,
     IQN,
     IQNAlgorithm,
     NStepDQN,
@@ -58,6 +61,7 @@ def test_package_exports_high_level_algorithms_and_config() -> None:
     assert RootDQN is DQN
     assert RootDoubleDQN is DoubleDQN
     assert RootDuelingDQN is DuelingDQN
+    assert RootIQL is IQL
     assert RootIQN is IQN
     assert RootNoisyDQN is NoisyDQN
     assert RootPrioritizedDQN is PrioritizedDQN
@@ -77,6 +81,7 @@ def test_algorithms_package_exposes_high_level_and_low_level_names() -> None:
     assert DQN.__name__ == "DQN"
     assert DoubleDQN.__name__ == "DoubleDQN"
     assert DuelingDQN.__name__ == "DuelingDQN"
+    assert IQL.__name__ == "IQL"
     assert IQN.__name__ == "IQN"
     assert NoisyDQN.__name__ == "NoisyDQN"
     assert PrioritizedDQN.__name__ == "PrioritizedDQN"
@@ -92,6 +97,7 @@ def test_algorithms_package_exposes_high_level_and_low_level_names() -> None:
     assert DQNAlgorithm.__name__ == "DQN"
     assert DoubleDQNAlgorithm.__name__ == "DoubleDQN"
     assert DuelingDQNAlgorithm.__name__ == "DuelingDQN"
+    assert IQLAlgorithm.__name__ == "IQL"
     assert IQNAlgorithm.__name__ == "IQN"
     assert NoisyDQNAlgorithm.__name__ == "NoisyDQN"
     assert PrioritizedDQNAlgorithm.__name__ == "PrioritizedDQN"

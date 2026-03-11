@@ -60,3 +60,19 @@ def test_transition_dataset_validates_lengths() -> None:
             dones=np.zeros((3,), dtype=np.float32),
         )
 
+
+def test_transition_dataset_preserves_continuous_action_shape() -> None:
+    from rl_training.data.offline_dataset import TransitionDataset
+
+    dataset = TransitionDataset(
+        obs=np.zeros((10, 4), dtype=np.float32),
+        actions=np.zeros((10, 2), dtype=np.float32),
+        rewards=np.ones((10,), dtype=np.float32),
+        next_obs=np.ones((10, 4), dtype=np.float32),
+        dones=np.zeros((10,), dtype=np.float32),
+    )
+
+    batch = dataset.sample(batch_size=5, device="cpu")
+
+    assert batch["actions"].shape == (5, 2)
+    assert batch["actions"].dtype == torch.float32
