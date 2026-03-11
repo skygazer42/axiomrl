@@ -18,6 +18,8 @@ from rl_training.algorithms.ppo import PPO as PPOAlgorithm
 from rl_training.algorithms.ppo import ppo_loss
 from rl_training.algorithms.qr_dqn import QRDQN as QRDQNAlgorithm
 from rl_training.algorithms.qr_dqn import qr_loss
+from rl_training.algorithms.redq import REDQ as REDQAlgorithm
+from rl_training.algorithms.redq import redq_loss
 from rl_training.algorithms.sac import SAC as SACAlgorithm
 from rl_training.algorithms.sac import sac_loss
 from rl_training.algorithms.tqc import TQC as TQCAlgorithm
@@ -49,6 +51,8 @@ __all__ = [
     "QRDQNAlgorithm",
     "RainbowDQN",
     "RainbowDQNAlgorithm",
+    "REDQ",
+    "REDQAlgorithm",
     "PPO",
     "PPOAlgorithm",
     "SAC",
@@ -65,6 +69,7 @@ __all__ = [
     "iqn_loss",
     "ppo_loss",
     "qr_loss",
+    "redq_loss",
     "sac_loss",
     "tqc_loss",
     "td3_loss",
@@ -86,6 +91,7 @@ def __getattr__(name: str):
         "PrioritizedDQN",
         "QRDQN",
         "RainbowDQN",
+        "REDQ",
         "SAC",
         "TQC",
         "TD3",
@@ -104,6 +110,7 @@ def __getattr__(name: str):
             PrioritizedDQN,
             QRDQN,
             RainbowDQN,
+            REDQ,
             SAC,
             TQC,
             TD3,
@@ -123,6 +130,7 @@ def __getattr__(name: str):
             "PrioritizedDQN": PrioritizedDQN,
             "QRDQN": QRDQN,
             "RainbowDQN": RainbowDQN,
+            "REDQ": REDQ,
             "SAC": SAC,
             "TQC": TQC,
             "TD3": TD3,

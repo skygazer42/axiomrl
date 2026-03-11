@@ -202,6 +202,39 @@ def test_train_command_runs_for_tqc_config(tmp_path: Path) -> None:
     assert any((tmp_path / "tqc-runs").iterdir())
 
 
+def test_train_command_runs_for_redq_config(tmp_path: Path) -> None:
+    config_file = tmp_path / "redq-config.yaml"
+    config_file.write_text(
+        "\n".join(
+            [
+                "algo: redq",
+                "env_id: Pendulum-v1",
+                "seed: 43",
+                "total_timesteps: 32",
+                f"output_dir: {tmp_path / 'redq-runs'}",
+                "eval_episodes: 0",
+                "algo_kwargs:",
+                "  buffer_capacity: 256",
+                "  batch_size: 32",
+                "  learning_starts: 32",
+                "  train_frequency: 1",
+                "  gradient_updates_per_step: 2",
+                "  hidden_sizes: [32, 32]",
+                "  alpha: 0.2",
+                "  tau: 0.005",
+                "  num_critics: 5",
+                "  subset_size: 2",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    exit_code = main(["train", "--config", str(config_file)])
+
+    assert exit_code == 0
+    assert any((tmp_path / "redq-runs").iterdir())
+
+
 def test_train_command_runs_for_double_dqn_config(tmp_path: Path) -> None:
     config_file = tmp_path / "double-dqn-config.yaml"
     config_file.write_text(

@@ -20,6 +20,7 @@ from rl_training.algorithms.dqn import PrioritizedDQN as PrioritizedDQNAlgorithm
 from rl_training.algorithms.dqn import RainbowDQN as RainbowDQNAlgorithm
 from rl_training.algorithms.ppo import PPO as PPOAlgorithm
 from rl_training.algorithms.qr_dqn import QRDQN as QRDQNAlgorithm
+from rl_training.algorithms.redq import REDQ as REDQAlgorithm
 from rl_training.algorithms.sac import SAC as SACAlgorithm
 from rl_training.algorithms.tqc import TQC as TQCAlgorithm
 from rl_training.algorithms.td3 import TD3 as TD3Algorithm
@@ -34,6 +35,7 @@ from rl_training.models.mlp_iqn_network import MLPIQNetwork
 from rl_training.models.mlp_noisy_q_network import MLPNoisyQNetwork
 from rl_training.models.mlp_q_network import MLPQNetwork
 from rl_training.models.mlp_qr_q_network import MLPQRQNetwork
+from rl_training.models.mlp_redq import MLPREDQModel
 from rl_training.models.mlp_sac import MLPSACModel
 from rl_training.models.mlp_tqc import MLPTQCModel
 from rl_training.models.mlp_td3 import MLPTD3Model
@@ -42,6 +44,7 @@ from rl_training.runtime.a2c_trainer import train_a2c
 from rl_training.runtime.ddpg_trainer import _evaluate_ddpg_policy, train_ddpg
 from rl_training.runtime.dqn_trainer import _evaluate_q_policy, train_dqn
 from rl_training.runtime.ppo_trainer import _evaluate_policy, train_ppo
+from rl_training.runtime.redq_trainer import _evaluate_redq_policy, train_redq
 from rl_training.runtime.sac_trainer import _evaluate_sac_policy, train_sac
 from rl_training.runtime.tqc_trainer import _evaluate_tqc_policy, train_tqc
 from rl_training.runtime.td3_trainer import _evaluate_td3_policy, train_td3
@@ -320,6 +323,30 @@ def _load_tqc_algorithm(config: TrainConfig, checkpoint_state: CheckpointState, 
     return algorithm
 
 
+def _load_redq_algorithm(config: TrainConfig, checkpoint_state: CheckpointState, *, device: torch.device) -> REDQAlgorithm:
+    obs_dim, action_dim = _infer_continuous_env_spaces(config)
+    hidden_sizes = tuple(config.algo_kwargs.get("hidden_sizes", (256, 256)))
+    num_critics = int(config.algo_kwargs.get("num_critics", 10))
+    subset_size = int(config.algo_kwargs.get("subset_size", 2))
+
+    algorithm = REDQAlgorithm(
+        model=MLPREDQModel(
+            obs_dim=obs_dim,
+            action_dim=action_dim,
+            hidden_sizes=hidden_sizes,
+            num_critics=num_critics,
+        ).to(device),
+        learning_rate=float(config.algo_kwargs.get("learning_rate", 3e-4)),
+        gamma=float(config.algo_kwargs.get("gamma", 0.99)),
+        alpha=float(config.algo_kwargs.get("alpha", 0.2)),
+        tau=float(config.algo_kwargs.get("tau", 0.005)),
+        num_critics=num_critics,
+        subset_size=subset_size,
+    )
+    algorithm.load_state_dict(checkpoint_state.algorithm_state)
+    return algorithm
+
+
 def _load_ddpg_algorithm(config: TrainConfig, checkpoint_state: CheckpointState, *, device: torch.device) -> DDPGAlgorithm:
     obs_dim, action_dim = _infer_continuous_env_spaces(config)
     hidden_sizes = tuple(config.algo_kwargs.get("hidden_sizes", (256, 256)))
@@ -393,6 +420,11 @@ def _evaluate_sac(config: TrainConfig, checkpoint_state: CheckpointState, device
 def _evaluate_tqc(config: TrainConfig, checkpoint_state: CheckpointState, device: torch.device, num_episodes: int) -> MetricDict:
     algorithm = _load_tqc_algorithm(config, checkpoint_state, device=device)
     return _evaluate_tqc_policy(algorithm.model, config, device=device, num_episodes=num_episodes)
+
+
+def _evaluate_redq(config: TrainConfig, checkpoint_state: CheckpointState, device: torch.device, num_episodes: int) -> MetricDict:
+    algorithm = _load_redq_algorithm(config, checkpoint_state, device=device)
+    return _evaluate_redq_policy(algorithm.model, config, device=device, num_episodes=num_episodes)
 
 
 def _evaluate_ddpg(config: TrainConfig, checkpoint_state: CheckpointState, device: torch.device, num_episodes: int) -> MetricDict:
@@ -529,6 +561,22 @@ def _predict_tqc(
     return _format_action_output(actions, discrete=False)
 
 
+def _predict_redq(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    obs: object,
+    deterministic: bool,
+) -> int | np.ndarray:
+    algorithm = _load_redq_algorithm(config, checkpoint_state, device=device)
+    obs_tensor = _prepare_observation(obs, device=device)
+    low, high = _continuous_action_bounds(config, device=device)
+    with torch.no_grad():
+        normalized_actions = algorithm.model.sample_actions(obs_tensor, deterministic=deterministic).actions
+        actions = _scale_continuous_actions(normalized_actions, low=low, high=high)
+    return _format_action_output(actions, discrete=False)
+
+
 def _predict_ddpg(
     config: TrainConfig,
     checkpoint_state: CheckpointState,
@@ -653,6 +701,12 @@ _ALGORITHM_REGISTRY: dict[str, AlgorithmSpec] = {
         train_fn=train_tqc,
         evaluate_fn=_evaluate_tqc,
         predict_fn=_predict_tqc,
+    ),
+    "redq": AlgorithmSpec(
+        name="redq",
+        train_fn=train_redq,
+        evaluate_fn=_evaluate_redq,
+        predict_fn=_predict_redq,
     ),
     "td3": AlgorithmSpec(
         name="td3",

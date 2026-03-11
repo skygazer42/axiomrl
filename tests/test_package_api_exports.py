@@ -12,6 +12,7 @@ from rl_training import PrioritizedDQN as RootPrioritizedDQN
 from rl_training import PPO as RootPPO
 from rl_training import QRDQN as RootQRDQN
 from rl_training import RainbowDQN as RootRainbowDQN
+from rl_training import REDQ as RootREDQ
 from rl_training import SAC as RootSAC
 from rl_training import TQC as RootTQC
 from rl_training import TrainConfig
@@ -39,6 +40,8 @@ from rl_training.algorithms import (
     QRDQNAlgorithm,
     RainbowDQN,
     RainbowDQNAlgorithm,
+    REDQ,
+    REDQAlgorithm,
     SAC,
     SACAlgorithm,
     TQC,
@@ -63,6 +66,7 @@ def test_package_exports_high_level_algorithms_and_config() -> None:
     assert RootQRDQN is QRDQN
     assert RootSAC is SAC
     assert RootTQC is TQC
+    assert RootREDQ is REDQ
     assert TrainConfig.__name__ == "TrainConfig"
 
 
@@ -81,6 +85,7 @@ def test_algorithms_package_exposes_high_level_and_low_level_names() -> None:
     assert QRDQN.__name__ == "QRDQN"
     assert SAC.__name__ == "SAC"
     assert TQC.__name__ == "TQC"
+    assert REDQ.__name__ == "REDQ"
     assert C51DQNAlgorithm.__name__ == "C51DQN"
     assert PPOAlgorithm.__name__ == "PPO"
     assert DDPGAlgorithm.__name__ == "DDPG"
@@ -94,6 +99,7 @@ def test_algorithms_package_exposes_high_level_and_low_level_names() -> None:
     assert QRDQNAlgorithm.__name__ == "QRDQN"
     assert SACAlgorithm.__name__ == "SAC"
     assert TQCAlgorithm.__name__ == "TQC"
+    assert REDQAlgorithm.__name__ == "REDQ"
 
 
 def test_data_package_exposes_processing_utilities() -> None:

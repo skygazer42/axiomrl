@@ -159,5 +159,9 @@ class TQC(ManagedAlgorithm):
     algo_name = "tqc"
 
 
+class REDQ(ManagedAlgorithm):
+    algo_name = "redq"
+
+
 class TD3(ManagedAlgorithm):
     algo_name = "td3"
