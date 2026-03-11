@@ -71,6 +71,8 @@ class REDQ:
     ) -> None:
         if int(num_critics) != int(model.num_critics):
             raise ValueError(f"expected num_critics={model.num_critics}, got {num_critics}")
+        if int(subset_size) < 1:
+            raise ValueError(f"subset_size must be >= 1, got {subset_size}")
         if int(subset_size) > int(num_critics):
             raise ValueError(f"subset_size must be <= num_critics, got {subset_size} > {num_critics}")
 

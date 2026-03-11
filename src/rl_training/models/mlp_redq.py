@@ -121,7 +121,7 @@ class MLPREDQModel(nn.Module):
         obs_tensor = self._prepare_obs(obs)
         action_tensor = torch.as_tensor(actions, dtype=torch.float32, device=obs_tensor.device)
         if action_tensor.ndim == 1:
-            action_tensor = action_tensor.unsqueeze(-1)
+            action_tensor = action_tensor.unsqueeze(0)
         inputs = torch.cat([obs_tensor, action_tensor], dim=-1)
         q_values = [critic(inputs).squeeze(-1) for critic in self.critics]
         return torch.stack(q_values, dim=1)

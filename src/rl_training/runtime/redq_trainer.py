@@ -115,6 +115,8 @@ def train_redq(
     tau = float(config.algo_kwargs.get("tau", 0.005))
     num_critics = int(config.algo_kwargs.get("num_critics", 10))
     subset_size = int(config.algo_kwargs.get("subset_size", 2))
+    if gradient_updates_per_step < 1:
+        raise ValueError(f"gradient_updates_per_step must be >= 1, got {gradient_updates_per_step}")
 
     torch.manual_seed(config.seed)
     np.random.seed(config.seed)

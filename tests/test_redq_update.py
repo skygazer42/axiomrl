@@ -1,4 +1,5 @@
 import torch
+import pytest
 
 from rl_training.algorithms.redq import REDQ, _sample_target_critic_indices, redq_loss
 from rl_training.models.mlp_redq import MLPREDQModel
@@ -22,12 +23,48 @@ def test_mlp_redq_model_samples_bounded_actions_and_ensemble_q_values() -> None:
     assert torch.all(sampled.actions >= -1.0 - 1e-6)
 
 
+def test_mlp_redq_q_values_accepts_single_multidimensional_action() -> None:
+    model = MLPREDQModel(
+        obs_dim=4,
+        action_dim=2,
+        hidden_sizes=(32, 32),
+        num_critics=5,
+    )
+
+    q_values = model.q_values(
+        torch.zeros(4, dtype=torch.float32),
+        torch.zeros(2, dtype=torch.float32),
+    )
+
+    assert q_values.shape == (1, 5)
+
+
 def test_sample_target_critic_indices_returns_unique_subset() -> None:
     indices = _sample_target_critic_indices(num_critics=10, subset_size=3)
 
     assert indices.shape == (3,)
     assert len(set(indices.tolist())) == 3
     assert all(0 <= int(index) < 10 for index in indices.tolist())
+
+
+def test_redq_rejects_invalid_subset_size_at_construction() -> None:
+    model = MLPREDQModel(
+        obs_dim=3,
+        action_dim=1,
+        hidden_sizes=(32, 32),
+        num_critics=5,
+    )
+
+    with pytest.raises(ValueError, match="subset_size must be >= 1"):
+        REDQ(
+            model=model,
+            learning_rate=3e-4,
+            gamma=0.99,
+            alpha=0.2,
+            tau=0.005,
+            num_critics=5,
+            subset_size=0,
+        )
 
 
 def test_redq_loss_returns_named_metrics() -> None:
