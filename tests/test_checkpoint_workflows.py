@@ -5,6 +5,7 @@ from rl_training.runtime.dqn_trainer import train_dqn
 from rl_training.runtime.iql_trainer import train_iql
 from rl_training.runtime.ppo_trainer import train_ppo
 from rl_training.runtime.redq_trainer import train_redq
+from rl_training.runtime.cql_trainer import train_cql
 from rl_training.runtime.sac_trainer import train_sac
 from rl_training.runtime.td3_bc_trainer import train_td3_bc
 from rl_training.runtime.tqc_trainer import train_tqc
@@ -209,6 +210,35 @@ def test_evaluate_checkpoint_returns_metrics_for_iql(tmp_path: Path) -> None:
     assert set(metrics) >= {"eval_return_mean", "eval_return_std", "eval_episodes"}
 
 
+def test_evaluate_checkpoint_returns_metrics_for_cql(tmp_path: Path) -> None:
+    config = TrainConfig(
+        algo="cql",
+        env_id="Pendulum-v1",
+        seed=63,
+        total_timesteps=96,
+        output_dir=tmp_path,
+        eval_episodes=1,
+        algo_kwargs={
+            "dataset_kind": "random",
+            "dataset_size": 192,
+            "dataset_seed": 37,
+            "batch_size": 32,
+            "hidden_sizes": (32, 32),
+            "learning_rate": 3e-4,
+            "gamma": 0.99,
+            "alpha": 0.2,
+            "tau": 0.005,
+            "cql_alpha": 5.0,
+            "num_cql_samples": 10,
+        },
+    )
+
+    train_result = train_cql(config, run_suffix="cql-eval-source")
+    metrics = evaluate_checkpoint(train_result.checkpoint_path, num_episodes=1)
+
+    assert set(metrics) >= {"eval_return_mean", "eval_return_std", "eval_episodes"}
+
+
 def test_resume_training_advances_global_step_for_iql(tmp_path: Path) -> None:
     config = TrainConfig(
         algo="iql",
@@ -237,6 +267,41 @@ def test_resume_training_advances_global_step_for_iql(tmp_path: Path) -> None:
         train_result.checkpoint_path,
         total_timesteps=160,
         run_suffix="iql-resume-target",
+    )
+
+    assert resumed.checkpoint_path is not None
+    assert resumed.checkpoint_path.exists()
+    assert resumed.metrics["global_step"] >= 160
+
+
+def test_resume_training_advances_global_step_for_cql(tmp_path: Path) -> None:
+    config = TrainConfig(
+        algo="cql",
+        env_id="Pendulum-v1",
+        seed=65,
+        total_timesteps=96,
+        output_dir=tmp_path,
+        eval_episodes=1,
+        algo_kwargs={
+            "dataset_kind": "random",
+            "dataset_size": 192,
+            "dataset_seed": 39,
+            "batch_size": 32,
+            "hidden_sizes": (32, 32),
+            "learning_rate": 3e-4,
+            "gamma": 0.99,
+            "alpha": 0.2,
+            "tau": 0.005,
+            "cql_alpha": 5.0,
+            "num_cql_samples": 10,
+        },
+    )
+
+    train_result = train_cql(config, run_suffix="cql-resume-source")
+    resumed = resume_training(
+        train_result.checkpoint_path,
+        total_timesteps=160,
+        run_suffix="cql-resume-target",
     )
 
     assert resumed.checkpoint_path is not None

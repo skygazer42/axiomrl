@@ -3,6 +3,8 @@ from rl_training.algorithms.a2c import A2C as A2CAlgorithm
 from rl_training.algorithms.a2c import a2c_loss
 from rl_training.algorithms.c51_dqn import C51DQN as C51DQNAlgorithm
 from rl_training.algorithms.c51_dqn import c51_loss
+from rl_training.algorithms.cql import CQL as CQLAlgorithm
+from rl_training.algorithms.cql import cql_loss
 from rl_training.algorithms.ddpg import DDPG as DDPGAlgorithm
 from rl_training.algorithms.ddpg import ddpg_loss
 from rl_training.algorithms.dqn import DQN as DQNAlgorithm
@@ -36,6 +38,8 @@ __all__ = [
     "A2CAlgorithm",
     "C51DQN",
     "C51DQNAlgorithm",
+    "CQL",
+    "CQLAlgorithm",
     "DDPG",
     "DDPGAlgorithm",
     "DQN",
@@ -72,6 +76,7 @@ __all__ = [
     "UpdateResult",
     "a2c_loss",
     "c51_loss",
+    "cql_loss",
     "ddpg_loss",
     "dqn_loss",
     "iql_loss",
@@ -90,6 +95,7 @@ def __getattr__(name: str):
     if name in {
         "A2C",
         "C51DQN",
+        "CQL",
         "DDPG",
         "PPO",
         "DQN",
@@ -111,6 +117,7 @@ def __getattr__(name: str):
         from rl_training.api import (
             A2C,
             C51DQN,
+            CQL,
             DDPG,
             DQN,
             DoubleDQN,
@@ -133,6 +140,7 @@ def __getattr__(name: str):
         mapping = {
             "A2C": A2C,
             "C51DQN": C51DQN,
+            "CQL": CQL,
             "DDPG": DDPG,
             "PPO": PPO,
             "DQN": DQN,

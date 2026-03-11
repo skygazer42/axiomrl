@@ -10,6 +10,7 @@ import torch
 
 from rl_training.algorithms.a2c import A2C as A2CAlgorithm
 from rl_training.algorithms.c51_dqn import C51DQN as C51DQNAlgorithm
+from rl_training.algorithms.cql import CQL as CQLAlgorithm
 from rl_training.algorithms.ddpg import DDPG as DDPGAlgorithm
 from rl_training.algorithms.dqn import DQN as DQNAlgorithm
 from rl_training.algorithms.dqn import DoubleDQN as DoubleDQNAlgorithm
@@ -44,6 +45,7 @@ from rl_training.models.mlp_tqc import MLPTQCModel
 from rl_training.models.mlp_td3 import MLPTD3Model
 from rl_training.runtime.a2c_trainer import _evaluate_policy as _evaluate_a2c_policy
 from rl_training.runtime.a2c_trainer import train_a2c
+from rl_training.runtime.cql_trainer import train_cql
 from rl_training.runtime.ddpg_trainer import _evaluate_ddpg_policy, train_ddpg
 from rl_training.runtime.dqn_trainer import _evaluate_q_policy, train_dqn
 from rl_training.runtime.iql_trainer import _evaluate_iql_policy, train_iql
@@ -316,6 +318,22 @@ def _load_sac_algorithm(config: TrainConfig, checkpoint_state: CheckpointState, 
     return algorithm
 
 
+def _load_cql_algorithm(config: TrainConfig, checkpoint_state: CheckpointState, *, device: torch.device) -> CQLAlgorithm:
+    obs_dim, action_dim = _infer_continuous_env_spaces(config)
+    hidden_sizes = tuple(config.algo_kwargs.get("hidden_sizes", (256, 256)))
+    algorithm = CQLAlgorithm(
+        model=MLPSACModel(obs_dim=obs_dim, action_dim=action_dim, hidden_sizes=hidden_sizes).to(device),
+        learning_rate=float(config.algo_kwargs.get("learning_rate", 3e-4)),
+        gamma=float(config.algo_kwargs.get("gamma", 0.99)),
+        alpha=float(config.algo_kwargs.get("alpha", 0.2)),
+        tau=float(config.algo_kwargs.get("tau", 0.005)),
+        cql_alpha=float(config.algo_kwargs.get("cql_alpha", 5.0)),
+        num_cql_samples=int(config.algo_kwargs.get("num_cql_samples", 10)),
+    )
+    algorithm.load_state_dict(checkpoint_state.algorithm_state)
+    return algorithm
+
+
 def _load_tqc_algorithm(config: TrainConfig, checkpoint_state: CheckpointState, *, device: torch.device) -> TQCAlgorithm:
     obs_dim, action_dim = _infer_continuous_env_spaces(config)
     hidden_sizes = tuple(config.algo_kwargs.get("hidden_sizes", (256, 256)))
@@ -462,6 +480,11 @@ def _evaluate_sac(config: TrainConfig, checkpoint_state: CheckpointState, device
     return _evaluate_sac_policy(algorithm.model, config, device=device, num_episodes=num_episodes)
 
 
+def _evaluate_cql(config: TrainConfig, checkpoint_state: CheckpointState, device: torch.device, num_episodes: int) -> MetricDict:
+    algorithm = _load_cql_algorithm(config, checkpoint_state, device=device)
+    return _evaluate_sac_policy(algorithm.model, config, device=device, num_episodes=num_episodes)
+
+
 def _evaluate_tqc(config: TrainConfig, checkpoint_state: CheckpointState, device: torch.device, num_episodes: int) -> MetricDict:
     algorithm = _load_tqc_algorithm(config, checkpoint_state, device=device)
     return _evaluate_tqc_policy(algorithm.model, config, device=device, num_episodes=num_episodes)
@@ -605,6 +628,22 @@ def _predict_sac(
     deterministic: bool,
 ) -> int | np.ndarray:
     algorithm = _load_sac_algorithm(config, checkpoint_state, device=device)
+    obs_tensor = _prepare_observation(obs, device=device)
+    low, high = _continuous_action_bounds(config, device=device)
+    with torch.no_grad():
+        normalized_actions = algorithm.model.sample_actions(obs_tensor, deterministic=deterministic).actions
+        actions = _scale_continuous_actions(normalized_actions, low=low, high=high)
+    return _format_action_output(actions, discrete=False)
+
+
+def _predict_cql(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    obs: object,
+    deterministic: bool,
+) -> int | np.ndarray:
+    algorithm = _load_cql_algorithm(config, checkpoint_state, device=device)
     obs_tensor = _prepare_observation(obs, device=device)
     low, high = _continuous_action_bounds(config, device=device)
     with torch.no_grad():
@@ -786,6 +825,12 @@ _ALGORITHM_REGISTRY: dict[str, AlgorithmSpec] = {
         train_fn=train_sac,
         evaluate_fn=_evaluate_sac,
         predict_fn=_predict_sac,
+    ),
+    "cql": AlgorithmSpec(
+        name="cql",
+        train_fn=train_cql,
+        evaluate_fn=_evaluate_cql,
+        predict_fn=_predict_cql,
     ),
     "tqc": AlgorithmSpec(
         name="tqc",

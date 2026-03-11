@@ -1,0 +1,20 @@
+algo: cql
+env_id: Pendulum-v1
+seed: 103
+total_timesteps: 5000
+output_dir: runs
+device: auto
+num_envs: 1
+eval_episodes: 5
+algo_kwargs:
+  dataset_kind: random
+  dataset_size: 10000
+  dataset_seed: 31
+  batch_size: 256
+  hidden_sizes: [256, 256]
+  learning_rate: 0.0003
+  gamma: 0.99
+  alpha: 0.2
+  tau: 0.005
+  cql_alpha: 5.0
+  num_cql_samples: 10

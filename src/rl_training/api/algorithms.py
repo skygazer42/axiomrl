@@ -119,6 +119,10 @@ class C51DQN(ManagedAlgorithm):
     algo_name = "c51_dqn"
 
 
+class CQL(ManagedAlgorithm):
+    algo_name = "cql"
+
+
 class NStepDQN(ManagedAlgorithm):
     algo_name = "n_step_dqn"
 

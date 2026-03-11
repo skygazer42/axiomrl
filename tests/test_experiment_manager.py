@@ -11,6 +11,7 @@ def test_builtin_algorithm_specs_are_registered() -> None:
     dqn = get_algorithm_spec("dqn")
     iql = get_algorithm_spec("iql")
     sac = get_algorithm_spec("sac")
+    cql = get_algorithm_spec("cql")
     td3_bc = get_algorithm_spec("td3_bc")
     tqc = get_algorithm_spec("tqc")
     redq = get_algorithm_spec("redq")
@@ -21,6 +22,7 @@ def test_builtin_algorithm_specs_are_registered() -> None:
     assert dqn.name == "dqn"
     assert iql.name == "iql"
     assert sac.name == "sac"
+    assert cql.name == "cql"
     assert td3_bc.name == "td3_bc"
     assert tqc.name == "tqc"
     assert redq.name == "redq"
@@ -40,6 +42,9 @@ def test_builtin_algorithm_specs_are_registered() -> None:
     assert callable(sac.train_fn)
     assert callable(sac.evaluate_fn)
     assert callable(sac.predict_fn)
+    assert callable(cql.train_fn)
+    assert callable(cql.evaluate_fn)
+    assert callable(cql.predict_fn)
     assert callable(td3_bc.train_fn)
     assert callable(td3_bc.evaluate_fn)
     assert callable(td3_bc.predict_fn)

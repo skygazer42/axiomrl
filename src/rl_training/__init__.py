@@ -1,6 +1,7 @@
 from rl_training.api import (
     A2C,
     C51DQN,
+    CQL,
     DDPG,
     DQN,
     DoubleDQN,
@@ -26,6 +27,7 @@ __all__ = [
     "__version__",
     "A2C",
     "C51DQN",
+    "CQL",
     "DDPG",
     "DQN",
     "DoubleDQN",

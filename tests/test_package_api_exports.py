@@ -15,12 +15,15 @@ from rl_training import QRDQN as RootQRDQN
 from rl_training import RainbowDQN as RootRainbowDQN
 from rl_training import REDQ as RootREDQ
 from rl_training import SAC as RootSAC
+from rl_training import CQL as RootCQL
 from rl_training import TD3BC as RootTD3BC
 from rl_training import TQC as RootTQC
 from rl_training import TrainConfig
 from rl_training.algorithms import (
     C51DQN,
     C51DQNAlgorithm,
+    CQL,
+    CQLAlgorithm,
     DDPG,
     DDPGAlgorithm,
     DQN,
@@ -72,6 +75,7 @@ def test_package_exports_high_level_algorithms_and_config() -> None:
     assert RootNStepDQN is NStepDQN
     assert RootQRDQN is QRDQN
     assert RootSAC is SAC
+    assert RootCQL is CQL
     assert RootTQC is TQC
     assert RootREDQ is REDQ
     assert RootTD3BC is TD3BC
@@ -93,6 +97,7 @@ def test_algorithms_package_exposes_high_level_and_low_level_names() -> None:
     assert NStepDQN.__name__ == "NStepDQN"
     assert QRDQN.__name__ == "QRDQN"
     assert SAC.__name__ == "SAC"
+    assert CQL.__name__ == "CQL"
     assert TD3BC.__name__ == "TD3BC"
     assert TQC.__name__ == "TQC"
     assert REDQ.__name__ == "REDQ"
@@ -109,6 +114,7 @@ def test_algorithms_package_exposes_high_level_and_low_level_names() -> None:
     assert RainbowDQNAlgorithm.__name__ == "RainbowDQN"
     assert QRDQNAlgorithm.__name__ == "QRDQN"
     assert SACAlgorithm.__name__ == "SAC"
+    assert CQLAlgorithm.__name__ == "CQL"
     assert TD3BCAlgorithm.__name__ == "TD3BC"
     assert TQCAlgorithm.__name__ == "TQC"
     assert REDQAlgorithm.__name__ == "REDQ"

@@ -7,6 +7,7 @@ from rl_training.api import (
     DQN,
     DoubleDQN,
     DuelingDQN,
+    CQL,
     IQL,
     IQN,
     NoisyDQN,
@@ -293,6 +294,29 @@ def test_off_policy_public_apis_support_learn_and_evaluate(tmp_path: Path) -> No
             },
         )
     )
+    cql = CQL(
+        TrainConfig(
+            algo="cql",
+            env_id="Pendulum-v1",
+            seed=62,
+            total_timesteps=96,
+            output_dir=tmp_path / "cql-runs",
+            eval_episodes=1,
+            algo_kwargs={
+                "dataset_kind": "random",
+                "dataset_size": 192,
+                "dataset_seed": 17,
+                "batch_size": 32,
+                "hidden_sizes": (32, 32),
+                "learning_rate": 3e-4,
+                "gamma": 0.99,
+                "alpha": 0.2,
+                "tau": 0.005,
+                "cql_alpha": 5.0,
+                "num_cql_samples": 10,
+            },
+        )
+    )
     tqc = TQC(
         TrainConfig(
             algo="tqc",
@@ -437,6 +461,7 @@ def test_off_policy_public_apis_support_learn_and_evaluate(tmp_path: Path) -> No
     qr_dqn.learn()
     iqn.learn()
     sac.learn()
+    cql.learn()
     tqc.learn()
     redq.learn()
     iql.learn()
@@ -456,6 +481,7 @@ def test_off_policy_public_apis_support_learn_and_evaluate(tmp_path: Path) -> No
     qr_dqn_action = qr_dqn.predict([0.0, 0.0, 0.0, 0.0])
     iqn_action = iqn.predict([0.0, 0.0, 0.0, 0.0])
     sac_action = sac.predict([0.0, 0.0, 0.0])
+    cql_action = cql.predict([0.0, 0.0, 0.0])
     tqc_action = tqc.predict([0.0, 0.0, 0.0])
     redq_action = redq.predict([0.0, 0.0, 0.0])
     iql_action = iql.predict([0.0, 0.0, 0.0])
@@ -475,6 +501,7 @@ def test_off_policy_public_apis_support_learn_and_evaluate(tmp_path: Path) -> No
     assert isinstance(qr_dqn_action, int)
     assert isinstance(iqn_action, int)
     assert len(sac_action) == 1
+    assert len(cql_action) == 1
     assert len(tqc_action) == 1
     assert len(redq_action) == 1
     assert len(iql_action) == 1
@@ -493,6 +520,7 @@ def test_off_policy_public_apis_support_learn_and_evaluate(tmp_path: Path) -> No
     assert "eval_return_mean" in qr_dqn.evaluate(num_episodes=1)
     assert "eval_return_mean" in iqn.evaluate(num_episodes=1)
     assert "eval_return_mean" in sac.evaluate(num_episodes=1)
+    assert "eval_return_mean" in cql.evaluate(num_episodes=1)
     assert "eval_return_mean" in tqc.evaluate(num_episodes=1)
     assert "eval_return_mean" in redq.evaluate(num_episodes=1)
     assert "eval_return_mean" in iql.evaluate(num_episodes=1)

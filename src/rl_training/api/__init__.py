@@ -1,6 +1,7 @@
 from rl_training.api.algorithms import (
     A2C,
     C51DQN,
+    CQL,
     DDPG,
     DQN,
     DoubleDQN,
@@ -23,6 +24,7 @@ from rl_training.api.algorithms import (
 __all__ = [
     "A2C",
     "C51DQN",
+    "CQL",
     "DDPG",
     "DQN",
     "DoubleDQN",
