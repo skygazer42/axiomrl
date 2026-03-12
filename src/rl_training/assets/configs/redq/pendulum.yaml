@@ -1,0 +1,21 @@
+algo: redq
+env_id: Pendulum-v1
+seed: 73
+total_timesteps: 5000
+output_dir: runs
+device: auto
+num_envs: 1
+eval_episodes: 5
+algo_kwargs:
+  buffer_capacity: 100000
+  batch_size: 256
+  learning_starts: 1000
+  train_frequency: 1
+  gradient_updates_per_step: 4
+  hidden_sizes: [256, 256]
+  learning_rate: 0.0003
+  gamma: 0.99
+  alpha: 0.2
+  tau: 0.005
+  num_critics: 10
+  subset_size: 2

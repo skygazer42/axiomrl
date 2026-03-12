@@ -1,0 +1,11 @@
+suite: atari
+presets:
+  - name: dqn_breakout
+    config: zoo/atari/dqn_breakout.yaml
+    description: Value-based Atari baseline with NatureCNN features.
+  - name: ppo_breakout
+    config: zoo/atari/ppo_breakout.yaml
+    description: On-policy Atari baseline with shared CNN actor-critic.
+  - name: recurrent_ppo_breakout
+    config: zoo/atari/recurrent_ppo_breakout.yaml
+    description: Recurrent Atari baseline for partial-observability experiments.

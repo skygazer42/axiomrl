@@ -1,0 +1,22 @@
+algo: marwil
+env_id: Pendulum-v1
+seed: 101
+total_timesteps: 5000
+output_dir: runs
+device: auto
+num_envs: 1
+eval_episodes: 5
+algo_kwargs:
+  dataset_kind: random
+  dataset_size: 10000
+  dataset_seed: 47
+  batch_size: 256
+  hidden_sizes: [256, 256]
+  learning_rate: 0.0003
+  gamma: 0.99
+  returns_to_go_gamma: 0.99
+  beta: 1.0
+  vf_coeff: 1.0
+  moving_average_sqd_adv_norm_start: 100.0
+  moving_average_sqd_adv_norm_update_rate: 0.01
+  eval_interval: 1000

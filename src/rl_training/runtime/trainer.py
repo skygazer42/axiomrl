@@ -19,6 +19,15 @@ class TrainerState:
     algorithm: str
     run_dir: Path
     global_step: int = 0
+    epoch: int = 0
+    update_count: int = 0
+    should_stop: bool = False
+    stop_reason: str | None = None
+
+    def request_stop(self, reason: str) -> None:
+        self.should_stop = True
+        if self.stop_reason is None:
+            self.stop_reason = reason
 
 
 class Trainer(Protocol):

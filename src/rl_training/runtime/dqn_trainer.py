@@ -14,9 +14,10 @@ from rl_training.algorithms.qr_dqn import QRDQN
 from rl_training.data.n_step import NStepAccumulator
 from rl_training.data.prioritized_replay_buffer import PrioritizedReplayBuffer
 from rl_training.data.replay_buffer import ReplayBuffer
-from rl_training.envs.factory import make_vector_env
-from rl_training.experiment.checkpointing import CheckpointState, save_checkpoint
+from rl_training.envs.factory import build_env, make_vector_env
+from rl_training.experiment.checkpointing import CheckpointState
 from rl_training.experiment.config import TrainConfig
+from rl_training.models.cnn import CNNQNetwork
 from rl_training.models.mlp_c51_q_network import MLPC51QNetwork
 from rl_training.models.mlp_dueling_noisy_q_network import MLPDuelingNoisyQNetwork
 from rl_training.models.mlp_dueling_q_network import MLPDuelingQNetwork
@@ -24,14 +25,15 @@ from rl_training.models.mlp_iqn_network import MLPIQNetwork
 from rl_training.models.mlp_noisy_q_network import MLPNoisyQNetwork
 from rl_training.models.mlp_q_network import MLPQNetwork
 from rl_training.models.mlp_qr_q_network import MLPQRQNetwork
-from rl_training.runtime.callbacks import Callback, CallbackList
+from rl_training.runtime.callbacks import Callback, CallbackList, merge_callbacks
 from rl_training.runtime.collector import CollectResult
+from rl_training.runtime.controls import build_control_callbacks, resolve_eval_interval, should_run_evaluation
 from rl_training.runtime.run_utils import create_training_run, resolve_device, save_training_checkpoint
 from rl_training.runtime.trainer import TrainResult, TrainerState
 from rl_training.runtime.types import MetricDict
 
 
-def _infer_spaces(envs: gym.vector.SyncVectorEnv) -> tuple[int, int]:
+def _infer_spaces(envs: gym.vector.SyncVectorEnv) -> tuple[tuple[int, ...], int]:
     obs_space = envs.single_observation_space
     action_space = envs.single_action_space
 
@@ -39,10 +41,10 @@ def _infer_spaces(envs: gym.vector.SyncVectorEnv) -> tuple[int, int]:
         raise TypeError(f"unsupported observation space for DQN trainer: {type(obs_space)!r}")
     if not isinstance(action_space, gym.spaces.Discrete):
         raise TypeError(f"unsupported action space for DQN trainer: {type(action_space)!r}")
-    if obs_space.shape is None or len(obs_space.shape) != 1:
-        raise ValueError(f"expected flat 1D observations, got shape={obs_space.shape!r}")
+    if obs_space.shape is None or len(obs_space.shape) not in (1, 3):
+        raise ValueError(f"expected flat 1D or channel-first image observations, got shape={obs_space.shape!r}")
 
-    return int(obs_space.shape[0]), int(action_space.n)
+    return tuple(int(dim) for dim in obs_space.shape), int(action_space.n)
 
 
 def _epsilon_at_step(
@@ -76,11 +78,12 @@ def _beta_at_step(
 def _build_q_network(
     config: TrainConfig,
     *,
-    obs_dim: int,
+    obs_shape: tuple[int, ...],
     action_dim: int,
     hidden_sizes: tuple[int, ...],
 ) -> (
-    MLPQNetwork
+    CNNQNetwork
+    | MLPQNetwork
     | MLPDuelingQNetwork
     | MLPNoisyQNetwork
     | MLPDuelingNoisyQNetwork
@@ -88,6 +91,17 @@ def _build_q_network(
     | MLPQRQNetwork
     | MLPIQNetwork
 ):
+    if len(obs_shape) == 3:
+        if config.algo != "dqn":
+            raise ValueError(f"image observations are currently supported for algo='dqn' only, got {config.algo!r}")
+        return CNNQNetwork(
+            obs_shape=obs_shape,
+            action_dim=action_dim,
+            hidden_sizes=tuple(config.algo_kwargs.get("head_hidden_sizes", hidden_sizes or (512,))),
+            features_dim=int(config.algo_kwargs.get("features_dim", 512)),
+        )
+
+    obs_dim = obs_shape[0]
     if config.algo == "dueling_dqn":
         return MLPDuelingQNetwork(
             obs_dim=obs_dim,
@@ -140,7 +154,8 @@ def _build_q_network(
 def _build_algorithm(
     config: TrainConfig,
     *,
-    q_network: MLPQNetwork
+    q_network: CNNQNetwork
+    | MLPQNetwork
     | MLPDuelingQNetwork
     | MLPNoisyQNetwork
     | MLPDuelingNoisyQNetwork
@@ -151,6 +166,14 @@ def _build_algorithm(
     gamma: float,
     target_update_interval: int,
 ) -> DQN | C51DQN | QRDQN | IQN:
+    if isinstance(q_network, CNNQNetwork):
+        return DQN(
+            q_network=q_network,
+            learning_rate=learning_rate,
+            gamma=gamma,
+            target_update_interval=target_update_interval,
+        )
+
     if config.algo == "c51_dqn":
         if not isinstance(q_network, MLPC51QNetwork):
             raise TypeError(f"expected MLPC51QNetwork for c51_dqn, got {type(q_network)!r}")
@@ -207,7 +230,8 @@ def _build_algorithm(
 
 
 def _evaluate_q_policy(
-    q_network: MLPQNetwork
+    q_network: CNNQNetwork
+    | MLPQNetwork
     | MLPDuelingQNetwork
     | MLPNoisyQNetwork
     | MLPDuelingNoisyQNetwork
@@ -219,8 +243,7 @@ def _evaluate_q_policy(
     device: torch.device,
     num_episodes: int,
 ) -> MetricDict:
-    env = gym.make(config.env_id, **config.env_kwargs)
-    env = gym.wrappers.RecordEpisodeStatistics(env)
+    env = build_env(config, 0, evaluation=True)
     returns: list[float] = []
 
     try:
@@ -259,7 +282,7 @@ def train_dqn(
     run_artifacts = create_training_run(config, run_suffix=run_suffix)
     run_context = run_artifacts.run_context
     logger = run_artifacts.logger
-    callback_list = CallbackList(callbacks)
+    callback_list = CallbackList(merge_callbacks(build_control_callbacks(config), callbacks))
     trainer_state = TrainerState(algorithm=config.algo, run_dir=run_context.run_dir)
 
     buffer_capacity = int(config.algo_kwargs.get("buffer_capacity", 10000))
@@ -279,6 +302,7 @@ def train_dqn(
     prioritized_beta_end = float(config.algo_kwargs.get("prioritized_beta_end", 1.0))
     prioritized_beta_fraction = float(config.algo_kwargs.get("prioritized_beta_fraction", 1.0))
     prioritized_eps = float(config.algo_kwargs.get("prioritized_eps", 1e-6))
+    eval_interval = resolve_eval_interval(config)
 
     torch.manual_seed(config.seed)
     np.random.seed(config.seed)
@@ -291,10 +315,10 @@ def train_dqn(
         if n_step <= 0:
             raise ValueError(f"n_step must be > 0, got {n_step}")
 
-        obs_dim, action_dim = _infer_spaces(envs)
+        obs_shape, action_dim = _infer_spaces(envs)
         q_network = _build_q_network(
             config,
-            obs_dim=obs_dim,
+            obs_shape=obs_shape,
             action_dim=action_dim,
             hidden_sizes=hidden_sizes,
         ).to(device)
@@ -312,7 +336,7 @@ def train_dqn(
         if config.algo in {"prioritized_dqn", "rainbow_dqn"}:
             replay_buffer: ReplayBuffer | PrioritizedReplayBuffer = PrioritizedReplayBuffer(
                 capacity=buffer_capacity,
-                obs_shape=(obs_dim,),
+                obs_shape=obs_shape,
                 action_shape=(),
                 alpha=prioritized_alpha,
                 priority_eps=prioritized_eps,
@@ -321,7 +345,7 @@ def train_dqn(
         else:
             replay_buffer = ReplayBuffer(
                 capacity=buffer_capacity,
-                obs_shape=(obs_dim,),
+                obs_shape=obs_shape,
                 action_shape=(),
                 device=device,
             )
@@ -429,24 +453,35 @@ def train_dqn(
                         beta_fraction=prioritized_beta_fraction,
                     )
                 )
-
-        algorithm.set_eval_mode()
-        eval_metrics = _evaluate_q_policy(
-            q_network,
-            config,
-            device=device,
-            num_episodes=config.eval_episodes,
-        )
-        metrics = {**metrics, **eval_metrics}
-        logger.log_metrics(metrics, step=global_step)
-        callback_list.on_eval_end(trainer_state, eval_metrics)
+            if should_run_evaluation(
+                global_step=global_step,
+                total_timesteps=config.total_timesteps,
+                eval_interval=eval_interval,
+            ):
+                algorithm.set_eval_mode()
+                eval_metrics = _evaluate_q_policy(
+                    q_network,
+                    config,
+                    device=device,
+                    num_episodes=config.eval_episodes,
+                )
+                algorithm.set_train_mode()
+                metrics = {**metrics, **eval_metrics}
+                logger.log_metrics(metrics, step=global_step)
+                callback_list.on_eval_end(trainer_state, metrics)
+                if trainer_state.should_stop:
+                    break
 
         checkpoint_path = save_training_checkpoint(
             run_context=run_context,
             config=config,
             algorithm_state=algorithm.state_dict(),
             buffer_state=replay_buffer.state_dict(),
-            trainer_state={"global_step": global_step},
+            trainer_state={
+                "global_step": global_step,
+                "should_stop": trainer_state.should_stop,
+                "stop_reason": trainer_state.stop_reason,
+            },
             metrics=metrics,
         )
     finally:

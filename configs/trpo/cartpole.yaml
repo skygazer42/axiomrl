@@ -1,0 +1,21 @@
+algo: trpo
+env_id: CartPole-v1
+seed: 7
+total_timesteps: 1024
+output_dir: runs
+device: auto
+num_envs: 2
+eval_episodes: 5
+algo_kwargs:
+  num_steps: 64
+  hidden_sizes: [64, 64]
+  learning_rate: 0.001
+  value_updates: 5
+  max_kl: 0.01
+  cg_iterations: 10
+  cg_damping: 0.1
+  line_search_steps: 10
+  line_search_shrink: 0.8
+  ent_coef: 0.0
+  gamma: 0.99
+  gae_lambda: 0.95

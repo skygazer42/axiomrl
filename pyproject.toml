@@ -5,9 +5,17 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "rl-training"
 version = "0.1.0"
-description = "A reinforcement learning training package foundation."
+description = "A modular reinforcement learning package with core, contrib, and zoo workflows."
 readme = "README.md"
 requires-python = ">=3.10"
+keywords = ["reinforcement-learning", "deep-learning", "pytorch", "gymnasium", "atari"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Science/Research",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 dependencies = [
   "gymnasium",
   "numpy",
@@ -16,11 +24,31 @@ dependencies = [
   "torch",
 ]
 
+[project.optional-dependencies]
+atari = [
+  "ale-py",
+]
+offline = [
+  "minari",
+]
+
+[project.scripts]
+rl-training = "rl_training.cli:main"
+rl-training-zoo = "rl_training.zoo_cli:main"
+
 [tool.setuptools]
 package-dir = {"" = "src"}
+include-package-data = true
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+rl_training = [
+  "assets/configs/*/*.yaml",
+  "assets/zoo/*/*.yaml",
+  "assets/zoo/README.md",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

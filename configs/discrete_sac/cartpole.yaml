@@ -1,0 +1,18 @@
+algo: discrete_sac
+env_id: CartPole-v1
+seed: 7
+total_timesteps: 2048
+output_dir: runs
+device: auto
+num_envs: 2
+eval_episodes: 5
+algo_kwargs:
+  buffer_capacity: 50000
+  batch_size: 128
+  learning_starts: 256
+  train_frequency: 1
+  hidden_sizes: [128, 128]
+  learning_rate: 0.0003
+  gamma: 0.99
+  alpha: 0.2
+  tau: 0.005

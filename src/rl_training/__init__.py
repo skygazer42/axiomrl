@@ -1,13 +1,29 @@
+from importlib import import_module
+
 from rl_training.api import (
     A2C,
+    AWR,
+    AWAC,
+    MARWIL,
+    BC,
+    BCQ,
+    BEAR,
     C51DQN,
+    CalQL,
+    CRR,
+    CrossQ,
     CQL,
     DDPG,
+    EDAC,
+    DrQv2,
+    DiscreteSAC,
     DQN,
     DoubleDQN,
     DuelingDQN,
+    HER,
     IQL,
     IQN,
+    XQL,
     NStepDQN,
     NoisyDQN,
     PPO,
@@ -15,7 +31,10 @@ from rl_training.api import (
     QRDQN,
     RainbowDQN,
     REDQ,
+    RLPD,
+    ReBRAC,
     SAC,
+    TRPO,
     TQC,
     TD3,
     TD3BC,
@@ -23,17 +42,38 @@ from rl_training.api import (
 from rl_training.experiment.config import TrainConfig
 from rl_training.version import __version__
 
+
+def __getattr__(name: str):
+    if name == "contrib":
+        return import_module("rl_training.contrib")
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
 __all__ = [
     "__version__",
     "A2C",
+    "AWR",
+    "AWAC",
+    "MARWIL",
+    "BC",
+    "BCQ",
+    "BEAR",
     "C51DQN",
+    "CalQL",
+    "CRR",
+    "CrossQ",
     "CQL",
     "DDPG",
+    "EDAC",
+    "DrQv2",
+    "DiscreteSAC",
     "DQN",
     "DoubleDQN",
     "DuelingDQN",
+    "HER",
     "IQL",
     "IQN",
+    "XQL",
     "NStepDQN",
     "NoisyDQN",
     "PPO",
@@ -41,9 +81,13 @@ __all__ = [
     "QRDQN",
     "RainbowDQN",
     "REDQ",
+    "RLPD",
+    "ReBRAC",
     "SAC",
+    "TRPO",
     "TQC",
     "TD3",
     "TD3BC",
     "TrainConfig",
+    "contrib",
 ]

@@ -1,0 +1,30 @@
+algo: drqv2
+env_id: Pendulum-v1
+seed: 7
+total_timesteps: 5000
+output_dir: runs
+device: auto
+num_envs: 1
+eval_episodes: 5
+algo_kwargs:
+  buffer_capacity: 50000
+  batch_size: 128
+  learning_starts: 256
+  train_frequency: 1
+  features_dim: 256
+  actor_hidden_sizes: [256, 256]
+  critic_hidden_sizes: [256, 256]
+  learning_rate: 0.0001
+  gamma: 0.99
+  tau: 0.01
+  policy_delay: 2
+  augmentation_pad: 4
+  exploration_noise: 0.1
+  exploration_noise_clip: 0.3
+env_kwargs:
+  render_mode: rgb_array
+  wrappers:
+    pixels:
+      resize_shape: [84, 84]
+      frame_stack: 3
+      channel_first: true

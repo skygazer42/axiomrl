@@ -1,0 +1,4 @@
+name: ppo_breakout
+config: configs/ppo/breakout_atari.yaml
+algorithm: ppo
+env_id: ALE/Breakout-v5

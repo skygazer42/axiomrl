@@ -1,0 +1,14 @@
+algo: bc
+env_id: Pendulum-v1
+seed: 7
+total_timesteps: 10000
+output_dir: runs/bc-pendulum
+eval_episodes: 5
+algo_kwargs:
+  dataset_kind: random
+  dataset_size: 10000
+  dataset_seed: 7
+  batch_size: 256
+  hidden_sizes: [256, 256]
+  learning_rate: 0.0003
+  eval_interval: 1000

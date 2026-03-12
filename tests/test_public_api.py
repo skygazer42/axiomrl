@@ -1,15 +1,32 @@
 from pathlib import Path
 
+import gymnasium as gym
+import numpy as np
+
 from rl_training.api import (
     A2C,
+    AWR,
+    AWAC,
+    MARWIL,
+    BEAR,
+    BC,
+    BCQ,
     C51DQN,
+    CalQL,
+    CrossQ,
+    CRR,
     DDPG,
+    EDAC,
+    DrQv2,
+    DiscreteSAC,
     DQN,
     DoubleDQN,
     DuelingDQN,
     CQL,
+    HER,
     IQL,
     IQN,
+    XQL,
     NoisyDQN,
     NStepDQN,
     PPO,
@@ -17,12 +34,619 @@ from rl_training.api import (
     QRDQN,
     RainbowDQN,
     REDQ,
+    RLPD,
+    ReBRAC,
     SAC,
     TD3,
     TD3BC,
+    TRPO,
     TQC,
 )
+from rl_training.contrib import RecurrentPPO
+from rl_training.envs import POINT_GOAL_ENV_ID
 from rl_training.experiment.config import TrainConfig
+
+
+class TinyRenderContinuousEnv(gym.Env):
+    metadata = {"render_modes": ["rgb_array"]}
+
+    def __init__(self, render_mode: str | None = None) -> None:
+        super().__init__()
+        self.render_mode = render_mode
+        self.observation_space = gym.spaces.Box(low=-1.0, high=1.0, shape=(3,), dtype=np.float32)
+        self.action_space = gym.spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
+        self._step = 0
+        self._state = np.zeros(3, dtype=np.float32)
+
+    def reset(self, *, seed: int | None = None, options: dict | None = None):
+        super().reset(seed=seed)
+        del options
+        self._step = 0
+        self._state.fill(0.0)
+        return self._state.copy(), {}
+
+    def step(self, action: np.ndarray):
+        action_value = float(np.asarray(action).reshape(-1)[0])
+        self._step += 1
+        self._state = np.array([action_value, self._step / 4.0, -action_value], dtype=np.float32)
+        terminated = self._step >= 4
+        truncated = False
+        reward = 1.0 - abs(action_value)
+        return self._state.copy(), reward, terminated, truncated, {}
+
+    def render(self) -> np.ndarray:
+        canvas = np.zeros((96, 96, 3), dtype=np.uint8)
+        action_intensity = int(np.clip((self._state[0] + 1.0) * 127.5, 0, 255))
+        canvas[..., 0] = np.uint8(self._step * 32)
+        canvas[16:80, 16:80, 1] = np.uint8(action_intensity)
+        canvas[32:64, 32:64, 2] = np.uint8(255 - action_intensity)
+        return canvas
+
+
+def _register_tiny_render_env() -> str:
+    env_id = "RLTrainingTest/PublicAPIDrQv2-v0"
+    try:
+        gym.spec(env_id)
+    except gym.error.Error:
+        gym.register(id=env_id, entry_point=TinyRenderContinuousEnv)
+    return env_id
+
+
+def test_bc_public_api_supports_learn_save_load_and_evaluate(tmp_path: Path) -> None:
+    config = TrainConfig(
+        algo="bc",
+        env_id="Pendulum-v1",
+        seed=49,
+        total_timesteps=16,
+        output_dir=tmp_path / "bc-runs",
+        eval_episodes=1,
+        algo_kwargs={
+            "dataset_kind": "random",
+            "dataset_size": 64,
+            "dataset_seed": 17,
+            "batch_size": 16,
+            "hidden_sizes": (16, 16),
+            "eval_interval": 8,
+        },
+    )
+
+    algo = BC(config)
+    result = algo.learn()
+    exported = algo.save(tmp_path / "exports" / "bc.pt")
+    loaded = BC.load(exported)
+    action = loaded.predict([0.0, 0.0, 0.0])
+    metrics = loaded.evaluate(num_episodes=1)
+
+    assert result.checkpoint_path is not None
+    assert exported.exists()
+    assert len(action) == 1
+    assert set(metrics) >= {"eval_return_mean", "eval_return_std", "eval_episodes"}
+
+
+def test_awr_public_api_supports_learn_save_load_and_evaluate(tmp_path: Path) -> None:
+    config = TrainConfig(
+        algo="awr",
+        env_id="Pendulum-v1",
+        seed=50,
+        total_timesteps=16,
+        output_dir=tmp_path / "awr-runs",
+        eval_episodes=1,
+        algo_kwargs={
+            "dataset_kind": "random",
+            "dataset_size": 64,
+            "dataset_seed": 18,
+            "batch_size": 16,
+            "hidden_sizes": (16, 16),
+            "learning_rate": 3e-4,
+            "gamma": 0.99,
+            "beta": 1.0,
+            "max_weight": 20.0,
+            "eval_interval": 8,
+        },
+    )
+
+    algo = AWR(config)
+    result = algo.learn()
+    exported = algo.save(tmp_path / "exports" / "awr.pt")
+    loaded = AWR.load(exported)
+    action = loaded.predict([0.0, 0.0, 0.0])
+    metrics = loaded.evaluate(num_episodes=1)
+
+    assert result.checkpoint_path is not None
+    assert exported.exists()
+    assert len(action) == 1
+    assert set(metrics) >= {"eval_return_mean", "eval_return_std", "eval_episodes"}
+
+
+def test_marwil_public_api_supports_learn_save_load_and_evaluate(tmp_path: Path) -> None:
+    config = TrainConfig(
+        algo="marwil",
+        env_id="Pendulum-v1",
+        seed=50,
+        total_timesteps=16,
+        output_dir=tmp_path / "marwil-runs",
+        eval_episodes=1,
+        algo_kwargs={
+            "dataset_kind": "random",
+            "dataset_size": 64,
+            "dataset_seed": 18,
+            "batch_size": 16,
+            "hidden_sizes": (16, 16),
+            "learning_rate": 3e-4,
+            "gamma": 0.99,
+            "beta": 1.0,
+            "vf_coeff": 1.0,
+            "moving_average_sqd_adv_norm_start": 100.0,
+            "moving_average_sqd_adv_norm_update_rate": 0.05,
+            "eval_interval": 8,
+        },
+    )
+
+    algo = MARWIL(config)
+    result = algo.learn()
+    exported = algo.save(tmp_path / "exports" / "marwil.pt")
+    loaded = MARWIL.load(exported)
+    action = loaded.predict([0.0, 0.0, 0.0])
+    metrics = loaded.evaluate(num_episodes=1)
+
+    assert result.checkpoint_path is not None
+    assert exported.exists()
+    assert len(action) == 1
+    assert set(metrics) >= {"eval_return_mean", "eval_return_std", "eval_episodes"}
+
+
+def test_awac_public_api_supports_learn_save_load_and_evaluate(tmp_path: Path) -> None:
+    config = TrainConfig(
+        algo="awac",
+        env_id="Pendulum-v1",
+        seed=51,
+        total_timesteps=16,
+        output_dir=tmp_path / "awac-runs",
+        eval_episodes=1,
+        algo_kwargs={
+            "dataset_kind": "random",
+            "dataset_size": 64,
+            "dataset_seed": 23,
+            "batch_size": 16,
+            "hidden_sizes": (16, 16),
+            "eval_interval": 8,
+        },
+    )
+
+    algo = AWAC(config)
+    result = algo.learn()
+    exported = algo.save(tmp_path / "exports" / "awac.pt")
+    loaded = AWAC.load(exported)
+    action = loaded.predict([0.0, 0.0, 0.0])
+    metrics = loaded.evaluate(num_episodes=1)
+
+    assert result.checkpoint_path is not None
+    assert exported.exists()
+    assert len(action) == 1
+    assert set(metrics) >= {"eval_return_mean", "eval_return_std", "eval_episodes"}
+
+
+def test_crr_public_api_supports_learn_save_load_and_evaluate(tmp_path: Path) -> None:
+    config = TrainConfig(
+        algo="crr",
+        env_id="Pendulum-v1",
+        seed=52,
+        total_timesteps=16,
+        output_dir=tmp_path / "crr-runs",
+        eval_episodes=1,
+        algo_kwargs={
+            "dataset_kind": "random",
+            "dataset_size": 64,
+            "dataset_seed": 24,
+            "batch_size": 16,
+            "hidden_sizes": (16, 16),
+            "learning_rate": 3e-4,
+            "gamma": 0.99,
+            "tau": 0.005,
+            "beta": 1.0,
+            "n_action_samples": 4,
+            "max_weight": 20.0,
+            "advantage_type": "mean",
+            "weight_type": "exp",
+            "eval_interval": 8,
+        },
+    )
+
+    algo = CRR(config)
+    result = algo.learn()
+    exported = algo.save(tmp_path / "exports" / "crr.pt")
+    loaded = CRR.load(exported)
+    action = loaded.predict([0.0, 0.0, 0.0])
+    metrics = loaded.evaluate(num_episodes=1)
+
+    assert result.checkpoint_path is not None
+    assert exported.exists()
+    assert len(action) == 1
+    assert set(metrics) >= {"eval_return_mean", "eval_return_std", "eval_episodes"}
+
+
+def test_rebrac_public_api_supports_learn_save_load_and_evaluate(tmp_path: Path) -> None:
+    config = TrainConfig(
+        algo="rebrac",
+        env_id="Pendulum-v1",
+        seed=53,
+        total_timesteps=16,
+        output_dir=tmp_path / "rebrac-runs",
+        eval_episodes=1,
+        algo_kwargs={
+            "dataset_kind": "random",
+            "dataset_size": 64,
+            "dataset_seed": 25,
+            "batch_size": 16,
+            "hidden_sizes": (16, 16),
+            "learning_rate": 3e-4,
+            "gamma": 0.99,
+            "tau": 0.005,
+            "policy_noise": 0.2,
+            "noise_clip": 0.5,
+            "policy_delay": 2,
+            "actor_bc_weight": 1.0,
+            "critic_bc_weight": 1.0,
+            "actor_q_weight": 1.0,
+            "eval_interval": 8,
+        },
+    )
+
+    algo = ReBRAC(config)
+    result = algo.learn()
+    exported = algo.save(tmp_path / "exports" / "rebrac.pt")
+    loaded = ReBRAC.load(exported)
+    action = loaded.predict([0.0, 0.0, 0.0])
+    metrics = loaded.evaluate(num_episodes=1)
+
+    assert result.checkpoint_path is not None
+    assert exported.exists()
+    assert len(action) == 1
+    assert set(metrics) >= {"eval_return_mean", "eval_return_std", "eval_episodes"}
+
+
+def test_cal_ql_public_api_supports_learn_save_load_and_evaluate(tmp_path: Path) -> None:
+    config = TrainConfig(
+        algo="cal_ql",
+        env_id="Pendulum-v1",
+        seed=54,
+        total_timesteps=16,
+        output_dir=tmp_path / "cal-ql-runs",
+        eval_episodes=1,
+        algo_kwargs={
+            "dataset_kind": "random",
+            "dataset_size": 64,
+            "dataset_seed": 26,
+            "batch_size": 16,
+            "hidden_sizes": (16, 16),
+            "learning_rate": 3e-4,
+            "gamma": 0.99,
+            "alpha": 0.2,
+            "tau": 0.005,
+            "cql_alpha": 5.0,
+            "num_cql_samples": 10,
+            "eval_interval": 8,
+        },
+    )
+
+    algo = CalQL(config)
+    result = algo.learn()
+    exported = algo.save(tmp_path / "exports" / "cal_ql.pt")
+    loaded = CalQL.load(exported)
+    action = loaded.predict([0.0, 0.0, 0.0])
+    metrics = loaded.evaluate(num_episodes=1)
+
+    assert result.checkpoint_path is not None
+    assert exported.exists()
+    assert len(action) == 1
+    assert set(metrics) >= {"eval_return_mean", "eval_return_std", "eval_episodes"}
+
+
+def test_edac_public_api_supports_learn_save_load_and_evaluate(tmp_path: Path) -> None:
+    config = TrainConfig(
+        algo="edac",
+        env_id="Pendulum-v1",
+        seed=55,
+        total_timesteps=16,
+        output_dir=tmp_path / "edac-runs",
+        eval_episodes=1,
+        algo_kwargs={
+            "dataset_kind": "random",
+            "dataset_size": 64,
+            "dataset_seed": 27,
+            "batch_size": 16,
+            "hidden_sizes": (16, 16),
+            "learning_rate": 3e-4,
+            "gamma": 0.99,
+            "alpha": 0.2,
+            "tau": 0.005,
+            "num_critics": 4,
+            "eta": 1.0,
+            "eval_interval": 8,
+        },
+    )
+
+    algo = EDAC(config)
+    result = algo.learn()
+    exported = algo.save(tmp_path / "exports" / "edac.pt")
+    loaded = EDAC.load(exported)
+    action = loaded.predict([0.0, 0.0, 0.0])
+    metrics = loaded.evaluate(num_episodes=1)
+
+    assert result.checkpoint_path is not None
+    assert exported.exists()
+    assert len(action) == 1
+    assert set(metrics) >= {"eval_return_mean", "eval_return_std", "eval_episodes"}
+
+
+def test_rlpd_public_api_supports_learn_save_load_and_evaluate(tmp_path: Path) -> None:
+    config = TrainConfig(
+        algo="rlpd",
+        env_id="Pendulum-v1",
+        seed=56,
+        total_timesteps=16,
+        output_dir=tmp_path / "rlpd-runs",
+        eval_episodes=1,
+        algo_kwargs={
+            "dataset_kind": "random",
+            "dataset_size": 64,
+            "dataset_seed": 28,
+            "buffer_capacity": 256,
+            "batch_size": 16,
+            "learning_starts": 8,
+            "train_frequency": 1,
+            "gradient_updates_per_step": 2,
+            "offline_pretrain_updates": 4,
+            "offline_batch_ratio": 0.5,
+            "hidden_sizes": (16, 16),
+            "learning_rate": 3e-4,
+            "gamma": 0.99,
+            "alpha": 0.2,
+            "tau": 0.005,
+            "eval_interval": 8,
+        },
+    )
+
+    algo = RLPD(config)
+    result = algo.learn()
+    exported = algo.save(tmp_path / "exports" / "rlpd.pt")
+    loaded = RLPD.load(exported)
+    action = loaded.predict([0.0, 0.0, 0.0])
+    metrics = loaded.evaluate(num_episodes=1)
+
+    assert result.checkpoint_path is not None
+    assert exported.exists()
+    assert len(action) == 1
+    assert set(metrics) >= {"eval_return_mean", "eval_return_std", "eval_episodes"}
+
+
+def test_xql_public_api_supports_learn_save_load_and_evaluate(tmp_path: Path) -> None:
+    config = TrainConfig(
+        algo="xql",
+        env_id="Pendulum-v1",
+        seed=55,
+        total_timesteps=16,
+        output_dir=tmp_path / "xql-runs",
+        eval_episodes=1,
+        algo_kwargs={
+            "dataset_kind": "random",
+            "dataset_size": 64,
+            "dataset_seed": 27,
+            "batch_size": 16,
+            "hidden_sizes": (16, 16),
+            "learning_rate": 3e-4,
+            "gamma": 0.99,
+            "tau": 0.005,
+            "beta": 3.0,
+            "loss_temperature": 1.0,
+            "max_advantage_weight": 100.0,
+            "max_value_diff_exp": 5.0,
+            "eval_interval": 8,
+        },
+    )
+
+    algo = XQL(config)
+    result = algo.learn()
+    exported = algo.save(tmp_path / "exports" / "xql.pt")
+    loaded = XQL.load(exported)
+    action = loaded.predict([0.0, 0.0, 0.0])
+    metrics = loaded.evaluate(num_episodes=1)
+
+    assert result.checkpoint_path is not None
+    assert exported.exists()
+    assert len(action) == 1
+    assert set(metrics) >= {"eval_return_mean", "eval_return_std", "eval_episodes"}
+
+
+def test_bear_public_api_supports_learn_save_load_and_evaluate(tmp_path: Path) -> None:
+    config = TrainConfig(
+        algo="bear",
+        env_id="Pendulum-v1",
+        seed=52,
+        total_timesteps=16,
+        output_dir=tmp_path / "bear-runs",
+        eval_episodes=1,
+        algo_kwargs={
+            "dataset_kind": "random",
+            "dataset_size": 64,
+            "dataset_seed": 25,
+            "batch_size": 16,
+            "hidden_sizes": (16, 16),
+            "latent_dim": 2,
+            "mmd_sigma": 20.0,
+            "mmd_alpha": 10.0,
+            "num_mmd_action_samples": 10,
+            "eval_interval": 8,
+        },
+    )
+
+    algo = BEAR(config)
+    result = algo.learn()
+    exported = algo.save(tmp_path / "exports" / "bear.pt")
+    loaded = BEAR.load(exported)
+    action = loaded.predict([0.0, 0.0, 0.0])
+    metrics = loaded.evaluate(num_episodes=1)
+
+    assert result.checkpoint_path is not None
+    assert exported.exists()
+    assert len(action) == 1
+    assert set(metrics) >= {"eval_return_mean", "eval_return_std", "eval_episodes"}
+
+
+def test_bcq_public_api_supports_learn_save_load_and_evaluate(tmp_path: Path) -> None:
+    config = TrainConfig(
+        algo="bcq",
+        env_id="Pendulum-v1",
+        seed=52,
+        total_timesteps=16,
+        output_dir=tmp_path / "bcq-runs",
+        eval_episodes=1,
+        algo_kwargs={
+            "dataset_kind": "random",
+            "dataset_size": 64,
+            "dataset_seed": 27,
+            "batch_size": 16,
+            "hidden_sizes": (16, 16),
+            "latent_dim": 2,
+            "num_action_samples": 10,
+            "perturbation_scale": 0.05,
+            "eval_interval": 8,
+        },
+    )
+
+    algo = BCQ(config)
+    result = algo.learn()
+    exported = algo.save(tmp_path / "exports" / "bcq.pt")
+    loaded = BCQ.load(exported)
+    action = loaded.predict([0.0, 0.0, 0.0])
+    metrics = loaded.evaluate(num_episodes=1)
+
+    assert result.checkpoint_path is not None
+    assert exported.exists()
+    assert len(action) == 1
+    assert set(metrics) >= {"eval_return_mean", "eval_return_std", "eval_episodes"}
+
+
+def test_crossq_public_api_supports_learn_save_load_and_evaluate(tmp_path: Path) -> None:
+    config = TrainConfig(
+        algo="crossq",
+        env_id="Pendulum-v1",
+        seed=53,
+        total_timesteps=128,
+        output_dir=tmp_path / "crossq-runs",
+        eval_episodes=1,
+        algo_kwargs={
+            "buffer_capacity": 512,
+            "batch_size": 32,
+            "learning_starts": 32,
+            "train_frequency": 1,
+            "hidden_sizes": (32, 32),
+            "critic_hidden_sizes": (32, 32),
+            "learning_rate": 1e-3,
+            "gamma": 0.99,
+            "alpha": 0.1,
+            "policy_delay": 1,
+            "adam_beta1": 0.5,
+            "bn_momentum": 0.99,
+        },
+    )
+
+    algo = CrossQ(config)
+    result = algo.learn()
+    exported = algo.save(tmp_path / "exports" / "crossq.pt")
+    loaded = CrossQ.load(exported)
+    action = loaded.predict([0.0, 0.0, 0.0])
+    metrics = loaded.evaluate(num_episodes=1)
+
+    assert result.checkpoint_path is not None
+    assert exported.exists()
+    assert len(action) == 1
+    assert set(metrics) >= {"eval_return_mean", "eval_return_std", "eval_episodes"}
+
+
+def test_drqv2_public_api_supports_learn_save_load_and_evaluate(tmp_path: Path) -> None:
+    config = TrainConfig(
+        algo="drqv2",
+        env_id=_register_tiny_render_env(),
+        seed=54,
+        total_timesteps=96,
+        output_dir=tmp_path / "drqv2-runs",
+        eval_episodes=1,
+        algo_kwargs={
+            "buffer_capacity": 512,
+            "batch_size": 32,
+            "learning_starts": 32,
+            "train_frequency": 1,
+            "features_dim": 64,
+            "actor_hidden_sizes": (32,),
+            "critic_hidden_sizes": (32,),
+            "learning_rate": 1e-4,
+            "gamma": 0.99,
+            "tau": 0.01,
+            "policy_delay": 2,
+            "augmentation_pad": 4,
+            "exploration_noise": 0.1,
+            "exploration_noise_clip": 0.3,
+        },
+        env_kwargs={
+            "render_mode": "rgb_array",
+            "wrappers": {
+                "pixels": {
+                    "resize_shape": [84, 84],
+                    "frame_stack": 3,
+                    "channel_first": True,
+                }
+            },
+        },
+    )
+
+    algo = DrQv2(config)
+    result = algo.learn()
+    exported = algo.save(tmp_path / "exports" / "drqv2.pt")
+    loaded = DrQv2.load(exported)
+    action = loaded.predict(np.zeros((9, 84, 84), dtype=np.uint8))
+    metrics = loaded.evaluate(num_episodes=1)
+
+    assert result.checkpoint_path is not None
+    assert exported.exists()
+    assert len(action) == 1
+    assert set(metrics) >= {"eval_return_mean", "eval_return_std", "eval_episodes"}
+
+
+def test_her_public_api_supports_learn_save_load_and_evaluate(tmp_path: Path) -> None:
+    config = TrainConfig(
+        algo="her",
+        env_id=POINT_GOAL_ENV_ID,
+        seed=52,
+        total_timesteps=32,
+        output_dir=tmp_path / "her-runs",
+        eval_episodes=1,
+        algo_kwargs={
+            "buffer_capacity": 512,
+            "batch_size": 16,
+            "learning_starts": 8,
+            "hidden_sizes": (16, 16),
+            "eval_interval": 8,
+        },
+    )
+
+    algo = HER(config)
+    result = algo.learn()
+    exported = algo.save(tmp_path / "exports" / "her.pt")
+    loaded = HER.load(exported)
+    action = loaded.predict(
+        {
+            "observation": [0.0],
+            "achieved_goal": [0.0],
+            "desired_goal": [0.5],
+        }
+    )
+    metrics = loaded.evaluate(num_episodes=1)
+
+    assert result.checkpoint_path is not None
+    assert exported.exists()
+    assert len(action) == 1
+    assert set(metrics) >= {"eval_return_mean", "eval_return_std", "eval_episodes", "eval_success_rate"}
 
 
 def test_ppo_public_api_supports_learn_save_load_and_evaluate(tmp_path: Path) -> None:
@@ -46,6 +670,118 @@ def test_ppo_public_api_supports_learn_save_load_and_evaluate(tmp_path: Path) ->
     result = algo.learn()
     exported = algo.save(tmp_path / "exports" / "ppo.pt")
     loaded = PPO.load(exported)
+    action = loaded.predict([0.0, 0.0, 0.0, 0.0])
+    metrics = loaded.evaluate(num_episodes=1)
+
+    assert result.checkpoint_path is not None
+    assert exported.exists()
+    assert isinstance(action, int)
+    assert set(metrics) >= {"eval_return_mean", "eval_return_std", "eval_episodes"}
+
+
+def test_discrete_sac_public_api_supports_learn_save_load_and_evaluate(tmp_path: Path) -> None:
+    config = TrainConfig(
+        algo="discrete_sac",
+        env_id="CartPole-v1",
+        seed=54,
+        total_timesteps=128,
+        output_dir=tmp_path / "discrete-sac-runs",
+        num_envs=2,
+        eval_episodes=1,
+        algo_kwargs={
+            "buffer_capacity": 512,
+            "batch_size": 32,
+            "learning_starts": 32,
+            "train_frequency": 1,
+            "hidden_sizes": (32, 32),
+            "learning_rate": 3e-4,
+            "gamma": 0.99,
+            "alpha": 0.2,
+            "tau": 0.005,
+        },
+    )
+
+    algo = DiscreteSAC(config)
+    result = algo.learn()
+    exported = algo.save(tmp_path / "exports" / "discrete-sac.pt")
+    loaded = DiscreteSAC.load(exported)
+    action = loaded.predict([0.0, 0.0, 0.0, 0.0])
+    metrics = loaded.evaluate(num_episodes=1)
+
+    assert result.checkpoint_path is not None
+    assert exported.exists()
+    assert isinstance(action, int)
+    assert set(metrics) >= {"eval_return_mean", "eval_return_std", "eval_episodes"}
+
+
+def test_trpo_public_api_supports_learn_save_load_and_evaluate(tmp_path: Path) -> None:
+    config = TrainConfig(
+        algo="trpo",
+        env_id="CartPole-v1",
+        seed=54,
+        total_timesteps=64,
+        output_dir=tmp_path / "trpo-runs",
+        num_envs=2,
+        eval_episodes=1,
+        algo_kwargs={
+            "num_steps": 32,
+            "hidden_sizes": (16, 16),
+            "learning_rate": 1e-3,
+            "value_updates": 3,
+            "max_kl": 0.01,
+            "cg_iterations": 5,
+            "cg_damping": 0.1,
+            "line_search_steps": 5,
+            "line_search_shrink": 0.8,
+        },
+    )
+
+    algo = TRPO(config)
+    result = algo.learn()
+    exported = algo.save(tmp_path / "exports" / "trpo.pt")
+    loaded = TRPO.load(exported)
+    action = loaded.predict([0.0, 0.0, 0.0, 0.0])
+    metrics = loaded.evaluate(num_episodes=1)
+
+    assert result.checkpoint_path is not None
+    assert exported.exists()
+    assert isinstance(action, int)
+    assert set(metrics) >= {"eval_return_mean", "eval_return_std", "eval_episodes"}
+
+
+def test_recurrent_ppo_contrib_public_api_supports_learn_save_load_and_evaluate(tmp_path: Path) -> None:
+    config = TrainConfig(
+        algo="recurrent_ppo",
+        env_id="CartPole-v1",
+        seed=67,
+        total_timesteps=64,
+        output_dir=tmp_path / "recurrent-ppo-runs",
+        num_envs=2,
+        eval_episodes=1,
+        algo_kwargs={
+            "num_steps": 32,
+            "update_epochs": 1,
+            "minibatch_size": 32,
+            "sequence_length": 8,
+            "sequences_per_batch": 4,
+            "learning_rate": 3e-4,
+            "clip_coef": 0.2,
+            "ent_coef": 0.01,
+            "vf_coef": 0.5,
+            "gamma": 0.99,
+            "gae_lambda": 0.95,
+            "encoder_hidden_sizes": (32,),
+            "head_hidden_sizes": (32,),
+            "features_dim": 64,
+            "recurrent_hidden_size": 64,
+            "recurrent_num_layers": 1,
+        },
+    )
+
+    algo = RecurrentPPO(config)
+    result = algo.learn()
+    exported = algo.save(tmp_path / "exports" / "recurrent-ppo.pt")
+    loaded = RecurrentPPO.load(exported)
     action = loaded.predict([0.0, 0.0, 0.0, 0.0])
     metrics = loaded.evaluate(num_episodes=1)
 
@@ -317,6 +1053,123 @@ def test_off_policy_public_apis_support_learn_and_evaluate(tmp_path: Path) -> No
             },
         )
     )
+    cal_ql = CalQL(
+        TrainConfig(
+            algo="cal_ql",
+            env_id="Pendulum-v1",
+            seed=63,
+            total_timesteps=96,
+            output_dir=tmp_path / "cal-ql-runs",
+            eval_episodes=1,
+            algo_kwargs={
+                "dataset_kind": "random",
+                "dataset_size": 192,
+                "dataset_seed": 18,
+                "batch_size": 32,
+                "hidden_sizes": (32, 32),
+                "learning_rate": 3e-4,
+                "gamma": 0.99,
+                "alpha": 0.2,
+                "tau": 0.005,
+                "cql_alpha": 5.0,
+                "num_cql_samples": 10,
+            },
+        )
+    )
+    edac = EDAC(
+        TrainConfig(
+            algo="edac",
+            env_id="Pendulum-v1",
+            seed=64,
+            total_timesteps=96,
+            output_dir=tmp_path / "edac-runs",
+            eval_episodes=1,
+            algo_kwargs={
+                "dataset_kind": "random",
+                "dataset_size": 192,
+                "dataset_seed": 19,
+                "batch_size": 32,
+                "hidden_sizes": (32, 32),
+                "learning_rate": 3e-4,
+                "gamma": 0.99,
+                "alpha": 0.2,
+                "tau": 0.005,
+                "num_critics": 4,
+                "eta": 1.0,
+            },
+        )
+    )
+    awr = AWR(
+        TrainConfig(
+            algo="awr",
+            env_id="Pendulum-v1",
+            seed=65,
+            total_timesteps=96,
+            output_dir=tmp_path / "awr-runs",
+            eval_episodes=1,
+            algo_kwargs={
+                "dataset_kind": "random",
+                "dataset_size": 192,
+                "dataset_seed": 20,
+                "batch_size": 32,
+                "hidden_sizes": (32, 32),
+                "learning_rate": 3e-4,
+                "gamma": 0.99,
+                "beta": 1.0,
+                "max_weight": 20.0,
+            },
+        )
+    )
+    marwil = MARWIL(
+        TrainConfig(
+            algo="marwil",
+            env_id="Pendulum-v1",
+            seed=66,
+            total_timesteps=96,
+            output_dir=tmp_path / "marwil-runs",
+            eval_episodes=1,
+            algo_kwargs={
+                "dataset_kind": "random",
+                "dataset_size": 192,
+                "dataset_seed": 21,
+                "batch_size": 32,
+                "hidden_sizes": (32, 32),
+                "learning_rate": 3e-4,
+                "gamma": 0.99,
+                "beta": 1.0,
+                "vf_coeff": 1.0,
+                "moving_average_sqd_adv_norm_start": 100.0,
+                "moving_average_sqd_adv_norm_update_rate": 0.05,
+            },
+        )
+    )
+    rlpd = RLPD(
+        TrainConfig(
+            algo="rlpd",
+            env_id="Pendulum-v1",
+            seed=67,
+            total_timesteps=96,
+            output_dir=tmp_path / "rlpd-runs",
+            eval_episodes=1,
+            algo_kwargs={
+                "dataset_kind": "random",
+                "dataset_size": 192,
+                "dataset_seed": 22,
+                "buffer_capacity": 512,
+                "batch_size": 32,
+                "learning_starts": 32,
+                "train_frequency": 1,
+                "gradient_updates_per_step": 2,
+                "offline_pretrain_updates": 8,
+                "offline_batch_ratio": 0.5,
+                "hidden_sizes": (32, 32),
+                "learning_rate": 3e-4,
+                "gamma": 0.99,
+                "alpha": 0.2,
+                "tau": 0.005,
+            },
+        )
+    )
     tqc = TQC(
         TrainConfig(
             algo="tqc",
@@ -382,6 +1235,30 @@ def test_off_policy_public_apis_support_learn_and_evaluate(tmp_path: Path) -> No
                 "expectile": 0.7,
                 "beta": 3.0,
                 "max_advantage_weight": 100.0,
+            },
+        )
+    )
+    xql = XQL(
+        TrainConfig(
+            algo="xql",
+            env_id="Pendulum-v1",
+            seed=65,
+            total_timesteps=96,
+            output_dir=tmp_path / "xql-runs",
+            eval_episodes=1,
+            algo_kwargs={
+                "dataset_kind": "random",
+                "dataset_size": 192,
+                "dataset_seed": 22,
+                "batch_size": 32,
+                "hidden_sizes": (32, 32),
+                "learning_rate": 3e-4,
+                "gamma": 0.99,
+                "tau": 0.005,
+                "beta": 3.0,
+                "loss_temperature": 1.0,
+                "max_advantage_weight": 100.0,
+                "max_value_diff_exp": 5.0,
             },
         )
     )
@@ -462,9 +1339,15 @@ def test_off_policy_public_apis_support_learn_and_evaluate(tmp_path: Path) -> No
     iqn.learn()
     sac.learn()
     cql.learn()
+    cal_ql.learn()
+    edac.learn()
+    awr.learn()
+    marwil.learn()
+    rlpd.learn()
     tqc.learn()
     redq.learn()
     iql.learn()
+    xql.learn()
     td3_bc.learn()
     ddpg.learn()
     td3.learn()
@@ -482,9 +1365,15 @@ def test_off_policy_public_apis_support_learn_and_evaluate(tmp_path: Path) -> No
     iqn_action = iqn.predict([0.0, 0.0, 0.0, 0.0])
     sac_action = sac.predict([0.0, 0.0, 0.0])
     cql_action = cql.predict([0.0, 0.0, 0.0])
+    cal_ql_action = cal_ql.predict([0.0, 0.0, 0.0])
+    edac_action = edac.predict([0.0, 0.0, 0.0])
+    awr_action = awr.predict([0.0, 0.0, 0.0])
+    marwil_action = marwil.predict([0.0, 0.0, 0.0])
+    rlpd_action = rlpd.predict([0.0, 0.0, 0.0])
     tqc_action = tqc.predict([0.0, 0.0, 0.0])
     redq_action = redq.predict([0.0, 0.0, 0.0])
     iql_action = iql.predict([0.0, 0.0, 0.0])
+    xql_action = xql.predict([0.0, 0.0, 0.0])
     td3_bc_action = td3_bc.predict([0.0, 0.0, 0.0])
     ddpg_action = ddpg.predict([0.0, 0.0, 0.0])
     td3_action = td3.predict([0.0, 0.0, 0.0])
@@ -502,9 +1391,15 @@ def test_off_policy_public_apis_support_learn_and_evaluate(tmp_path: Path) -> No
     assert isinstance(iqn_action, int)
     assert len(sac_action) == 1
     assert len(cql_action) == 1
+    assert len(cal_ql_action) == 1
+    assert len(edac_action) == 1
+    assert len(awr_action) == 1
+    assert len(marwil_action) == 1
+    assert len(rlpd_action) == 1
     assert len(tqc_action) == 1
     assert len(redq_action) == 1
     assert len(iql_action) == 1
+    assert len(xql_action) == 1
     assert len(td3_bc_action) == 1
     assert len(ddpg_action) == 1
     assert len(td3_action) == 1
@@ -521,9 +1416,15 @@ def test_off_policy_public_apis_support_learn_and_evaluate(tmp_path: Path) -> No
     assert "eval_return_mean" in iqn.evaluate(num_episodes=1)
     assert "eval_return_mean" in sac.evaluate(num_episodes=1)
     assert "eval_return_mean" in cql.evaluate(num_episodes=1)
+    assert "eval_return_mean" in cal_ql.evaluate(num_episodes=1)
+    assert "eval_return_mean" in edac.evaluate(num_episodes=1)
+    assert "eval_return_mean" in awr.evaluate(num_episodes=1)
+    assert "eval_return_mean" in marwil.evaluate(num_episodes=1)
+    assert "eval_return_mean" in rlpd.evaluate(num_episodes=1)
     assert "eval_return_mean" in tqc.evaluate(num_episodes=1)
     assert "eval_return_mean" in redq.evaluate(num_episodes=1)
     assert "eval_return_mean" in iql.evaluate(num_episodes=1)
+    assert "eval_return_mean" in xql.evaluate(num_episodes=1)
     assert "eval_return_mean" in td3_bc.evaluate(num_episodes=1)
     assert "eval_return_mean" in ddpg.evaluate(num_episodes=1)
     assert "eval_return_mean" in td3.evaluate(num_episodes=1)

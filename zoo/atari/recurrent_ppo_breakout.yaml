@@ -1,0 +1,4 @@
+name: recurrent_ppo_breakout
+config: configs/recurrent_ppo/breakout_atari.yaml
+algorithm: recurrent_ppo
+env_id: ALE/Breakout-v5

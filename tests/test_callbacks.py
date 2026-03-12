@@ -3,7 +3,8 @@ from pathlib import Path
 from rl_training.api import DQN, PPO
 from rl_training.experiment.config import TrainConfig
 from rl_training.runtime.collector import CollectResult
-from rl_training.runtime.trainer import TrainResult
+from rl_training.runtime.controls import EarlyStoppingCallback, EarlyStoppingConfig
+from rl_training.runtime.trainer import TrainResult, TrainerState
 from rl_training.runtime.types import MetricDict
 from rl_training.algorithms.base import UpdateResult
 
@@ -82,3 +83,16 @@ def test_public_api_training_emits_callbacks_for_ppo_and_dqn(tmp_path: Path) -> 
     assert any(event.startswith("update:") for event in dqn_callback.events)
     assert any(event.startswith("eval:") for event in dqn_callback.events)
     assert any(event.startswith("train_end:") for event in dqn_callback.events)
+
+
+def test_early_stopping_callback_implements_callback_protocol(tmp_path: Path) -> None:
+    callback = EarlyStoppingCallback(EarlyStoppingConfig())
+    trainer = TrainerState(algorithm="ppo", run_dir=tmp_path, global_step=1)
+
+    callback.on_train_start(trainer)
+    callback.on_collect_end(trainer, CollectResult(num_env_steps=1, num_episodes=0, metrics={}, last_obs=None))
+    callback.on_update_end(trainer, UpdateResult(metrics={}, num_gradient_steps=0))
+    callback.on_eval_end(trainer, {"eval_return_mean": 0.0, "eval_episodes": 1.0})
+    callback.on_train_end(trainer, TrainResult(run_dir=tmp_path, checkpoint_path=None, metrics={"global_step": 0.0}))
+
+    assert trainer.global_step == 1

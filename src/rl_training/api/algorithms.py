@@ -103,12 +103,64 @@ class PPO(ManagedAlgorithm):
     algo_name = "ppo"
 
 
+class TRPO(ManagedAlgorithm):
+    algo_name = "trpo"
+
+
 class A2C(ManagedAlgorithm):
     algo_name = "a2c"
 
 
+class AWR(ManagedAlgorithm):
+    algo_name = "awr"
+
+
+class AWAC(ManagedAlgorithm):
+    algo_name = "awac"
+
+
+class MARWIL(ManagedAlgorithm):
+    algo_name = "marwil"
+
+
+class BC(ManagedAlgorithm):
+    algo_name = "bc"
+
+
+class BCQ(ManagedAlgorithm):
+    algo_name = "bcq"
+
+
+class BEAR(ManagedAlgorithm):
+    algo_name = "bear"
+
+
+class CrossQ(ManagedAlgorithm):
+    algo_name = "crossq"
+
+
+class CRR(ManagedAlgorithm):
+    algo_name = "crr"
+
+
+class HER(ManagedAlgorithm):
+    algo_name = "her"
+
+
 class DDPG(ManagedAlgorithm):
     algo_name = "ddpg"
+
+
+class EDAC(ManagedAlgorithm):
+    algo_name = "edac"
+
+
+class DrQv2(ManagedAlgorithm):
+    algo_name = "drqv2"
+
+
+class DiscreteSAC(ManagedAlgorithm):
+    algo_name = "discrete_sac"
 
 
 class DQN(ManagedAlgorithm):
@@ -117,6 +169,10 @@ class DQN(ManagedAlgorithm):
 
 class C51DQN(ManagedAlgorithm):
     algo_name = "c51_dqn"
+
+
+class CalQL(ManagedAlgorithm):
+    algo_name = "cal_ql"
 
 
 class CQL(ManagedAlgorithm):
@@ -137,6 +193,10 @@ class IQN(ManagedAlgorithm):
 
 class IQL(ManagedAlgorithm):
     algo_name = "iql"
+
+
+class XQL(ManagedAlgorithm):
+    algo_name = "xql"
 
 
 class DoubleDQN(ManagedAlgorithm):
@@ -171,9 +231,21 @@ class REDQ(ManagedAlgorithm):
     algo_name = "redq"
 
 
+class RLPD(ManagedAlgorithm):
+    algo_name = "rlpd"
+
+
+class ReBRAC(ManagedAlgorithm):
+    algo_name = "rebrac"
+
+
 class TD3(ManagedAlgorithm):
     algo_name = "td3"
 
 
 class TD3BC(ManagedAlgorithm):
     algo_name = "td3_bc"
+
+
+class RecurrentPPO(ManagedAlgorithm):
+    algo_name = "recurrent_ppo"

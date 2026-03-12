@@ -9,12 +9,13 @@ import torch
 
 from rl_training.algorithms.td3 import TD3
 from rl_training.data.replay_buffer import ReplayBuffer
-from rl_training.envs.factory import make_vector_env
+from rl_training.envs.factory import build_env, make_vector_env
 from rl_training.experiment.checkpointing import CheckpointState
 from rl_training.experiment.config import TrainConfig
 from rl_training.models.mlp_td3 import MLPTD3Model
-from rl_training.runtime.callbacks import Callback, CallbackList
+from rl_training.runtime.callbacks import Callback, CallbackList, merge_callbacks
 from rl_training.runtime.collector import CollectResult
+from rl_training.runtime.controls import build_control_callbacks, resolve_eval_interval, should_run_evaluation
 from rl_training.runtime.run_utils import create_training_run, resolve_device, save_training_checkpoint
 from rl_training.runtime.trainer import TrainResult, TrainerState
 from rl_training.runtime.types import MetricDict
@@ -61,8 +62,7 @@ def _evaluate_td3_policy(
     device: torch.device,
     num_episodes: int,
 ) -> MetricDict:
-    env = gym.make(config.env_id, **config.env_kwargs)
-    env = gym.wrappers.RecordEpisodeStatistics(env)
+    env = build_env(config, 0, evaluation=True)
     action_space = env.action_space
     if not isinstance(action_space, gym.spaces.Box):
         raise TypeError(f"unsupported action space for TD3 evaluation: {type(action_space)!r}")
@@ -107,7 +107,7 @@ def train_td3(
     run_artifacts = create_training_run(config, run_suffix=run_suffix)
     run_context = run_artifacts.run_context
     logger = run_artifacts.logger
-    callback_list = CallbackList(callbacks)
+    callback_list = CallbackList(merge_callbacks(build_control_callbacks(config), callbacks))
     trainer_state = TrainerState(algorithm="td3", run_dir=run_context.run_dir)
 
     buffer_capacity = int(config.algo_kwargs.get("buffer_capacity", 100000))
@@ -122,6 +122,7 @@ def train_td3(
     policy_noise = float(config.algo_kwargs.get("policy_noise", 0.2))
     noise_clip = float(config.algo_kwargs.get("noise_clip", 0.5))
     policy_delay = int(config.algo_kwargs.get("policy_delay", 2))
+    eval_interval = resolve_eval_interval(config)
 
     torch.manual_seed(config.seed)
     np.random.seed(config.seed)
@@ -213,23 +214,35 @@ def train_td3(
                 "buffer_size": float(len(replay_buffer)),
                 "gradient_steps": float(update_count),
             }
-
-        eval_metrics = _evaluate_td3_policy(
-            model,
-            config,
-            device=device,
-            num_episodes=config.eval_episodes,
-        )
-        metrics = {**metrics, **eval_metrics}
-        logger.log_metrics(metrics, step=global_step)
-        callback_list.on_eval_end(trainer_state, eval_metrics)
+            if should_run_evaluation(
+                global_step=global_step,
+                total_timesteps=config.total_timesteps,
+                eval_interval=eval_interval,
+            ):
+                algorithm.set_eval_mode()
+                eval_metrics = _evaluate_td3_policy(
+                    model,
+                    config,
+                    device=device,
+                    num_episodes=config.eval_episodes,
+                )
+                algorithm.set_train_mode()
+                metrics = {**metrics, **eval_metrics}
+                logger.log_metrics(metrics, step=global_step)
+                callback_list.on_eval_end(trainer_state, metrics)
+                if trainer_state.should_stop:
+                    break
 
         checkpoint_path = save_training_checkpoint(
             run_context=run_context,
             config=config,
             algorithm_state=algorithm.state_dict(),
             buffer_state=replay_buffer.state_dict(),
-            trainer_state={"global_step": global_step},
+            trainer_state={
+                "global_step": global_step,
+                "should_stop": trainer_state.should_stop,
+                "stop_reason": trainer_state.stop_reason,
+            },
             metrics=metrics,
         )
     finally:

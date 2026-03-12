@@ -1,0 +1,23 @@
+algo: rebrac
+env_id: Pendulum-v1
+seed: 93
+total_timesteps: 5000
+output_dir: runs
+device: auto
+num_envs: 1
+eval_episodes: 5
+algo_kwargs:
+  dataset_kind: random
+  dataset_size: 10000
+  dataset_seed: 29
+  batch_size: 256
+  hidden_sizes: [256, 256]
+  learning_rate: 0.0003
+  gamma: 0.99
+  tau: 0.005
+  policy_noise: 0.2
+  noise_clip: 0.5
+  policy_delay: 2
+  actor_bc_weight: 1.0
+  critic_bc_weight: 1.0
+  actor_q_weight: 1.0

@@ -1,0 +1,198 @@
+from __future__ import annotations
+
+from collections.abc import Sequence
+from pathlib import Path
+
+from rl_training.algorithms.xql import XQL
+from rl_training.experiment.checkpointing import CheckpointState
+from rl_training.experiment.config import TrainConfig
+from rl_training.models.mlp_iql import MLPIQLModel
+from rl_training.runtime.callbacks import Callback, CallbackList, merge_callbacks
+from rl_training.runtime.collector import CollectResult
+from rl_training.runtime.controls import (
+    build_control_callbacks,
+    resolve_effective_total_updates,
+    resolve_eval_interval,
+    resolve_max_epochs,
+    resolve_max_updates,
+    should_run_evaluation,
+    stop_reason_for_training_limits,
+)
+from rl_training.runtime.iql_trainer import _build_offline_dataset, _evaluate_iql_policy, _infer_env_spaces
+from rl_training.runtime.run_utils import create_training_run, resolve_device, save_training_checkpoint
+from rl_training.runtime.schedules import apply_learning_rate_scale, resolve_schedule_value
+from rl_training.runtime.trainer import TrainResult, TrainerState
+from rl_training.runtime.types import MetricDict
+
+
+def train_xql(
+    config: TrainConfig,
+    *,
+    run_suffix: str | None = None,
+    checkpoint_state: CheckpointState | None = None,
+    callbacks: Sequence[Callback] | None = None,
+) -> TrainResult:
+    device = resolve_device(config.device)
+    run_artifacts = create_training_run(config, run_suffix=run_suffix)
+    run_context = run_artifacts.run_context
+    logger = run_artifacts.logger
+    callback_list = CallbackList(merge_callbacks(build_control_callbacks(config), callbacks))
+    trainer_state = TrainerState(algorithm="xql", run_dir=run_context.run_dir)
+
+    batch_size = int(config.algo_kwargs.get("batch_size", 256))
+    hidden_sizes = tuple(config.algo_kwargs.get("hidden_sizes", (256, 256)))
+    learning_rate = float(config.algo_kwargs.get("learning_rate", 3e-4))
+    gamma = float(config.algo_kwargs.get("gamma", 0.99))
+    tau = float(config.algo_kwargs.get("tau", 0.005))
+    beta = float(config.algo_kwargs.get("beta", 3.0))
+    loss_temperature = float(config.algo_kwargs.get("loss_temperature", 1.0))
+    max_advantage_weight = float(config.algo_kwargs.get("max_advantage_weight", 100.0))
+    vanilla_value_loss = bool(config.algo_kwargs.get("vanilla_value_loss", False))
+    expectile = float(config.algo_kwargs.get("expectile", 0.7))
+    max_value_diff_exp = config.algo_kwargs.get("max_value_diff_exp", 5.0)
+    resolved_max_value_diff_exp = None if max_value_diff_exp is None else float(max_value_diff_exp)
+    eval_interval = resolve_eval_interval(config)
+    effective_total_updates = resolve_effective_total_updates(config)
+    max_updates = resolve_max_updates(config)
+    max_epochs = resolve_max_epochs(config)
+    warmup_steps = int(config.algo_kwargs.get("warmup_steps", 0))
+    learning_rate_schedule = config.algo_kwargs.get("learning_rate_schedule")
+
+    checkpoint_path: Path | None = None
+    metrics: MetricDict = {}
+
+    try:
+        obs_space, action_space = _infer_env_spaces(config)
+        dataset = _build_offline_dataset(config, action_space=action_space)
+        obs_dim = int(obs_space.shape[0])
+        action_dim = int(action_space.shape[0])
+
+        model = MLPIQLModel(
+            obs_dim=obs_dim,
+            action_dim=action_dim,
+            hidden_sizes=hidden_sizes,
+        ).to(device)
+        algorithm = XQL(
+            model=model,
+            learning_rate=learning_rate,
+            gamma=gamma,
+            tau=tau,
+            beta=beta,
+            loss_temperature=loss_temperature,
+            max_advantage_weight=max_advantage_weight,
+            vanilla_value_loss=vanilla_value_loss,
+            expectile=expectile,
+            max_value_diff_exp=resolved_max_value_diff_exp,
+        )
+        if checkpoint_state is not None:
+            algorithm.load_state_dict(checkpoint_state.algorithm_state)
+
+        global_step = int(checkpoint_state.trainer_state.get("global_step", 0)) if checkpoint_state is not None else 0
+        epoch = int(checkpoint_state.trainer_state.get("epoch", global_step)) if checkpoint_state is not None else 0
+        update_count = (
+            int(checkpoint_state.trainer_state.get("update_count", global_step))
+            if checkpoint_state is not None
+            else 0
+        )
+        trainer_state.global_step = global_step
+        trainer_state.epoch = epoch
+        trainer_state.update_count = update_count
+        initial_stop_reason = stop_reason_for_training_limits(
+            epoch=epoch,
+            update_count=update_count,
+            max_epochs=max_epochs,
+            max_updates=max_updates,
+        )
+        if initial_stop_reason is not None:
+            trainer_state.request_stop(initial_stop_reason)
+        callback_list.on_train_start(trainer_state)
+        callback_list.on_collect_end(
+            trainer_state,
+            CollectResult(
+                num_env_steps=len(dataset),
+                num_episodes=0,
+                metrics={"dataset_size": float(len(dataset))},
+                last_obs=None,
+            ),
+        )
+
+        while global_step < config.total_timesteps and not trainer_state.should_stop:
+            lr_scale = resolve_schedule_value(
+                learning_rate_schedule,
+                step=update_count,
+                total_steps=effective_total_updates,
+                warmup_steps=warmup_steps,
+            )
+            current_learning_rate = apply_learning_rate_scale(algorithm, scale=lr_scale)
+            result = algorithm.update(dataset.sample(batch_size, device=device), global_step=global_step)
+            global_step += 1
+            epoch += 1
+            update_count += result.num_gradient_steps
+            trainer_state.global_step = global_step
+            trainer_state.epoch = epoch
+            trainer_state.update_count = update_count
+            callback_list.on_update_end(trainer_state, result)
+
+            metrics = {
+                **result.metrics,
+                "global_step": float(global_step),
+                "epoch": float(epoch),
+                "update_count": float(update_count),
+                "gradient_steps": float(update_count),
+                "dataset_size": float(len(dataset)),
+                "lr_scale": float(lr_scale),
+                "learning_rate": float(current_learning_rate),
+                "loss_temperature": float(loss_temperature),
+                "beta": float(beta),
+            }
+            if should_run_evaluation(
+                global_step=global_step,
+                total_timesteps=config.total_timesteps,
+                eval_interval=eval_interval,
+            ):
+                eval_metrics = _evaluate_iql_policy(
+                    model,
+                    config,
+                    device=device,
+                    num_episodes=config.eval_episodes,
+                )
+                metrics = {**metrics, **eval_metrics}
+                logger.log_metrics(metrics, step=global_step)
+                callback_list.on_eval_end(trainer_state, metrics)
+                if trainer_state.should_stop:
+                    break
+
+            stop_reason = stop_reason_for_training_limits(
+                epoch=epoch,
+                update_count=update_count,
+                max_epochs=max_epochs,
+                max_updates=max_updates,
+            )
+            if stop_reason is not None:
+                trainer_state.request_stop(stop_reason)
+                break
+
+        checkpoint_path = save_training_checkpoint(
+            run_context=run_context,
+            config=config,
+            algorithm_state=algorithm.state_dict(),
+            buffer_state=None,
+            trainer_state={
+                "global_step": global_step,
+                "epoch": epoch,
+                "update_count": update_count,
+                "should_stop": trainer_state.should_stop,
+                "stop_reason": trainer_state.stop_reason,
+            },
+            metrics=metrics,
+        )
+    finally:
+        run_artifacts.close()
+
+    result = TrainResult(
+        run_dir=run_context.run_dir,
+        checkpoint_path=checkpoint_path,
+        metrics=metrics,
+    )
+    callback_list.on_train_end(trainer_state, result)
+    return result

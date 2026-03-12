@@ -33,6 +33,165 @@ def test_load_config_reads_yaml(tmp_path: Path) -> None:
     assert config.algo_kwargs["num_steps"] == 32
 
 
+def test_load_config_resolves_linked_zoo_preset(tmp_path: Path) -> None:
+    config_dir = tmp_path / "configs"
+    config_dir.mkdir()
+    config_file = config_dir / "ppo.yaml"
+    config_file.write_text(
+        "\n".join(
+            [
+                "algo: ppo",
+                "env_id: CartPole-v1",
+                "seed: 3",
+                "total_timesteps: 128",
+                f"output_dir: {tmp_path / 'runs'}",
+                "num_envs: 2",
+                "algo_kwargs:",
+                "  num_steps: 32",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    preset_dir = tmp_path / "zoo"
+    preset_dir.mkdir()
+    preset_file = preset_dir / "cartpole.yaml"
+    preset_file.write_text(
+        "\n".join(
+            [
+                "name: cartpole_ppo",
+                "config: configs/ppo.yaml",
+                "algorithm: ppo",
+                "env_id: CartPole-v1",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    config = load_config(preset_file)
+
+    assert config.algo == "ppo"
+    assert config.env_id == "CartPole-v1"
+    assert config.seed == 3
+    assert config.output_dir == tmp_path / "runs"
+    assert config.algo_kwargs["num_steps"] == 32
+
+
+def test_load_config_can_resolve_packaged_repo_config_outside_repo_root(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    config = load_config("configs/ppo/cartpole.yaml")
+
+    assert config.algo == "ppo"
+    assert config.env_id == "CartPole-v1"
+    assert config.total_timesteps > 0
+
+
+def test_load_config_can_resolve_packaged_drqv2_config_outside_repo_root(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    config = load_config("configs/drqv2/pendulum_pixels.yaml")
+
+    assert config.algo == "drqv2"
+    assert config.env_id == "Pendulum-v1"
+    assert config.env_kwargs["render_mode"] == "rgb_array"
+    assert config.env_kwargs["wrappers"]["pixels"]["frame_stack"] == 3
+
+
+def test_load_config_can_resolve_packaged_crr_config_outside_repo_root(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    config = load_config("configs/crr/pendulum.yaml")
+
+    assert config.algo == "crr"
+    assert config.env_id == "Pendulum-v1"
+    assert config.algo_kwargs["n_action_samples"] == 4
+    assert config.algo_kwargs["weight_type"] == "exp"
+
+
+def test_load_config_can_resolve_packaged_awr_config_outside_repo_root(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    config = load_config("configs/awr/pendulum.yaml")
+
+    assert config.algo == "awr"
+    assert config.env_id == "Pendulum-v1"
+    assert config.algo_kwargs["beta"] == 1.0
+    assert config.algo_kwargs["max_weight"] == 20.0
+
+
+def test_load_config_can_resolve_packaged_marwil_config_outside_repo_root(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    config = load_config("configs/marwil/pendulum.yaml")
+
+    assert config.algo == "marwil"
+    assert config.env_id == "Pendulum-v1"
+    assert config.algo_kwargs["beta"] == 1.0
+    assert config.algo_kwargs["vf_coeff"] == 1.0
+
+
+def test_load_config_can_resolve_packaged_cal_ql_config_outside_repo_root(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    config = load_config("configs/cal_ql/pendulum.yaml")
+
+    assert config.algo == "cal_ql"
+    assert config.env_id == "Pendulum-v1"
+    assert config.algo_kwargs["cql_alpha"] == 5.0
+
+
+def test_load_config_can_resolve_packaged_edac_config_outside_repo_root(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    config = load_config("configs/edac/pendulum.yaml")
+
+    assert config.algo == "edac"
+    assert config.env_id == "Pendulum-v1"
+    assert config.algo_kwargs["num_critics"] == 10
+    assert config.algo_kwargs["eta"] == 1.0
+
+
+def test_load_config_can_resolve_packaged_rlpd_config_outside_repo_root(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    config = load_config("configs/rlpd/pendulum.yaml")
+
+    assert config.algo == "rlpd"
+    assert config.env_id == "Pendulum-v1"
+    assert config.algo_kwargs["offline_pretrain_updates"] == 1000
+    assert config.algo_kwargs["offline_batch_ratio"] == 0.5
+
+
+def test_load_config_can_resolve_packaged_xql_config_outside_repo_root(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    config = load_config("configs/xql/pendulum.yaml")
+
+    assert config.algo == "xql"
+    assert config.env_id == "Pendulum-v1"
+    assert config.algo_kwargs["loss_temperature"] == 1.0
+
+
+def test_load_config_can_resolve_packaged_rebrac_config_outside_repo_root(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    config = load_config("configs/rebrac/pendulum.yaml")
+
+    assert config.algo == "rebrac"
+    assert config.env_id == "Pendulum-v1"
+    assert config.algo_kwargs["actor_bc_weight"] == 1.0
+    assert config.algo_kwargs["critic_bc_weight"] == 1.0
+
+
+def test_zoo_subcommand_uses_packaged_manifest_outside_repo_root(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    exit_code = main(["zoo", "--manifest", "zoo/atari/benchmark.yaml", "--format", "commands"])
+
+    assert exit_code == 0
+
+
 def test_train_command_runs_with_overrides(tmp_path: Path) -> None:
     config_file = tmp_path / "config.yaml"
     config_file.write_text(
@@ -269,6 +428,161 @@ def test_train_command_runs_for_iql_config(tmp_path: Path) -> None:
     assert any((tmp_path / "iql-runs").iterdir())
 
 
+def test_train_command_runs_for_bc_config(tmp_path: Path) -> None:
+    config_file = tmp_path / "bc-config.yaml"
+    config_file.write_text(
+        "\n".join(
+            [
+                "algo: bc",
+                "env_id: Pendulum-v1",
+                "seed: 46",
+                "total_timesteps: 16",
+                f"output_dir: {tmp_path / 'bc-runs'}",
+                "eval_episodes: 0",
+                "algo_kwargs:",
+                "  dataset_kind: random",
+                "  dataset_size: 64",
+                "  dataset_seed: 19",
+                "  batch_size: 16",
+                "  hidden_sizes: [32, 32]",
+                "  learning_rate: 0.0003",
+                "  eval_interval: 8",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    exit_code = main(["train", "--config", str(config_file)])
+
+    assert exit_code == 0
+    assert any((tmp_path / "bc-runs").iterdir())
+
+
+def test_train_command_runs_for_awac_config(tmp_path: Path) -> None:
+    config_file = tmp_path / "awac-config.yaml"
+    config_file.write_text(
+        "\n".join(
+            [
+                "algo: awac",
+                "env_id: Pendulum-v1",
+                "seed: 73",
+                "total_timesteps: 16",
+                f"output_dir: {tmp_path / 'awac-runs'}",
+                "eval_episodes: 1",
+                "algo_kwargs:",
+                "  dataset_kind: random",
+                "  dataset_size: 64",
+                "  dataset_seed: 13",
+                "  batch_size: 16",
+                "  hidden_sizes: [16, 16]",
+                "  eval_interval: 8",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    exit_code = main(["train", "--config", str(config_file)])
+
+    assert exit_code == 0
+    assert any((tmp_path / "awac-runs").iterdir())
+
+
+def test_train_command_runs_for_awr_config(tmp_path: Path) -> None:
+    config_file = tmp_path / "awr-config.yaml"
+    config_file.write_text(
+        "\n".join(
+            [
+                "algo: awr",
+                "env_id: Pendulum-v1",
+                "seed: 74",
+                "total_timesteps: 16",
+                f"output_dir: {tmp_path / 'awr-runs'}",
+                "eval_episodes: 1",
+                "algo_kwargs:",
+                "  dataset_kind: random",
+                "  dataset_size: 64",
+                "  dataset_seed: 14",
+                "  batch_size: 16",
+                "  hidden_sizes: [16, 16]",
+                "  learning_rate: 0.0003",
+                "  gamma: 0.99",
+                "  beta: 1.0",
+                "  max_weight: 20.0",
+                "  eval_interval: 8",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    exit_code = main(["train", "--config", str(config_file)])
+
+    assert exit_code == 0
+    assert any((tmp_path / "awr-runs").iterdir())
+
+
+def test_train_command_runs_for_marwil_config(tmp_path: Path) -> None:
+    config_file = tmp_path / "marwil-config.yaml"
+    config_file.write_text(
+        "\n".join(
+            [
+                "algo: marwil",
+                "env_id: Pendulum-v1",
+                "seed: 74",
+                "total_timesteps: 16",
+                f"output_dir: {tmp_path / 'marwil-runs'}",
+                "eval_episodes: 1",
+                "algo_kwargs:",
+                "  dataset_kind: random",
+                "  dataset_size: 64",
+                "  dataset_seed: 14",
+                "  batch_size: 16",
+                "  hidden_sizes: [16, 16]",
+                "  learning_rate: 0.0003",
+                "  gamma: 0.99",
+                "  beta: 1.0",
+                "  vf_coeff: 1.0",
+                "  moving_average_sqd_adv_norm_start: 100.0",
+                "  moving_average_sqd_adv_norm_update_rate: 0.05",
+                "  eval_interval: 8",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    exit_code = main(["train", "--config", str(config_file)])
+
+    assert exit_code == 0
+    assert any((tmp_path / "marwil-runs").iterdir())
+
+
+def test_train_command_runs_for_her_config(tmp_path: Path) -> None:
+    config_file = tmp_path / "her-config.yaml"
+    config_file.write_text(
+        "\n".join(
+            [
+                "algo: her",
+                "env_id: RL-PointGoal1D-v0",
+                "seed: 75",
+                "total_timesteps: 32",
+                f"output_dir: {tmp_path / 'her-runs'}",
+                "eval_episodes: 1",
+                "algo_kwargs:",
+                "  buffer_capacity: 512",
+                "  batch_size: 16",
+                "  learning_starts: 8",
+                "  hidden_sizes: [16, 16]",
+                "  eval_interval: 8",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    exit_code = main(["train", "--config", str(config_file)])
+
+    assert exit_code == 0
+    assert any((tmp_path / "her-runs").iterdir())
+
+
 def test_train_command_runs_for_cql_config(tmp_path: Path) -> None:
     config_file = tmp_path / "cql-config.yaml"
     config_file.write_text(
@@ -301,6 +615,319 @@ def test_train_command_runs_for_cql_config(tmp_path: Path) -> None:
 
     assert exit_code == 0
     assert any((tmp_path / "cql-runs").iterdir())
+
+
+def test_train_command_runs_for_cal_ql_config(tmp_path: Path) -> None:
+    config_file = tmp_path / "cal-ql-config.yaml"
+    config_file.write_text(
+        "\n".join(
+            [
+                "algo: cal_ql",
+                "env_id: Pendulum-v1",
+                "seed: 46",
+                "total_timesteps: 32",
+                f"output_dir: {tmp_path / 'cal-ql-runs'}",
+                "eval_episodes: 0",
+                "algo_kwargs:",
+                "  dataset_kind: random",
+                "  dataset_size: 128",
+                "  dataset_seed: 20",
+                "  batch_size: 32",
+                "  hidden_sizes: [32, 32]",
+                "  learning_rate: 0.0003",
+                "  gamma: 0.99",
+                "  alpha: 0.2",
+                "  tau: 0.005",
+                "  cql_alpha: 5.0",
+                "  num_cql_samples: 10",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    exit_code = main(["train", "--config", str(config_file)])
+
+    assert exit_code == 0
+    assert any((tmp_path / "cal-ql-runs").iterdir())
+
+
+def test_train_command_runs_for_edac_config(tmp_path: Path) -> None:
+    config_file = tmp_path / "edac-config.yaml"
+    config_file.write_text(
+        "\n".join(
+            [
+                "algo: edac",
+                "env_id: Pendulum-v1",
+                "seed: 47",
+                "total_timesteps: 32",
+                f"output_dir: {tmp_path / 'edac-runs'}",
+                "eval_episodes: 0",
+                "algo_kwargs:",
+                "  dataset_kind: random",
+                "  dataset_size: 128",
+                "  dataset_seed: 20",
+                "  batch_size: 32",
+                "  hidden_sizes: [32, 32]",
+                "  learning_rate: 0.0003",
+                "  gamma: 0.99",
+                "  alpha: 0.2",
+                "  tau: 0.005",
+                "  num_critics: 4",
+                "  eta: 1.0",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    exit_code = main(["train", "--config", str(config_file)])
+
+    assert exit_code == 0
+    assert any((tmp_path / "edac-runs").iterdir())
+
+
+def test_train_command_runs_for_rlpd_config(tmp_path: Path) -> None:
+    config_file = tmp_path / "rlpd-config.yaml"
+    config_file.write_text(
+        "\n".join(
+            [
+                "algo: rlpd",
+                "env_id: Pendulum-v1",
+                "seed: 48",
+                "total_timesteps: 32",
+                f"output_dir: {tmp_path / 'rlpd-runs'}",
+                "eval_episodes: 0",
+                "algo_kwargs:",
+                "  dataset_kind: random",
+                "  dataset_size: 128",
+                "  dataset_seed: 21",
+                "  buffer_capacity: 256",
+                "  batch_size: 32",
+                "  learning_starts: 16",
+                "  train_frequency: 1",
+                "  gradient_updates_per_step: 2",
+                "  offline_pretrain_updates: 4",
+                "  offline_batch_ratio: 0.5",
+                "  hidden_sizes: [32, 32]",
+                "  learning_rate: 0.0003",
+                "  gamma: 0.99",
+                "  alpha: 0.2",
+                "  tau: 0.005",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    exit_code = main(["train", "--config", str(config_file)])
+
+    assert exit_code == 0
+    assert any((tmp_path / "rlpd-runs").iterdir())
+
+
+def test_train_command_runs_for_xql_config(tmp_path: Path) -> None:
+    config_file = tmp_path / "xql-config.yaml"
+    config_file.write_text(
+        "\n".join(
+            [
+                "algo: xql",
+                "env_id: Pendulum-v1",
+                "seed: 47",
+                "total_timesteps: 32",
+                f"output_dir: {tmp_path / 'xql-runs'}",
+                "eval_episodes: 0",
+                "algo_kwargs:",
+                "  dataset_kind: random",
+                "  dataset_size: 128",
+                "  dataset_seed: 21",
+                "  batch_size: 32",
+                "  hidden_sizes: [32, 32]",
+                "  learning_rate: 0.0003",
+                "  gamma: 0.99",
+                "  tau: 0.005",
+                "  beta: 3.0",
+                "  loss_temperature: 1.0",
+                "  max_advantage_weight: 100.0",
+                "  max_value_diff_exp: 5.0",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    exit_code = main(["train", "--config", str(config_file)])
+
+    assert exit_code == 0
+    assert any((tmp_path / "xql-runs").iterdir())
+
+
+def test_train_command_runs_for_bear_config(tmp_path: Path) -> None:
+    config_file = tmp_path / "bear-config.yaml"
+    config_file.write_text(
+        "\n".join(
+            [
+                "algo: bear",
+                "env_id: Pendulum-v1",
+                "seed: 46",
+                "total_timesteps: 32",
+                f"output_dir: {tmp_path / 'bear-runs'}",
+                "eval_episodes: 0",
+                "algo_kwargs:",
+                "  dataset_kind: random",
+                "  dataset_size: 128",
+                "  dataset_seed: 20",
+                "  batch_size: 32",
+                "  hidden_sizes: [32, 32]",
+                "  latent_dim: 2",
+                "  learning_rate: 0.0003",
+                "  gamma: 0.99",
+                "  tau: 0.005",
+                "  behavior_kl_weight: 0.5",
+                "  mmd_sigma: 20.0",
+                "  mmd_alpha: 10.0",
+                "  num_mmd_action_samples: 10",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    exit_code = main(["train", "--config", str(config_file)])
+
+    assert exit_code == 0
+    assert any((tmp_path / "bear-runs").iterdir())
+
+
+def test_train_command_runs_for_bcq_config(tmp_path: Path) -> None:
+    config_file = tmp_path / "bcq-config.yaml"
+    config_file.write_text(
+        "\n".join(
+            [
+                "algo: bcq",
+                "env_id: Pendulum-v1",
+                "seed: 47",
+                "total_timesteps: 32",
+                f"output_dir: {tmp_path / 'bcq-runs'}",
+                "eval_episodes: 0",
+                "algo_kwargs:",
+                "  dataset_kind: random",
+                "  dataset_size: 128",
+                "  dataset_seed: 21",
+                "  batch_size: 32",
+                "  hidden_sizes: [32, 32]",
+                "  latent_dim: 2",
+                "  num_action_samples: 10",
+                "  perturbation_scale: 0.05",
+                "  learning_rate: 0.0003",
+                "  gamma: 0.99",
+                "  tau: 0.005",
+                "  vae_kl_weight: 0.5",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    exit_code = main(["train", "--config", str(config_file)])
+
+    assert exit_code == 0
+    assert any((tmp_path / "bcq-runs").iterdir())
+
+
+def test_train_command_runs_for_trpo_config(tmp_path: Path) -> None:
+    config_file = tmp_path / "trpo-config.yaml"
+    config_file.write_text(
+        "\n".join(
+            [
+                "algo: trpo",
+                "env_id: CartPole-v1",
+                "seed: 48",
+                "total_timesteps: 64",
+                f"output_dir: {tmp_path / 'trpo-runs'}",
+                "num_envs: 2",
+                "eval_episodes: 0",
+                "algo_kwargs:",
+                "  num_steps: 32",
+                "  hidden_sizes: [32, 32]",
+                "  learning_rate: 0.001",
+                "  value_updates: 3",
+                "  max_kl: 0.01",
+                "  cg_iterations: 5",
+                "  cg_damping: 0.1",
+                "  line_search_steps: 5",
+                "  line_search_shrink: 0.8",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    exit_code = main(["train", "--config", str(config_file)])
+
+    assert exit_code == 0
+    assert any((tmp_path / "trpo-runs").iterdir())
+
+
+def test_train_command_runs_for_discrete_sac_config(tmp_path: Path) -> None:
+    config_file = tmp_path / "discrete-sac-config.yaml"
+    config_file.write_text(
+        "\n".join(
+            [
+                "algo: discrete_sac",
+                "env_id: CartPole-v1",
+                "seed: 49",
+                "total_timesteps: 128",
+                f"output_dir: {tmp_path / 'discrete-sac-runs'}",
+                "num_envs: 2",
+                "eval_episodes: 0",
+                "algo_kwargs:",
+                "  buffer_capacity: 512",
+                "  batch_size: 32",
+                "  learning_starts: 32",
+                "  train_frequency: 1",
+                "  hidden_sizes: [32, 32]",
+                "  learning_rate: 0.0003",
+                "  gamma: 0.99",
+                "  alpha: 0.2",
+                "  tau: 0.005",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    exit_code = main(["train", "--config", str(config_file)])
+
+    assert exit_code == 0
+    assert any((tmp_path / "discrete-sac-runs").iterdir())
+
+
+def test_train_command_runs_for_crossq_config(tmp_path: Path) -> None:
+    config_file = tmp_path / "crossq-config.yaml"
+    config_file.write_text(
+        "\n".join(
+            [
+                "algo: crossq",
+                "env_id: Pendulum-v1",
+                "seed: 50",
+                "total_timesteps: 128",
+                f"output_dir: {tmp_path / 'crossq-runs'}",
+                "eval_episodes: 0",
+                "algo_kwargs:",
+                "  buffer_capacity: 512",
+                "  batch_size: 32",
+                "  learning_starts: 32",
+                "  train_frequency: 1",
+                "  hidden_sizes: [32, 32]",
+                "  critic_hidden_sizes: [32, 32]",
+                "  learning_rate: 0.001",
+                "  gamma: 0.99",
+                "  alpha: 0.1",
+                "  policy_delay: 1",
+                "  adam_beta1: 0.5",
+                "  bn_momentum: 0.99",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    exit_code = main(["train", "--config", str(config_file)])
+
+    assert exit_code == 0
+    assert any((tmp_path / "crossq-runs").iterdir())
 
 
 def test_train_command_runs_for_td3_bc_config(tmp_path: Path) -> None:

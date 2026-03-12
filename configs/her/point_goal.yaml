@@ -1,0 +1,20 @@
+algo: her
+env_id: RL-PointGoal1D-v0
+seed: 7
+total_timesteps: 20000
+output_dir: runs/her-point-goal
+device: auto
+eval_episodes: 5
+algo_kwargs:
+  buffer_capacity: 50000
+  batch_size: 256
+  learning_starts: 256
+  train_frequency: 1
+  hidden_sizes: [256, 256]
+  learning_rate: 0.0003
+  gamma: 0.98
+  tau: 0.005
+  her_ratio: 0.8
+  goal_selection_strategy: future
+  exploration_noise: 0.1
+  eval_interval: 1000

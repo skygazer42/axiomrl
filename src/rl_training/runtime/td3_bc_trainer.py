@@ -7,10 +7,20 @@ from rl_training.algorithms.td3_bc import TD3BC
 from rl_training.experiment.checkpointing import CheckpointState
 from rl_training.experiment.config import TrainConfig
 from rl_training.models.mlp_td3 import MLPTD3Model
-from rl_training.runtime.callbacks import Callback, CallbackList
+from rl_training.runtime.callbacks import Callback, CallbackList, merge_callbacks
 from rl_training.runtime.collector import CollectResult
+from rl_training.runtime.controls import (
+    build_control_callbacks,
+    resolve_effective_total_updates,
+    resolve_eval_interval,
+    resolve_max_epochs,
+    resolve_max_updates,
+    should_run_evaluation,
+    stop_reason_for_training_limits,
+)
 from rl_training.runtime.iql_trainer import _build_offline_dataset, _infer_env_spaces
 from rl_training.runtime.run_utils import create_training_run, resolve_device, save_training_checkpoint
+from rl_training.runtime.schedules import apply_learning_rate_scale, resolve_schedule_value
 from rl_training.runtime.td3_trainer import _evaluate_td3_policy
 from rl_training.runtime.trainer import TrainResult, TrainerState
 from rl_training.runtime.types import MetricDict
@@ -27,7 +37,7 @@ def train_td3_bc(
     run_artifacts = create_training_run(config, run_suffix=run_suffix)
     run_context = run_artifacts.run_context
     logger = run_artifacts.logger
-    callback_list = CallbackList(callbacks)
+    callback_list = CallbackList(merge_callbacks(build_control_callbacks(config), callbacks))
     trainer_state = TrainerState(algorithm="td3_bc", run_dir=run_context.run_dir)
 
     batch_size = int(config.algo_kwargs.get("batch_size", 256))
@@ -39,13 +49,19 @@ def train_td3_bc(
     noise_clip = float(config.algo_kwargs.get("noise_clip", 0.5))
     policy_delay = int(config.algo_kwargs.get("policy_delay", 2))
     bc_alpha = float(config.algo_kwargs.get("bc_alpha", 2.5))
+    eval_interval = resolve_eval_interval(config)
+    effective_total_updates = resolve_effective_total_updates(config)
+    max_updates = resolve_max_updates(config)
+    max_epochs = resolve_max_epochs(config)
+    warmup_steps = int(config.algo_kwargs.get("warmup_steps", 0))
+    learning_rate_schedule = config.algo_kwargs.get("learning_rate_schedule")
 
     checkpoint_path: Path | None = None
     metrics: MetricDict = {}
 
     try:
         obs_space, action_space = _infer_env_spaces(config)
-        dataset = _build_offline_dataset(config)
+        dataset = _build_offline_dataset(config, action_space=action_space)
         obs_dim = int(obs_space.shape[0])
         action_dim = int(action_space.shape[0])
 
@@ -68,9 +84,24 @@ def train_td3_bc(
             algorithm.load_state_dict(checkpoint_state.algorithm_state)
 
         global_step = int(checkpoint_state.trainer_state.get("global_step", 0)) if checkpoint_state is not None else 0
-        update_count = 0
+        epoch = int(checkpoint_state.trainer_state.get("epoch", global_step)) if checkpoint_state is not None else 0
+        update_count = (
+            int(checkpoint_state.trainer_state.get("update_count", global_step))
+            if checkpoint_state is not None
+            else 0
+        )
         latest_update_metrics: MetricDict = {}
         trainer_state.global_step = global_step
+        trainer_state.epoch = epoch
+        trainer_state.update_count = update_count
+        initial_stop_reason = stop_reason_for_training_limits(
+            epoch=epoch,
+            update_count=update_count,
+            max_epochs=max_epochs,
+            max_updates=max_updates,
+        )
+        if initial_stop_reason is not None:
+            trainer_state.request_stop(initial_stop_reason)
         callback_list.on_train_start(trainer_state)
         callback_list.on_collect_end(
             trainer_state,
@@ -82,37 +113,73 @@ def train_td3_bc(
             ),
         )
 
-        while global_step < config.total_timesteps:
+        while global_step < config.total_timesteps and not trainer_state.should_stop:
+            lr_scale = resolve_schedule_value(
+                learning_rate_schedule,
+                step=update_count,
+                total_steps=effective_total_updates,
+                warmup_steps=warmup_steps,
+            )
+            current_learning_rate = apply_learning_rate_scale(algorithm, scale=lr_scale)
             result = algorithm.update(dataset.sample(batch_size, device=device), global_step=global_step)
             global_step += 1
+            epoch += 1
             update_count += result.num_gradient_steps
             latest_update_metrics = result.metrics
             trainer_state.global_step = global_step
+            trainer_state.epoch = epoch
+            trainer_state.update_count = update_count
             callback_list.on_update_end(trainer_state, result)
 
             metrics = {
                 **latest_update_metrics,
                 "global_step": float(global_step),
+                "epoch": float(epoch),
+                "update_count": float(update_count),
                 "gradient_steps": float(update_count),
                 "dataset_size": float(len(dataset)),
+                "lr_scale": float(lr_scale),
+                "learning_rate": float(current_learning_rate),
             }
+            if should_run_evaluation(
+                global_step=global_step,
+                total_timesteps=config.total_timesteps,
+                eval_interval=eval_interval,
+            ):
+                eval_metrics = _evaluate_td3_policy(
+                    model,
+                    config,
+                    device=device,
+                    num_episodes=config.eval_episodes,
+                )
+                metrics = {**metrics, **eval_metrics}
+                logger.log_metrics(metrics, step=global_step)
+                callback_list.on_eval_end(trainer_state, metrics)
+                if trainer_state.should_stop:
+                    break
 
-        eval_metrics = _evaluate_td3_policy(
-            model,
-            config,
-            device=device,
-            num_episodes=config.eval_episodes,
-        )
-        metrics = {**metrics, **eval_metrics}
-        logger.log_metrics(metrics, step=global_step)
-        callback_list.on_eval_end(trainer_state, eval_metrics)
+            stop_reason = stop_reason_for_training_limits(
+                epoch=epoch,
+                update_count=update_count,
+                max_epochs=max_epochs,
+                max_updates=max_updates,
+            )
+            if stop_reason is not None:
+                trainer_state.request_stop(stop_reason)
+                break
 
         checkpoint_path = save_training_checkpoint(
             run_context=run_context,
             config=config,
             algorithm_state=algorithm.state_dict(),
             buffer_state=None,
-            trainer_state={"global_step": global_step},
+            trainer_state={
+                "global_step": global_step,
+                "epoch": epoch,
+                "update_count": update_count,
+                "should_stop": trainer_state.should_stop,
+                "stop_reason": trainer_state.stop_reason,
+            },
             metrics=metrics,
         )
     finally:

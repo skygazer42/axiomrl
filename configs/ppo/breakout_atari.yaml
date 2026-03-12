@@ -1,0 +1,35 @@
+algo: ppo
+env_id: ALE/Breakout-v5
+seed: 7
+total_timesteps: 1000000
+output_dir: runs
+device: auto
+num_envs: 8
+eval_episodes: 5
+tags:
+  - atari
+algo_kwargs:
+  num_steps: 128
+  update_epochs: 4
+  minibatch_size: 256
+  learning_rate: 0.00025
+  clip_coef: 0.1
+  ent_coef: 0.01
+  vf_coef: 0.5
+  gamma: 0.99
+  gae_lambda: 0.95
+  head_hidden_sizes: [512]
+  features_dim: 512
+env_kwargs:
+  frameskip: 1
+  repeat_action_probability: 0.0
+  full_action_space: false
+  wrappers:
+    atari:
+      screen_size: 84
+      frame_skip: 4
+      noop_max: 30
+      grayscale_obs: true
+      frame_stack: 4
+      clip_reward: true
+      channel_first: true

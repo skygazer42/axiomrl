@@ -49,3 +49,12 @@ class CallbackList:
     def on_train_end(self, trainer: object, result: TrainResult) -> None:
         for callback in self.callbacks:
             callback.on_train_end(trainer, result)
+
+
+def merge_callbacks(*callback_groups: Sequence[Callback] | None) -> tuple[Callback, ...]:
+    merged: list[Callback] = []
+    for callback_group in callback_groups:
+        if callback_group is None:
+            continue
+        merged.extend(callback_group)
+    return tuple(merged)

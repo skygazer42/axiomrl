@@ -1,0 +1,23 @@
+algo: crr
+env_id: Pendulum-v1
+seed: 7
+total_timesteps: 32
+output_dir: runs
+device: auto
+num_envs: 1
+eval_episodes: 5
+algo_kwargs:
+  dataset_kind: random
+  dataset_size: 2048
+  dataset_seed: 17
+  batch_size: 256
+  hidden_sizes: [256, 256]
+  learning_rate: 0.0003
+  gamma: 0.99
+  tau: 0.005
+  beta: 1.0
+  n_action_samples: 4
+  max_weight: 20.0
+  advantage_type: mean
+  weight_type: exp
+  eval_interval: 8

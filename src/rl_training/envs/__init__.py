@@ -1,3 +1,57 @@
-from rl_training.envs.factory import make_env, make_vector_env
+from rl_training.envs.factory import build_env, make_env, make_vector_env
+from rl_training.envs.goals import (
+    ACHIEVED_GOAL_KEY,
+    DESIRED_GOAL_KEY,
+    GOAL_OBSERVATION_KEY,
+    POINT_GOAL_ENV_ID,
+    GoalSpaceSpec,
+    PointGoal1DEnv,
+    flatten_goal_observation,
+    goal_env_compute_done,
+    goal_env_compute_reward,
+    infer_goal_space_spec,
+    is_goal_observation_space,
+    register_builtin_goal_envs,
+    split_goal_observation,
+)
+from rl_training.envs.pixels import PixelObservationConfig, apply_pixel_wrappers, resolve_pixel_wrapper_config
+from rl_training.envs.rewards import (
+    RewardClipWrapper,
+    RewardSignWrapper,
+    RewardScaleWrapper,
+    RewardShiftWrapper,
+    RewardTransformConfig,
+    apply_reward_wrappers,
+    resolve_reward_preset,
+    resolve_reward_wrapper_config,
+)
 
-__all__ = ["make_env", "make_vector_env"]
+__all__ = [
+    "RewardClipWrapper",
+    "RewardSignWrapper",
+    "RewardScaleWrapper",
+    "RewardShiftWrapper",
+    "RewardTransformConfig",
+    "PixelObservationConfig",
+    "ACHIEVED_GOAL_KEY",
+    "DESIRED_GOAL_KEY",
+    "GOAL_OBSERVATION_KEY",
+    "GoalSpaceSpec",
+    "POINT_GOAL_ENV_ID",
+    "PointGoal1DEnv",
+    "apply_pixel_wrappers",
+    "apply_reward_wrappers",
+    "build_env",
+    "flatten_goal_observation",
+    "goal_env_compute_done",
+    "goal_env_compute_reward",
+    "infer_goal_space_spec",
+    "is_goal_observation_space",
+    "make_env",
+    "make_vector_env",
+    "register_builtin_goal_envs",
+    "resolve_reward_preset",
+    "resolve_pixel_wrapper_config",
+    "resolve_reward_wrapper_config",
+    "split_goal_observation",
+]

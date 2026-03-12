@@ -10,6 +10,7 @@ from torch.distributions import Normal
 
 LOG_STD_MIN = -5.0
 LOG_STD_MAX = 2.0
+ACTION_EPS = 1e-6
 
 
 @dataclass(slots=True)
@@ -89,6 +90,15 @@ class MLPSACModel(nn.Module):
             obs_tensor = obs_tensor.unsqueeze(0)
         return obs_tensor
 
+    def _prepare_actions(self, actions: object, *, device: torch.device) -> torch.Tensor:
+        action_tensor = torch.as_tensor(actions, dtype=torch.float32, device=device)
+        if action_tensor.ndim == 1:
+            if self.action_dim == 1:
+                action_tensor = action_tensor.unsqueeze(-1)
+            else:
+                action_tensor = action_tensor.unsqueeze(0)
+        return action_tensor
+
     def _actor_stats(self, obs: object) -> tuple[torch.Tensor, torch.Tensor]:
         obs_tensor = self._prepare_obs(obs)
         features = self.actor_backbone(obs_tensor)
@@ -104,7 +114,7 @@ class MLPSACModel(nn.Module):
         actions = torch.tanh(pre_tanh_actions)
 
         logprobs = distribution.log_prob(pre_tanh_actions)
-        logprobs = logprobs - torch.log(1.0 - actions.pow(2) + 1e-6)
+        logprobs = logprobs - torch.log(1.0 - actions.pow(2) + ACTION_EPS)
         logprobs = logprobs.sum(dim=-1)
 
         return SACSample(
@@ -113,10 +123,18 @@ class MLPSACModel(nn.Module):
             pre_tanh_actions=pre_tanh_actions,
         )
 
+    def action_logprobs(self, obs: object, actions: object) -> torch.Tensor:
+        mean, log_std = self._actor_stats(obs)
+        action_tensor = self._prepare_actions(actions, device=mean.device)
+        clipped_actions = action_tensor.clamp(-1.0 + ACTION_EPS, 1.0 - ACTION_EPS)
+        pre_tanh_actions = 0.5 * torch.log((1.0 + clipped_actions) / (1.0 - clipped_actions))
+        distribution = Normal(mean, log_std.exp())
+        logprobs = distribution.log_prob(pre_tanh_actions)
+        logprobs = logprobs - torch.log(1.0 - clipped_actions.pow(2) + ACTION_EPS)
+        return logprobs.sum(dim=-1)
+
     def q_values(self, obs: object, actions: object) -> tuple[torch.Tensor, torch.Tensor]:
         obs_tensor = self._prepare_obs(obs)
-        action_tensor = torch.as_tensor(actions, dtype=torch.float32, device=obs_tensor.device)
-        if action_tensor.ndim == 1:
-            action_tensor = action_tensor.unsqueeze(-1)
+        action_tensor = self._prepare_actions(actions, device=obs_tensor.device)
         inputs = torch.cat([obs_tensor, action_tensor], dim=-1)
         return self.q1(inputs).squeeze(-1), self.q2(inputs).squeeze(-1)

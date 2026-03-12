@@ -1,0 +1,21 @@
+algo: bear
+env_id: Pendulum-v1
+seed: 7
+total_timesteps: 20000
+output_dir: runs/bear-pendulum
+eval_episodes: 5
+algo_kwargs:
+  dataset_kind: random
+  dataset_size: 10000
+  dataset_seed: 31
+  batch_size: 256
+  hidden_sizes: [256, 256]
+  latent_dim: 2
+  learning_rate: 0.0003
+  gamma: 0.99
+  tau: 0.005
+  behavior_kl_weight: 0.5
+  mmd_sigma: 20.0
+  mmd_alpha: 10.0
+  num_mmd_action_samples: 10
+  eval_interval: 1000

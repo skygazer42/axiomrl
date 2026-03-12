@@ -9,12 +9,13 @@ import torch
 
 from rl_training.algorithms.a2c import A2C
 from rl_training.data.rollout_buffer import RolloutBuffer
-from rl_training.envs.factory import make_vector_env
+from rl_training.envs.factory import build_env, make_vector_env
 from rl_training.experiment.checkpointing import CheckpointState
 from rl_training.experiment.config import TrainConfig
 from rl_training.models.mlp_actor_critic import MLPActorCritic
-from rl_training.runtime.callbacks import Callback, CallbackList
+from rl_training.runtime.callbacks import Callback, CallbackList, merge_callbacks
 from rl_training.runtime.collector import CollectResult
+from rl_training.runtime.controls import build_control_callbacks
 from rl_training.runtime.run_utils import create_training_run, resolve_device, save_training_checkpoint
 from rl_training.runtime.trainer import TrainResult, TrainerState
 from rl_training.runtime.types import MetricDict
@@ -41,8 +42,7 @@ def _evaluate_policy(
     device: torch.device,
     num_episodes: int,
 ) -> MetricDict:
-    env = gym.make(config.env_id, **config.env_kwargs)
-    env = gym.wrappers.RecordEpisodeStatistics(env)
+    env = build_env(config, 0, evaluation=True)
     returns: list[float] = []
 
     try:
@@ -81,7 +81,7 @@ def train_a2c(
     run_artifacts = create_training_run(config, run_suffix=run_suffix)
     run_context = run_artifacts.run_context
     logger = run_artifacts.logger
-    callback_list = CallbackList(callbacks)
+    callback_list = CallbackList(merge_callbacks(build_control_callbacks(config), callbacks))
     trainer_state = TrainerState(algorithm="a2c", run_dir=run_context.run_dir)
 
     num_steps = int(config.algo_kwargs.get("num_steps", 128))
@@ -199,7 +199,9 @@ def train_a2c(
                 "gradient_steps": float(result.num_gradient_steps),
             }
             logger.log_metrics(metrics, step=global_step)
-            callback_list.on_eval_end(trainer_state, eval_metrics)
+            callback_list.on_eval_end(trainer_state, metrics)
+            if trainer_state.should_stop:
+                break
             update_index += 1
 
         checkpoint_path = save_training_checkpoint(
@@ -207,7 +209,11 @@ def train_a2c(
             config=config,
             algorithm_state=algorithm.state_dict(),
             buffer_state=None,
-            trainer_state={"global_step": global_step},
+            trainer_state={
+                "global_step": global_step,
+                "should_stop": trainer_state.should_stop,
+                "stop_reason": trainer_state.stop_reason,
+            },
             metrics=metrics,
         )
     finally:

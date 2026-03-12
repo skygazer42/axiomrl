@@ -5,6 +5,8 @@ from pathlib import Path
 from collections.abc import Sequence
 from typing import Any
 
+import numpy as np
+
 from rl_training.experiment.checkpointing import CheckpointState, load_checkpoint
 from rl_training.experiment.config import TrainConfig
 from rl_training.experiment.registry import get_algorithm_spec

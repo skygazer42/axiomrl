@@ -4,24 +4,45 @@ from collections.abc import Callable
 
 import gymnasium as gym
 
+from rl_training.envs.atari import apply_atari_wrappers, resolve_atari_wrapper_config, split_env_kwargs
+from rl_training.envs.goals import register_builtin_goal_envs
+from rl_training.envs.pixels import apply_pixel_wrappers, resolve_pixel_wrapper_config
+from rl_training.envs.rewards import apply_reward_wrappers, resolve_reward_wrapper_config
 from rl_training.experiment.config import TrainConfig
 
 
 EnvFactory = Callable[[], gym.Env]
 
 
-def make_env(config: TrainConfig, env_index: int) -> EnvFactory:
+def build_env(config: TrainConfig, env_index: int, *, evaluation: bool = False) -> gym.Env:
+    register_builtin_goal_envs()
+    env_kwargs, wrapper_kwargs = split_env_kwargs(config.env_kwargs)
+    env = gym.make(config.env_id, **env_kwargs)
+    env = apply_atari_wrappers(
+        env,
+        resolve_atari_wrapper_config(
+            env_id=config.env_id,
+            tags=config.tags,
+            wrapper_kwargs=wrapper_kwargs,
+            evaluation=evaluation,
+        ),
+    )
+    env = apply_pixel_wrappers(env, resolve_pixel_wrapper_config(wrapper_kwargs))
+    env = apply_reward_wrappers(env, resolve_reward_wrapper_config(wrapper_kwargs))
+    env = gym.wrappers.RecordEpisodeStatistics(env)
+    env.action_space.seed(config.seed + env_index)
+    if getattr(env, "observation_space", None) is not None:
+        env.observation_space.seed(config.seed + env_index)
+    return env
+
+
+def make_env(config: TrainConfig, env_index: int, *, evaluation: bool = False) -> EnvFactory:
     def thunk() -> gym.Env:
-        env = gym.make(config.env_id, **config.env_kwargs)
-        env = gym.wrappers.RecordEpisodeStatistics(env)
-        env.action_space.seed(config.seed + env_index)
-        if getattr(env, "observation_space", None) is not None:
-            env.observation_space.seed(config.seed + env_index)
-        return env
+        return build_env(config, env_index, evaluation=evaluation)
 
     return thunk
 
 
-def make_vector_env(config: TrainConfig) -> gym.vector.SyncVectorEnv:
-    env_fns = [make_env(config, env_index) for env_index in range(config.num_envs)]
+def make_vector_env(config: TrainConfig, *, evaluation: bool = False) -> gym.vector.SyncVectorEnv:
+    env_fns = [make_env(config, env_index, evaluation=evaluation) for env_index in range(config.num_envs)]
     return gym.vector.SyncVectorEnv(env_fns)
