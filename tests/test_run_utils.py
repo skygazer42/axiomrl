@@ -1,6 +1,7 @@
 from pathlib import Path
 from unittest.mock import patch
 
+import pytest
 from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
 
 from rl_training.experiment.checkpointing import load_checkpoint
@@ -67,7 +68,7 @@ def test_create_training_run_emits_tensorboard_event_file(tmp_path: Path) -> Non
     scalars = accumulator.Scalars("loss")
 
     assert scalars[-1].step == 7
-    assert scalars[-1].value == 1.25
+    assert scalars[-1].value == pytest.approx(1.25)
 
 
 def test_save_training_checkpoint_writes_loadable_checkpoint(tmp_path: Path) -> None:
@@ -98,7 +99,8 @@ def test_save_training_checkpoint_writes_loadable_checkpoint(tmp_path: Path) -> 
     assert loaded.algorithm_state == {"model": {"weights": [1, 2, 3]}}
     assert loaded.buffer_state == {"size": 8}
     assert loaded.trainer_state == {"global_step": 64}
-    assert loaded.metadata["metrics"] == {"loss": 0.5}
+    assert loaded.metadata["metrics"].keys() == {"loss"}
+    assert loaded.metadata["metrics"]["loss"] == pytest.approx(0.5)
 
 
 def test_resolve_device_auto_falls_back_to_cpu_when_cuda_probe_fails() -> None:

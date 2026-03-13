@@ -8,8 +8,8 @@ packages while staying modular, readable, and practical to extend.
 The package is intended to provide a stable core API for multiple algorithm
 families, including on-policy and off-policy methods. The long-term direction
 includes support for algorithms such as PPO, DQN, Double DQN, Dueling DQN,
-TRPO, Noisy DQN, Prioritized DQN, Rainbow DQN, C51-DQN, N-Step DQN, QR-DQN,
-DDPG, SAC, Discrete SAC, CrossQ, DrQ-v2, TD3, BC, AWR, AWAC, MARWIL, BCQ,
+Expected SARSA, Mellowmax DQN, Soft DQN, Advantage Learning DQN, Munchausen DQN, CQL-DQN, TRPO, PPG, Noisy DQN, Prioritized DQN, Rainbow DQN, C51-DQN, N-Step DQN, QR-DQN,
+DDPG, NAF, DRQN, R2D2, D4PG, ARS, OpenAI ES, SAC, Discrete SAC, CrossQ, DrQ, CURL, DrQ-v2, TD3, BC, AWR, AWAC, MARWIL, BCQ,
 BEAR, CRR, IQL, CQL, Cal-QL, EDAC, RLPD, XQL, ReBRAC, and related training patterns,
 together with reusable abstractions for policies, rollout buffers, replay buffers, collectors,
 trainers, evaluators, and experiment management.
@@ -29,8 +29,12 @@ state includes multiple discrete and continuous-control algorithms, Atari image
 pipelines, a `contrib` layer for recurrent PPO, a `zoo/` layer for packaged
 presets, and the first offline / goal-conditioned expansion wave through
 `BC`, `AWR`, `AWAC`, `MARWIL`, `BCQ`, `BEAR`, `CRR`, `Cal-QL`, `EDAC`,
-`RLPD`, `XQL`, `ReBRAC`, and `HER`, plus the next on-policy expansion through `TRPO`, and the first pixel-based
-continuous-control expansion through `DrQ-v2`.
+`RLPD`, `XQL`, `ReBRAC`, and `HER`, plus the narrow offline sequence-model lane through `Decision Transformer`, the next on-policy expansion through `TRPO` and narrow `PPG`, and the first pixel-based
+continuous-control expansion through narrow `DrQ`, `CURL`, and `DrQ-v2` lanes, together with the historical
+continuous-control gap closures `NAF`, a narrow recurrent discrete-control `DRQN`
+baseline, a narrow non-distributed `R2D2` value-based recurrent replay follow-on,
+a narrow non-distributed `D4PG` baseline, narrow synchronous `ARS` and `OpenAI ES` search baselines, a narrow `MOPO` model-based offline RL lane,
+the first narrow online ensemble-model MPC planning lane through `PETS`, and a narrow synchronous `IMPALA` discrete actor-critic lane.
 
 The next milestone is no longer “make it look like a package”. It is to make
 the package behave like a credible mainstream RL toolkit under broader training
@@ -53,16 +57,19 @@ expansion path is aimed at a more mainstream package shape:
 
 - a stable `core + contrib + zoo` package layout
 - Atari-ready environment wrappers and image observations
-- vector-observation `TRPO` alongside CNN-backed `PPO` and `DQN` training paths
+- vector-observation `TRPO` and `PPG` alongside CNN-backed `PPO` and `DQN` training paths
+- a narrow synchronous `IMPALA` lane for vector-observation discrete control
 - a discrete actor-critic lane through `Discrete SAC`
 - a lower-tuning continuous-control lane through `CrossQ`
-- a pixel-observation continuous-control lane through `DrQ-v2`
+- historical baselines through `NAF`, a narrow `DRQN`, a narrow `R2D2`, a non-distributed `D4PG`, and synchronous `ARS` / `OpenAI ES`
+- a narrow online model-predictive control lane through `PETS`
+- pixel-observation continuous-control lanes through `DrQ`, `CURL`, and `DrQ-v2`
 - a `contrib` layer for algorithms such as recurrent PPO
 - a `zoo/` layer for presets, benchmark manifests, and run recipes
 - offline dataset loading and reward transforms that work across trainers
 - goal-conditioned replay relabeling through `HER`
 - canonical offline RL baselines including `AWR`, `MARWIL`, `BCQ`, `BEAR`, `CRR`,
-  `Cal-QL`, `EDAC`, `RLPD`, `XQL`, and `ReBRAC`
+  `Cal-QL`, `EDAC`, `RLPD`, `XQL`, `ReBRAC`, and a narrow `MOPO`
 
 ## Install
 
@@ -94,6 +101,26 @@ surface:
 
 ```bash
 rl-training train --config configs/ppo/cartpole.yaml
+rl-training train --config configs/expected_sarsa/cartpole.yaml
+rl-training train --config configs/expected_double_dqn/cartpole.yaml
+rl-training train --config configs/boltzmann_dqn/cartpole.yaml
+rl-training train --config configs/boltzmann_double_dqn/cartpole.yaml
+rl-training train --config configs/mellowmax_dqn/cartpole.yaml
+rl-training train --config configs/soft_dqn/cartpole.yaml
+rl-training train --config configs/soft_double_dqn/cartpole.yaml
+rl-training train --config configs/advantage_learning_dqn/cartpole.yaml
+rl-training train --config configs/persistent_advantage_learning_dqn/cartpole.yaml
+rl-training train --config configs/munchausen_dqn/cartpole.yaml
+rl-training train --config configs/munchausen_double_dqn/cartpole.yaml
+rl-training train --config configs/cql_dqn/cartpole.yaml
+rl-training train --config configs/cql_double_dqn/cartpole.yaml
+rl-training train --config configs/clipped_double_dqn/cartpole.yaml
+rl-training train --config configs/hysteretic_dqn/cartpole.yaml
+rl-training train --config configs/ars/pendulum.yaml
+rl-training train --config configs/openai_es/pendulum.yaml
+rl-training train --config configs/pets/pendulum.yaml
+rl-training train --config configs/naf/pendulum.yaml
+rl-training train --config configs/d4pg/pendulum.yaml
 rl-training train --config configs/crossq/pendulum.yaml
 rl-training train --config configs/crr/pendulum.yaml
 rl-training train --config configs/awr/pendulum.yaml
@@ -103,6 +130,13 @@ rl-training train --config configs/edac/pendulum.yaml
 rl-training train --config configs/rlpd/pendulum.yaml
 rl-training train --config configs/xql/pendulum.yaml
 rl-training train --config configs/rebrac/pendulum.yaml
+rl-training train --config configs/decision_transformer/pendulum.yaml
+rl-training train --config configs/mopo/pendulum.yaml
+rl-training train --config configs/impala/cartpole.yaml
+rl-training train --config configs/appo/cartpole.yaml
+rl-training train --config configs/ppg/cartpole.yaml
+rl-training train --config configs/drq/pendulum_pixels.yaml
+rl-training train --config configs/curl/pendulum_pixels.yaml
 rl-training train --config configs/drqv2/pendulum_pixels.yaml
 rl-training train --config configs/discrete_sac/cartpole.yaml
 rl-training train --config configs/trpo/cartpole.yaml
@@ -133,6 +167,25 @@ After installing the package, the CLI entrypoint is:
 
 ```bash
 rl-training train --config configs/ppo/cartpole.yaml
+rl-training train --config configs/expected_sarsa/cartpole.yaml
+rl-training train --config configs/expected_double_dqn/cartpole.yaml
+rl-training train --config configs/boltzmann_dqn/cartpole.yaml
+rl-training train --config configs/boltzmann_double_dqn/cartpole.yaml
+rl-training train --config configs/mellowmax_dqn/cartpole.yaml
+rl-training train --config configs/soft_dqn/cartpole.yaml
+rl-training train --config configs/soft_double_dqn/cartpole.yaml
+rl-training train --config configs/advantage_learning_dqn/cartpole.yaml
+rl-training train --config configs/persistent_advantage_learning_dqn/cartpole.yaml
+rl-training train --config configs/munchausen_dqn/cartpole.yaml
+rl-training train --config configs/munchausen_double_dqn/cartpole.yaml
+rl-training train --config configs/cql_dqn/cartpole.yaml
+rl-training train --config configs/cql_double_dqn/cartpole.yaml
+rl-training train --config configs/clipped_double_dqn/cartpole.yaml
+rl-training train --config configs/hysteretic_dqn/cartpole.yaml
+rl-training train --config configs/ars/pendulum.yaml
+rl-training train --config configs/openai_es/pendulum.yaml
+rl-training train --config configs/naf/pendulum.yaml
+rl-training train --config configs/d4pg/pendulum.yaml
 rl-training train --config configs/crossq/pendulum.yaml
 rl-training train --config configs/crr/pendulum.yaml
 rl-training train --config configs/awr/pendulum.yaml
@@ -142,6 +195,13 @@ rl-training train --config configs/edac/pendulum.yaml
 rl-training train --config configs/rlpd/pendulum.yaml
 rl-training train --config configs/xql/pendulum.yaml
 rl-training train --config configs/rebrac/pendulum.yaml
+rl-training train --config configs/decision_transformer/pendulum.yaml
+rl-training train --config configs/mopo/pendulum.yaml
+rl-training train --config configs/impala/cartpole.yaml
+rl-training train --config configs/appo/cartpole.yaml
+rl-training train --config configs/ppg/cartpole.yaml
+rl-training train --config configs/drq/pendulum_pixels.yaml
+rl-training train --config configs/curl/pendulum_pixels.yaml
 rl-training train --config configs/drqv2/pendulum_pixels.yaml
 rl-training train --config configs/discrete_sac/cartpole.yaml
 rl-training train --config configs/trpo/cartpole.yaml
@@ -204,14 +264,14 @@ python -m rl_training zoo --format commands
 
 ## Pixel Control
 
-`DrQ-v2` uses generic pixel wrappers rather than an algorithm-specific
+`DrQ`, `CURL`, and `DrQ-v2` use generic pixel wrappers rather than an algorithm-specific
 environment fork. For classic Gymnasium control tasks, keep render settings in
 `env_kwargs` and pixel preprocessing in `env_kwargs.wrappers.pixels`.
 
 Example starter config:
 
 ```yaml
-algo: drqv2
+algo: drq
 env_id: Pendulum-v1
 seed: 7
 total_timesteps: 5000
@@ -226,11 +286,9 @@ algo_kwargs:
   critic_hidden_sizes: [256, 256]
   learning_rate: 0.0001
   gamma: 0.99
+  alpha: 0.1
   tau: 0.01
-  policy_delay: 2
   augmentation_pad: 4
-  exploration_noise: 0.1
-  exploration_noise_clip: 0.3
 env_kwargs:
   render_mode: rgb_array
   wrappers:
@@ -240,8 +298,23 @@ env_kwargs:
       channel_first: true
 ```
 
-The packaged starter preset for this path is
-`configs/drqv2/pendulum_pixels.yaml`.
+`DrQ` is the current stochastic SAC-style pixel-control baseline in this
+package; `CURL` is the narrow representation-learning follow-on that adds an
+auxiliary contrastive loss on top of the same pixel-control lane; `DrQ-v2`
+remains the deterministic TD3-style follow-on already on the surface. The
+package also includes a narrow offline sequence-model lane through
+`Decision Transformer`. The packaged starter presets for these paths are
+`configs/decision_transformer/pendulum.yaml`, `configs/drq/pendulum_pixels.yaml`,
+`configs/curl/pendulum_pixels.yaml`, and `configs/drqv2/pendulum_pixels.yaml`.
+
+For discrete actor-critic control with off-policy corrections, the package now
+ships both `IMPALA` and a deliberately narrow synchronous `APPO v1`. The
+starter presets for that lane are `configs/impala/cartpole.yaml` and
+`configs/appo/cartpole.yaml`.
+
+For online model-based control, `PETS` now provides a deliberately narrow
+ensemble-dynamics plus CEM planning lane for flat continuous-control tasks. The
+starter preset for that path is `configs/pets/pendulum.yaml`.
 
 ## Offline Data
 
@@ -356,15 +429,27 @@ algo_kwargs:
   dataset_mix_seed: 17
 ```
 
-Packaged starter configs now include `configs/bc/pendulum.yaml`,
+Packaged starter configs now include `configs/expected_sarsa/cartpole.yaml`,
+`configs/expected_double_dqn/cartpole.yaml`,
+`configs/boltzmann_dqn/cartpole.yaml`, `configs/boltzmann_double_dqn/cartpole.yaml`,
+`configs/mellowmax_dqn/cartpole.yaml`, `configs/soft_dqn/cartpole.yaml`,
+`configs/soft_double_dqn/cartpole.yaml`,
+`configs/advantage_learning_dqn/cartpole.yaml`,
+`configs/persistent_advantage_learning_dqn/cartpole.yaml`,
+`configs/munchausen_dqn/cartpole.yaml`, `configs/munchausen_double_dqn/cartpole.yaml`,
+`configs/cql_dqn/cartpole.yaml`, `configs/cql_double_dqn/cartpole.yaml`,
+`configs/clipped_double_dqn/cartpole.yaml`,
+`configs/hysteretic_dqn/cartpole.yaml`, `configs/ars/pendulum.yaml`, `configs/openai_es/pendulum.yaml`, `configs/ppg/cartpole.yaml`, `configs/bc/pendulum.yaml`,
 `configs/awr/pendulum.yaml`, `configs/awac/pendulum.yaml`,
 `configs/marwil/pendulum.yaml`,
 `configs/bcq/pendulum.yaml`,
 `configs/bear/pendulum.yaml`, `configs/cal_ql/pendulum.yaml`,
 `configs/crr/pendulum.yaml`, `configs/edac/pendulum.yaml`, `configs/rlpd/pendulum.yaml`,
 `configs/xql/pendulum.yaml`,
-`configs/rebrac/pendulum.yaml`, `configs/her/point_goal.yaml`, and
-`configs/drqv2/pendulum_pixels.yaml`.
+`configs/rebrac/pendulum.yaml`, `configs/decision_transformer/pendulum.yaml`,
+`configs/impala/cartpole.yaml`, `configs/appo/cartpole.yaml`,
+`configs/her/point_goal.yaml`, and `configs/drq/pendulum_pixels.yaml`,
+`configs/curl/pendulum_pixels.yaml`, `configs/drqv2/pendulum_pixels.yaml`.
 
 The first packaged `CRR` path is intentionally narrow: vector observations,
 continuous `Box` actions, and offline datasets only. Pixel observations,
@@ -512,8 +597,9 @@ algo_kwargs:
 ```
 
 The current first-class early-stopping path is wired into `A2C`, `PPO`,
-`TRPO`, `Discrete SAC`, `CrossQ`, `DrQ-v2`,
-`RecurrentPPO`, `DQN`, `DDPG`, `SAC`, `TD3`, `REDQ`, `TQC`, `BC`, `AWR`, `AWAC`, `MARWIL`,
+`PPG`,
+`TRPO`, `Discrete SAC`, `CrossQ`, `DrQ`, `DrQ-v2`,
+`RecurrentPPO`, `DQN`, `DDPG`, `NAF`, `DRQN`, `R2D2`, `D4PG`, `SAC`, `TD3`, `REDQ`, `TQC`, `BC`, `AWR`, `AWAC`, `MARWIL`,
 `BCQ`, `BEAR`, `CRR`, `Cal-QL`, `EDAC`, `RLPD`, `XQL`, `ReBRAC`, `HER`, `IQL`, `CQL`, and `TD3+BC`.
 
 Offline trainers also support simple update-budget and learning-rate schedule

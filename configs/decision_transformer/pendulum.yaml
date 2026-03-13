@@ -1,0 +1,22 @@
+algo: decision_transformer
+env_id: Pendulum-v1
+seed: 7
+total_timesteps: 5000
+output_dir: runs
+device: auto
+num_envs: 1
+eval_episodes: 5
+algo_kwargs:
+  dataset_kind: random
+  dataset_size: 10000
+  dataset_seed: 7
+  batch_size: 64
+  context_length: 20
+  hidden_size: 128
+  num_layers: 3
+  num_heads: 4
+  dropout: 0.1
+  learning_rate: 0.0001
+  gamma: 0.99
+  target_return: 0.0
+  max_timestep: 1000

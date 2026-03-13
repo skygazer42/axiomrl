@@ -63,6 +63,120 @@ def _evaluate_ddpg_policy(
     }
 
 
+def _store_vector_transitions(
+    replay_buffer: ReplayBuffer,
+    *,
+    obs: np.ndarray,
+    normalized_actions: torch.Tensor,
+    rewards: np.ndarray,
+    next_obs: np.ndarray,
+    dones: np.ndarray,
+    num_envs: int,
+) -> None:
+    for env_index in range(num_envs):
+        replay_buffer.add(
+            obs=obs[env_index],
+            actions=normalized_actions[env_index],
+            rewards=float(rewards[env_index]),
+            next_obs=next_obs[env_index],
+            dones=float(dones[env_index]),
+        )
+
+
+def _emit_collect_event(
+    callback_list: CallbackList,
+    trainer_state: TrainerState,
+    *,
+    global_step: int,
+    num_envs: int,
+    dones: np.ndarray,
+    replay_buffer: ReplayBuffer,
+    obs: np.ndarray,
+) -> None:
+    callback_list.on_collect_end(
+        trainer_state,
+        CollectResult(
+            num_env_steps=num_envs,
+            num_episodes=int(np.sum(dones)),
+            metrics={"global_step": float(global_step), "buffer_size": float(len(replay_buffer))},
+            last_obs=obs,
+        ),
+    )
+
+
+def _maybe_update_algorithm(
+    algorithm: DDPG,
+    replay_buffer: ReplayBuffer,
+    callback_list: CallbackList,
+    trainer_state: TrainerState,
+    *,
+    batch_size: int,
+    learning_starts: int,
+    train_frequency: int,
+    global_step: int,
+    latest_update_metrics: MetricDict,
+    update_count: int,
+) -> tuple[MetricDict, int]:
+    if len(replay_buffer) < max(batch_size, learning_starts):
+        return latest_update_metrics, update_count
+    if global_step % train_frequency != 0:
+        return latest_update_metrics, update_count
+
+    result = algorithm.update(replay_buffer.sample(batch_size), global_step=global_step)
+    callback_list.on_update_end(trainer_state, result)
+    return result.metrics, update_count + result.num_gradient_steps
+
+
+def _build_metrics(
+    latest_update_metrics: MetricDict,
+    *,
+    global_step: int,
+    replay_buffer: ReplayBuffer,
+    update_count: int,
+) -> MetricDict:
+    return {
+        **latest_update_metrics,
+        "global_step": float(global_step),
+        "buffer_size": float(len(replay_buffer)),
+        "gradient_steps": float(update_count),
+    }
+
+
+def _maybe_run_evaluation(
+    algorithm: DDPG,
+    model: MLPDDPGModel,
+    callback_list: CallbackList,
+    trainer_state: TrainerState,
+    config: TrainConfig,
+    logger: object,
+    *,
+    device: torch.device,
+    global_step: int,
+    eval_interval: int,
+    metrics: MetricDict,
+) -> tuple[MetricDict, bool]:
+    if not should_run_evaluation(
+        global_step=global_step,
+        total_timesteps=config.total_timesteps,
+        eval_interval=eval_interval,
+    ):
+        return metrics, False
+
+    algorithm.set_eval_mode()
+    eval_metrics = _evaluate_ddpg_policy(
+        model,
+        config,
+        device=device,
+        num_episodes=config.eval_episodes,
+    )
+    algorithm.set_train_mode()
+
+    merged_metrics = {**metrics, **eval_metrics}
+    logger.log_metrics(merged_metrics, step=global_step)
+    callback_list.on_eval_end(trainer_state, merged_metrics)
+    return merged_metrics, trainer_state.should_stop
+
+
 def train_ddpg(
     config: TrainConfig,
     *,
@@ -141,58 +255,62 @@ def train_ddpg(
             next_obs, rewards, terminated, truncated, _ = envs.step(env_actions.cpu().numpy())
             dones = np.logical_or(terminated, truncated).astype(np.float32)
 
-            for env_index in range(config.num_envs):
-                replay_buffer.add(
-                    obs=obs[env_index],
-                    actions=normalized_actions[env_index],
-                    rewards=float(rewards[env_index]),
-                    next_obs=next_obs[env_index],
-                    dones=float(dones[env_index]),
-                )
+            _store_vector_transitions(
+                replay_buffer,
+                obs=obs,
+                normalized_actions=normalized_actions,
+                rewards=rewards,
+                next_obs=next_obs,
+                dones=dones,
+                num_envs=config.num_envs,
+            )
 
             obs = next_obs
             global_step += config.num_envs
             trainer_state.global_step = global_step
-            callback_list.on_collect_end(
+            _emit_collect_event(
+                callback_list,
                 trainer_state,
-                CollectResult(
-                    num_env_steps=config.num_envs,
-                    num_episodes=int(np.sum(dones)),
-                    metrics={"global_step": float(global_step), "buffer_size": float(len(replay_buffer))},
-                    last_obs=obs,
-                ),
+                global_step=global_step,
+                num_envs=config.num_envs,
+                dones=dones,
+                replay_buffer=replay_buffer,
+                obs=obs,
             )
 
-            if len(replay_buffer) >= max(batch_size, learning_starts) and global_step % train_frequency == 0:
-                result = algorithm.update(replay_buffer.sample(batch_size), global_step=global_step)
-                latest_update_metrics = result.metrics
-                update_count += result.num_gradient_steps
-                callback_list.on_update_end(trainer_state, result)
-
-            metrics = {
-                **latest_update_metrics,
-                "global_step": float(global_step),
-                "buffer_size": float(len(replay_buffer)),
-                "gradient_steps": float(update_count),
-            }
-            if should_run_evaluation(
+            latest_update_metrics, update_count = _maybe_update_algorithm(
+                algorithm,
+                replay_buffer,
+                callback_list,
+                trainer_state,
+                batch_size=batch_size,
+                learning_starts=learning_starts,
+                train_frequency=train_frequency,
                 global_step=global_step,
-                total_timesteps=config.total_timesteps,
+                latest_update_metrics=latest_update_metrics,
+                update_count=update_count,
+            )
+
+            metrics = _build_metrics(
+                latest_update_metrics,
+                global_step=global_step,
+                replay_buffer=replay_buffer,
+                update_count=update_count,
+            )
+            metrics, should_stop = _maybe_run_evaluation(
+                algorithm,
+                model,
+                callback_list,
+                trainer_state,
+                config,
+                logger,
+                device=device,
+                global_step=global_step,
                 eval_interval=eval_interval,
-            ):
-                algorithm.set_eval_mode()
-                eval_metrics = _evaluate_ddpg_policy(
-                    model,
-                    config,
-                    device=device,
-                    num_episodes=config.eval_episodes,
-                )
-                algorithm.set_train_mode()
-                metrics = {**metrics, **eval_metrics}
-                logger.log_metrics(metrics, step=global_step)
-                callback_list.on_eval_end(trainer_state, metrics)
-                if trainer_state.should_stop:
-                    break
+                metrics=metrics,
+            )
+            if should_stop:
+                break
 
         checkpoint_path = save_training_checkpoint(
             run_context=run_context,

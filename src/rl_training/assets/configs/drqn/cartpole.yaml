@@ -1,0 +1,23 @@
+algo: drqn
+env_id: CartPole-v1
+seed: 111
+total_timesteps: 5000
+output_dir: runs
+device: auto
+num_envs: 2
+eval_episodes: 5
+algo_kwargs:
+  buffer_capacity: 10000
+  batch_size: 8
+  learning_starts: 32
+  train_frequency: 1
+  target_update_interval: 32
+  hidden_sizes: [128]
+  head_hidden_sizes: [128]
+  features_dim: 128
+  recurrent_hidden_size: 128
+  recurrent_num_layers: 1
+  sequence_length: 8
+  epsilon_start: 1.0
+  epsilon_end: 0.05
+  exploration_fraction: 0.3

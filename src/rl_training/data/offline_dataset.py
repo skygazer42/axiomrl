@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+import math
 from typing import Any
 
 import torch
+
+_FIELD_LENGTH_ERROR = "all fields must have the same length"
 
 
 def _to_1d_float_tensor(values: Any) -> torch.Tensor:
@@ -70,17 +73,17 @@ class TransitionDataset:
 
         size = int(obs_tensor.shape[0])
         if int(next_obs_tensor.shape[0]) != size:
-            raise ValueError("all fields must have the same length")
+            raise ValueError(_FIELD_LENGTH_ERROR)
         if int(actions_tensor.shape[0]) != size:
-            raise ValueError("all fields must have the same length")
+            raise ValueError(_FIELD_LENGTH_ERROR)
         if int(rewards_tensor.shape[0]) != size:
-            raise ValueError("all fields must have the same length")
+            raise ValueError(_FIELD_LENGTH_ERROR)
         if int(dones_tensor.shape[0]) != size:
-            raise ValueError("all fields must have the same length")
+            raise ValueError(_FIELD_LENGTH_ERROR)
         if next_actions_tensor is not None and int(next_actions_tensor.shape[0]) != size:
-            raise ValueError("all fields must have the same length")
+            raise ValueError(_FIELD_LENGTH_ERROR)
         if returns_to_go_tensor is not None and int(returns_to_go_tensor.shape[0]) != size:
-            raise ValueError("all fields must have the same length")
+            raise ValueError(_FIELD_LENGTH_ERROR)
 
         self._size = size
         self.obs = obs_tensor
@@ -156,10 +159,12 @@ class TransitionDataset:
         returns_to_go_gamma: float | None = None,
     ) -> TransitionDataset:
         rewards = self.rewards.clone()
-        if scale != 1.0:
-            rewards = rewards * float(scale)
-        if shift != 0.0:
-            rewards = rewards + float(shift)
+        scale_value = float(scale)
+        shift_value = float(shift)
+        if not math.isclose(scale_value, 1.0):
+            rewards = rewards * scale_value
+        if not math.isclose(shift_value, 0.0):
+            rewards = rewards + shift_value
         if clip_min is not None or clip_max is not None:
             lower = float("-inf") if clip_min is None else float(clip_min)
             upper = float("inf") if clip_max is None else float(clip_max)
@@ -174,8 +179,8 @@ class TransitionDataset:
             )
         elif (
             self.returns_to_go is not None
-            and scale == 1.0
-            and shift == 0.0
+            and math.isclose(scale_value, 1.0)
+            and math.isclose(shift_value, 0.0)
             and clip_min is None
             and clip_max is None
         ):

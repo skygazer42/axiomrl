@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from rl_training.cli import load_config, main
 from rl_training.experiment.config import TrainConfig
 from rl_training.runtime.dqn_trainer import train_dqn
@@ -87,6 +89,28 @@ def test_load_config_can_resolve_packaged_repo_config_outside_repo_root(monkeypa
     assert config.total_timesteps > 0
 
 
+def test_load_config_can_resolve_packaged_ars_config_outside_repo_root(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    config = load_config("configs/ars/pendulum.yaml")
+
+    assert config.algo == "ars"
+    assert config.env_id == "Pendulum-v1"
+    assert config.algo_kwargs["num_directions"] == 8
+    assert config.algo_kwargs["step_size"] == pytest.approx(0.02)
+
+
+def test_load_config_can_resolve_packaged_openai_es_config_outside_repo_root(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    config = load_config("configs/openai_es/pendulum.yaml")
+
+    assert config.algo == "openai_es"
+    assert config.env_id == "Pendulum-v1"
+    assert config.algo_kwargs["num_directions"] == 8
+    assert config.algo_kwargs["noise_std"] == pytest.approx(0.03)
+
+
 def test_load_config_can_resolve_packaged_drqv2_config_outside_repo_root(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.chdir(tmp_path)
 
@@ -96,6 +120,96 @@ def test_load_config_can_resolve_packaged_drqv2_config_outside_repo_root(monkeyp
     assert config.env_id == "Pendulum-v1"
     assert config.env_kwargs["render_mode"] == "rgb_array"
     assert config.env_kwargs["wrappers"]["pixels"]["frame_stack"] == 3
+
+
+def test_load_config_can_resolve_packaged_drq_config_outside_repo_root(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    config = load_config("configs/drq/pendulum_pixels.yaml")
+
+    assert config.algo == "drq"
+    assert config.env_id == "Pendulum-v1"
+    assert config.env_kwargs["render_mode"] == "rgb_array"
+    assert config.env_kwargs["wrappers"]["pixels"]["frame_stack"] == 3
+
+
+def test_load_config_can_resolve_packaged_curl_config_outside_repo_root(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    config = load_config("configs/curl/pendulum_pixels.yaml")
+
+    assert config.algo == "curl"
+    assert config.env_id == "Pendulum-v1"
+    assert config.env_kwargs["render_mode"] == "rgb_array"
+    assert config.algo_kwargs["projection_dim"] == 128
+
+
+def test_load_config_can_resolve_packaged_ppg_config_outside_repo_root(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    config = load_config("configs/ppg/cartpole.yaml")
+
+    assert config.algo == "ppg"
+    assert config.env_id == "CartPole-v1"
+    assert config.algo_kwargs["aux_frequency"] == 2
+    assert config.algo_kwargs["aux_buffer_rollouts"] == 4
+
+
+def test_load_config_can_resolve_packaged_decision_transformer_config_outside_repo_root(
+    monkeypatch, tmp_path: Path
+) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    config = load_config("configs/decision_transformer/pendulum.yaml")
+
+    assert config.algo == "decision_transformer"
+    assert config.env_id == "Pendulum-v1"
+    assert config.algo_kwargs["context_length"] == 20
+    assert config.algo_kwargs["num_layers"] == 3
+
+
+def test_load_config_can_resolve_packaged_impala_config_outside_repo_root(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    config = load_config("configs/impala/cartpole.yaml")
+
+    assert config.algo == "impala"
+    assert config.env_id == "CartPole-v1"
+    assert config.algo_kwargs["num_steps"] == 128
+    assert config.algo_kwargs["rho_clip"] == pytest.approx(1.0)
+
+
+def test_load_config_can_resolve_packaged_appo_config_outside_repo_root(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    config = load_config("configs/appo/cartpole.yaml")
+
+    assert config.algo == "appo"
+    assert config.env_id == "CartPole-v1"
+    assert config.algo_kwargs["num_steps"] == 128
+    assert config.algo_kwargs["clip_coef"] == pytest.approx(0.2)
+
+
+def test_load_config_can_resolve_packaged_mopo_config_outside_repo_root(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    config = load_config("configs/mopo/pendulum.yaml")
+
+    assert config.algo == "mopo"
+    assert config.env_id == "Pendulum-v1"
+    assert config.algo_kwargs["num_ensembles"] == 5
+    assert config.algo_kwargs["rollout_horizon"] == 3
+
+
+def test_load_config_can_resolve_packaged_pets_config_outside_repo_root(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    config = load_config("configs/pets/pendulum.yaml")
+
+    assert config.algo == "pets"
+    assert config.env_id == "Pendulum-v1"
+    assert config.algo_kwargs["num_ensembles"] == 5
+    assert config.algo_kwargs["planning_horizon"] == 5
 
 
 def test_load_config_can_resolve_packaged_crr_config_outside_repo_root(monkeypatch, tmp_path: Path) -> None:
@@ -116,8 +230,8 @@ def test_load_config_can_resolve_packaged_awr_config_outside_repo_root(monkeypat
 
     assert config.algo == "awr"
     assert config.env_id == "Pendulum-v1"
-    assert config.algo_kwargs["beta"] == 1.0
-    assert config.algo_kwargs["max_weight"] == 20.0
+    assert config.algo_kwargs["beta"] == pytest.approx(1.0)
+    assert config.algo_kwargs["max_weight"] == pytest.approx(20.0)
 
 
 def test_load_config_can_resolve_packaged_marwil_config_outside_repo_root(monkeypatch, tmp_path: Path) -> None:
@@ -127,8 +241,8 @@ def test_load_config_can_resolve_packaged_marwil_config_outside_repo_root(monkey
 
     assert config.algo == "marwil"
     assert config.env_id == "Pendulum-v1"
-    assert config.algo_kwargs["beta"] == 1.0
-    assert config.algo_kwargs["vf_coeff"] == 1.0
+    assert config.algo_kwargs["beta"] == pytest.approx(1.0)
+    assert config.algo_kwargs["vf_coeff"] == pytest.approx(1.0)
 
 
 def test_load_config_can_resolve_packaged_cal_ql_config_outside_repo_root(monkeypatch, tmp_path: Path) -> None:
@@ -138,7 +252,7 @@ def test_load_config_can_resolve_packaged_cal_ql_config_outside_repo_root(monkey
 
     assert config.algo == "cal_ql"
     assert config.env_id == "Pendulum-v1"
-    assert config.algo_kwargs["cql_alpha"] == 5.0
+    assert config.algo_kwargs["cql_alpha"] == pytest.approx(5.0)
 
 
 def test_load_config_can_resolve_packaged_edac_config_outside_repo_root(monkeypatch, tmp_path: Path) -> None:
@@ -149,7 +263,7 @@ def test_load_config_can_resolve_packaged_edac_config_outside_repo_root(monkeypa
     assert config.algo == "edac"
     assert config.env_id == "Pendulum-v1"
     assert config.algo_kwargs["num_critics"] == 10
-    assert config.algo_kwargs["eta"] == 1.0
+    assert config.algo_kwargs["eta"] == pytest.approx(1.0)
 
 
 def test_load_config_can_resolve_packaged_rlpd_config_outside_repo_root(monkeypatch, tmp_path: Path) -> None:
@@ -160,7 +274,7 @@ def test_load_config_can_resolve_packaged_rlpd_config_outside_repo_root(monkeypa
     assert config.algo == "rlpd"
     assert config.env_id == "Pendulum-v1"
     assert config.algo_kwargs["offline_pretrain_updates"] == 1000
-    assert config.algo_kwargs["offline_batch_ratio"] == 0.5
+    assert config.algo_kwargs["offline_batch_ratio"] == pytest.approx(0.5)
 
 
 def test_load_config_can_resolve_packaged_xql_config_outside_repo_root(monkeypatch, tmp_path: Path) -> None:
@@ -170,7 +284,7 @@ def test_load_config_can_resolve_packaged_xql_config_outside_repo_root(monkeypat
 
     assert config.algo == "xql"
     assert config.env_id == "Pendulum-v1"
-    assert config.algo_kwargs["loss_temperature"] == 1.0
+    assert config.algo_kwargs["loss_temperature"] == pytest.approx(1.0)
 
 
 def test_load_config_can_resolve_packaged_rebrac_config_outside_repo_root(monkeypatch, tmp_path: Path) -> None:
@@ -180,8 +294,8 @@ def test_load_config_can_resolve_packaged_rebrac_config_outside_repo_root(monkey
 
     assert config.algo == "rebrac"
     assert config.env_id == "Pendulum-v1"
-    assert config.algo_kwargs["actor_bc_weight"] == 1.0
-    assert config.algo_kwargs["critic_bc_weight"] == 1.0
+    assert config.algo_kwargs["actor_bc_weight"] == pytest.approx(1.0)
+    assert config.algo_kwargs["critic_bc_weight"] == pytest.approx(1.0)
 
 
 def test_zoo_subcommand_uses_packaged_manifest_outside_repo_root(monkeypatch, tmp_path: Path) -> None:

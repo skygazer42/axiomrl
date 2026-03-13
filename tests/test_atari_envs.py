@@ -2,6 +2,7 @@ from pathlib import Path
 
 import gymnasium as gym
 import numpy as np
+import pytest
 
 from rl_training.envs.atari import (
     ChannelFirstObservation,
@@ -160,7 +161,7 @@ def test_build_env_applies_atari_wrappers_when_requested(monkeypatch, tmp_path: 
     _, reward, terminated, truncated, _ = env.step(1)
 
     assert obs.shape == (4, 84, 84)
-    assert reward == 1.0
+    assert reward == pytest.approx(1.0)
     assert terminated or truncated
 
     env.close()

@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from dataclasses import replace
 from pathlib import Path
+from typing import cast
 
 import gymnasium as gym
 import numpy as np
@@ -166,7 +167,7 @@ def _build_mixed_offline_dataset(config: TrainConfig, *, action_space: gym.space
             entry_kwargs[str(key)] = value
 
         entry_kwargs.setdefault("dataset_seed", config.seed + index + 1)
-        entry_config = replace(config, algo_kwargs=entry_kwargs)
+        entry_config = cast(TrainConfig, replace(config, algo_kwargs=entry_kwargs))
         component_datasets.append(_build_offline_dataset(entry_config, action_space=action_space))
         weights.append(float(descriptor.get("weight", 1.0)))
 

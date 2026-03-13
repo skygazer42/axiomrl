@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from rl_training.experiment.config import TrainConfig
@@ -18,7 +18,7 @@ class RunContext:
 
 
 def create_run_context(config: TrainConfig, run_suffix: str | None = None) -> RunContext:
-    suffix = run_suffix or datetime.utcnow().strftime("%Y%m%d-%H%M%S-%f")
+    suffix = run_suffix or datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S-%f")
     run_id = f"{config.algo}__{config.env_id}__seed{config.seed}__{suffix}"
     run_dir = config.output_dir / run_id
     checkpoints_dir = run_dir / "checkpoints"

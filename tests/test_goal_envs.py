@@ -2,6 +2,7 @@ from pathlib import Path
 
 import gymnasium as gym
 import numpy as np
+import pytest
 
 from rl_training.envs import (
     POINT_GOAL_ENV_ID,
@@ -76,8 +77,8 @@ def test_goal_reward_and_done_helpers_support_success_and_preserved_truncation()
         fallback_truncated=True,
     )
 
-    assert success_reward == 0.0
-    assert success_done == 1.0
-    assert preserved_timeout_done == 1.0
+    assert success_reward == pytest.approx(0.0)
+    assert success_done == pytest.approx(1.0)
+    assert preserved_timeout_done == pytest.approx(1.0)
 
     env.close()

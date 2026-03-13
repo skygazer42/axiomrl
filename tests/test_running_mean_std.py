@@ -23,7 +23,7 @@ def test_running_mean_std_matches_combined_statistics_across_updates() -> None:
 
     combined = torch.tensor([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]], dtype=torch.float32)
     expected_mean = combined.mean(dim=0)
-    expected_var = combined.var(dim=0, unbiased=False)
+    expected_var = combined.var(dim=0, correction=0)
 
     assert rms.count == 3
     assert torch.allclose(rms.mean, expected_mean)

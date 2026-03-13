@@ -58,8 +58,8 @@ class CrossQ:
         self.model = model
         self.policy = model
         betas = (adam_beta1, 0.999)
-        self.actor_optimizer = torch.optim.Adam(self.model.actor_parameters(), lr=learning_rate, betas=betas)
-        self.critic_optimizer = torch.optim.Adam(self.model.critic_parameters(), lr=learning_rate, betas=betas)
+        self.actor_optimizer = torch.optim.Adam(self.model.actor_parameters(), lr=learning_rate, betas=betas, weight_decay=0.0)
+        self.critic_optimizer = torch.optim.Adam(self.model.critic_parameters(), lr=learning_rate, betas=betas, weight_decay=0.0)
         self.gamma = gamma
         self.alpha = alpha
         self.policy_delay = policy_delay

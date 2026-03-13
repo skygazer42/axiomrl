@@ -8,7 +8,28 @@ import numpy as np
 import torch
 
 from rl_training.algorithms.c51_dqn import C51DQN
-from rl_training.algorithms.dqn import DQN, DoubleDQN, DuelingDQN, PrioritizedDQN, RainbowDQN
+from rl_training.algorithms.dqn import (
+    AdvantageLearningDQN,
+    BoltzmannDQN,
+    BoltzmannDoubleDQN,
+    CQLDQN,
+    CQLDoubleDQN,
+    ClippedDoubleDQN,
+    DQN,
+    DoubleDQN,
+    DuelingDQN,
+    ExpectedDoubleDQN,
+    ExpectedSARSA,
+    HystereticDQN,
+    MellowmaxDQN,
+    MunchausenDQN,
+    MunchausenDoubleDQN,
+    PersistentAdvantageLearningDQN,
+    PrioritizedDQN,
+    RainbowDQN,
+    SoftDQN,
+    SoftDoubleDQN,
+)
 from rl_training.algorithms.iqn import IQN
 from rl_training.algorithms.qr_dqn import QRDQN
 from rl_training.data.n_step import NStepAccumulator
@@ -151,11 +172,25 @@ def _build_q_network(
     )
 
 
-def _build_algorithm(
+def _build_image_dqn_algorithm(
+    *,
+    q_network: CNNQNetwork,
+    learning_rate: float,
+    gamma: float,
+    target_update_interval: int,
+) -> DQN:
+    return DQN(
+        q_network=q_network,
+        learning_rate=learning_rate,
+        gamma=gamma,
+        target_update_interval=target_update_interval,
+    )
+
+
+def _build_distributional_dqn_algorithm(
     config: TrainConfig,
     *,
-    q_network: CNNQNetwork
-    | MLPQNetwork
+    q_network: MLPQNetwork
     | MLPDuelingQNetwork
     | MLPNoisyQNetwork
     | MLPDuelingNoisyQNetwork
@@ -165,15 +200,7 @@ def _build_algorithm(
     learning_rate: float,
     gamma: float,
     target_update_interval: int,
-) -> DQN | C51DQN | QRDQN | IQN:
-    if isinstance(q_network, CNNQNetwork):
-        return DQN(
-            q_network=q_network,
-            learning_rate=learning_rate,
-            gamma=gamma,
-            target_update_interval=target_update_interval,
-        )
-
+) -> C51DQN | QRDQN | IQN | None:
     if config.algo == "c51_dqn":
         if not isinstance(q_network, MLPC51QNetwork):
             raise TypeError(f"expected MLPC51QNetwork for c51_dqn, got {type(q_network)!r}")
@@ -210,16 +237,224 @@ def _build_algorithm(
             num_quantiles=num_quantiles,
             kappa=float(config.algo_kwargs.get("kappa", 1.0)),
         )
-    if config.algo == "double_dqn":
-        algorithm_cls = DoubleDQN
-    elif config.algo == "dueling_dqn":
-        algorithm_cls = DuelingDQN
-    elif config.algo == "prioritized_dqn":
-        algorithm_cls = PrioritizedDQN
-    elif config.algo == "rainbow_dqn":
-        algorithm_cls = RainbowDQN
-    else:
-        algorithm_cls = DQN
+    return None
+
+
+def _build_specialized_dqn_algorithm(
+    config: TrainConfig,
+    *,
+    q_network: MLPQNetwork | MLPDuelingQNetwork | MLPNoisyQNetwork | MLPDuelingNoisyQNetwork,
+    learning_rate: float,
+    gamma: float,
+    target_update_interval: int,
+) -> (
+    MellowmaxDQN
+    | SoftDQN
+    | ExpectedSARSA
+    | ExpectedDoubleDQN
+    | BoltzmannDQN
+    | BoltzmannDoubleDQN
+    | AdvantageLearningDQN
+    | PersistentAdvantageLearningDQN
+    | MunchausenDQN
+    | CQLDQN
+    | SoftDoubleDQN
+    | MunchausenDoubleDQN
+    | CQLDoubleDQN
+    | ClippedDoubleDQN
+    | HystereticDQN
+    | None
+):
+    builders = {
+        "expected_sarsa": lambda: ExpectedSARSA(
+            q_network=q_network,
+            learning_rate=learning_rate,
+            gamma=gamma,
+            target_update_interval=target_update_interval,
+            target_epsilon=float(config.algo_kwargs.get("target_epsilon", 0.05)),
+        ),
+        "expected_double_dqn": lambda: ExpectedDoubleDQN(
+            q_network=q_network,
+            learning_rate=learning_rate,
+            gamma=gamma,
+            target_update_interval=target_update_interval,
+            target_epsilon=float(config.algo_kwargs.get("target_epsilon", 0.05)),
+        ),
+        "boltzmann_dqn": lambda: BoltzmannDQN(
+            q_network=q_network,
+            learning_rate=learning_rate,
+            gamma=gamma,
+            target_update_interval=target_update_interval,
+            boltzmann_temperature=float(config.algo_kwargs.get("boltzmann_temperature", 0.5)),
+        ),
+        "boltzmann_double_dqn": lambda: BoltzmannDoubleDQN(
+            q_network=q_network,
+            learning_rate=learning_rate,
+            gamma=gamma,
+            target_update_interval=target_update_interval,
+            boltzmann_temperature=float(config.algo_kwargs.get("boltzmann_temperature", 0.5)),
+        ),
+        "mellowmax_dqn": lambda: MellowmaxDQN(
+            q_network=q_network,
+            learning_rate=learning_rate,
+            gamma=gamma,
+            target_update_interval=target_update_interval,
+            mellowmax_omega=float(config.algo_kwargs.get("mellowmax_omega", 5.0)),
+        ),
+        "soft_dqn": lambda: SoftDQN(
+            q_network=q_network,
+            learning_rate=learning_rate,
+            gamma=gamma,
+            target_update_interval=target_update_interval,
+            entropy_temperature=float(config.algo_kwargs.get("entropy_temperature", 0.03)),
+        ),
+        "soft_double_dqn": lambda: SoftDoubleDQN(
+            q_network=q_network,
+            learning_rate=learning_rate,
+            gamma=gamma,
+            target_update_interval=target_update_interval,
+            entropy_temperature=float(config.algo_kwargs.get("entropy_temperature", 0.03)),
+        ),
+        "advantage_learning_dqn": lambda: AdvantageLearningDQN(
+            q_network=q_network,
+            learning_rate=learning_rate,
+            gamma=gamma,
+            target_update_interval=target_update_interval,
+            advantage_alpha=float(config.algo_kwargs.get("advantage_alpha", 0.9)),
+        ),
+        "persistent_advantage_learning_dqn": lambda: PersistentAdvantageLearningDQN(
+            q_network=q_network,
+            learning_rate=learning_rate,
+            gamma=gamma,
+            target_update_interval=target_update_interval,
+            persistent_advantage_alpha=float(config.algo_kwargs.get("persistent_advantage_alpha", 0.9)),
+        ),
+        "munchausen_dqn": lambda: MunchausenDQN(
+            q_network=q_network,
+            learning_rate=learning_rate,
+            gamma=gamma,
+            target_update_interval=target_update_interval,
+            munchausen_alpha=float(config.algo_kwargs.get("munchausen_alpha", 0.9)),
+            entropy_temperature=float(config.algo_kwargs.get("entropy_temperature", 0.03)),
+            munchausen_clip_min=float(config.algo_kwargs.get("munchausen_clip_min", -1.0)),
+        ),
+        "munchausen_double_dqn": lambda: MunchausenDoubleDQN(
+            q_network=q_network,
+            learning_rate=learning_rate,
+            gamma=gamma,
+            target_update_interval=target_update_interval,
+            munchausen_alpha=float(config.algo_kwargs.get("munchausen_alpha", 0.9)),
+            entropy_temperature=float(config.algo_kwargs.get("entropy_temperature", 0.03)),
+            munchausen_clip_min=float(config.algo_kwargs.get("munchausen_clip_min", -1.0)),
+        ),
+        "cql_dqn": lambda: CQLDQN(
+            q_network=q_network,
+            learning_rate=learning_rate,
+            gamma=gamma,
+            target_update_interval=target_update_interval,
+            cql_alpha=float(config.algo_kwargs.get("cql_alpha", 1.0)),
+        ),
+        "cql_double_dqn": lambda: CQLDoubleDQN(
+            q_network=q_network,
+            learning_rate=learning_rate,
+            gamma=gamma,
+            target_update_interval=target_update_interval,
+            cql_alpha=float(config.algo_kwargs.get("cql_alpha", 1.0)),
+        ),
+        "clipped_double_dqn": lambda: ClippedDoubleDQN(
+            q_network=q_network,
+            learning_rate=learning_rate,
+            gamma=gamma,
+            target_update_interval=target_update_interval,
+        ),
+        "hysteretic_dqn": lambda: HystereticDQN(
+            q_network=q_network,
+            learning_rate=learning_rate,
+            gamma=gamma,
+            target_update_interval=target_update_interval,
+            hysteretic_beta=float(config.algo_kwargs.get("hysteretic_beta", 0.1)),
+        ),
+    }
+    builder = builders.get(config.algo)
+    return builder() if builder is not None else None
+
+
+def _select_default_dqn_algorithm_class(algo: str) -> type[DQN]:
+    if algo == "double_dqn":
+        return DoubleDQN
+    if algo == "dueling_dqn":
+        return DuelingDQN
+    if algo == "prioritized_dqn":
+        return PrioritizedDQN
+    if algo == "rainbow_dqn":
+        return RainbowDQN
+    return DQN
+
+
+def _build_algorithm(
+    config: TrainConfig,
+    *,
+    q_network: CNNQNetwork
+    | MLPQNetwork
+    | MLPDuelingQNetwork
+    | MLPNoisyQNetwork
+    | MLPDuelingNoisyQNetwork
+    | MLPC51QNetwork
+    | MLPQRQNetwork
+    | MLPIQNetwork,
+    learning_rate: float,
+    gamma: float,
+    target_update_interval: int,
+) -> (
+    DQN
+    | MellowmaxDQN
+    | SoftDQN
+    | ExpectedSARSA
+    | ExpectedDoubleDQN
+    | BoltzmannDQN
+    | BoltzmannDoubleDQN
+    | AdvantageLearningDQN
+    | PersistentAdvantageLearningDQN
+    | MunchausenDQN
+    | CQLDQN
+    | SoftDoubleDQN
+    | MunchausenDoubleDQN
+    | CQLDoubleDQN
+    | ClippedDoubleDQN
+    | HystereticDQN
+    | C51DQN
+    | QRDQN
+    | IQN
+):
+    if isinstance(q_network, CNNQNetwork):
+        return _build_image_dqn_algorithm(
+            q_network=q_network,
+            learning_rate=learning_rate,
+            gamma=gamma,
+            target_update_interval=target_update_interval,
+        )
+
+    distributional_algorithm = _build_distributional_dqn_algorithm(
+        config,
+        q_network=q_network,
+        learning_rate=learning_rate,
+        gamma=gamma,
+        target_update_interval=target_update_interval,
+    )
+    if distributional_algorithm is not None:
+        return distributional_algorithm
+
+    specialized_algorithm = _build_specialized_dqn_algorithm(
+        config,
+        q_network=q_network,
+        learning_rate=learning_rate,
+        gamma=gamma,
+        target_update_interval=target_update_interval,
+    )
+    if specialized_algorithm is not None:
+        return specialized_algorithm
+
+    algorithm_cls = _select_default_dqn_algorithm_class(config.algo)
 
     return algorithm_cls(
         q_network=q_network,
@@ -227,6 +462,164 @@ def _build_algorithm(
         gamma=gamma,
         target_update_interval=target_update_interval,
     )
+
+
+def _uses_n_step_returns(algo: str, *, n_step: int) -> bool:
+    return algo in {"n_step_dqn", "rainbow_dqn"} and n_step > 1
+
+
+def _uses_prioritized_replay(algo: str) -> bool:
+    return algo in {"prioritized_dqn", "rainbow_dqn"}
+
+
+def _resolve_algorithm_gamma(*, gamma: float, n_step: int, use_n_step_returns: bool) -> float:
+    if not use_n_step_returns:
+        return gamma
+    return gamma**n_step
+
+
+def _build_dqn_replay_buffer(
+    *,
+    use_prioritized_replay: bool,
+    buffer_capacity: int,
+    obs_shape: tuple[int, ...],
+    device: torch.device,
+    prioritized_alpha: float,
+    prioritized_eps: float,
+) -> ReplayBuffer | PrioritizedReplayBuffer:
+    if use_prioritized_replay:
+        return PrioritizedReplayBuffer(
+            capacity=buffer_capacity,
+            obs_shape=obs_shape,
+            action_shape=(),
+            alpha=prioritized_alpha,
+            priority_eps=prioritized_eps,
+            device=device,
+        )
+    return ReplayBuffer(
+        capacity=buffer_capacity,
+        obs_shape=obs_shape,
+        action_shape=(),
+        device=device,
+    )
+
+
+def _build_n_step_accumulator(
+    *,
+    use_n_step_returns: bool,
+    num_envs: int,
+    n_step: int,
+    gamma: float,
+) -> NStepAccumulator | None:
+    if not use_n_step_returns:
+        return None
+    return NStepAccumulator(num_envs=num_envs, n_step=n_step, gamma=gamma)
+
+
+def _store_transitions(
+    *,
+    replay_buffer: ReplayBuffer | PrioritizedReplayBuffer,
+    n_step_accumulator: NStepAccumulator | None,
+    num_envs: int,
+    obs: np.ndarray,
+    actions: torch.Tensor,
+    rewards: np.ndarray,
+    next_obs: np.ndarray,
+    dones: np.ndarray,
+) -> None:
+    for env_index in range(num_envs):
+        action = int(actions[env_index].item())
+        reward = float(rewards[env_index])
+        done = bool(dones[env_index])
+        if n_step_accumulator is None:
+            replay_buffer.add(
+                obs=obs[env_index],
+                actions=action,
+                rewards=reward,
+                next_obs=next_obs[env_index],
+                dones=float(done),
+            )
+            continue
+
+        for transition in n_step_accumulator.add(
+            env_index,
+            obs[env_index],
+            action,
+            reward,
+            next_obs[env_index],
+            done,
+        ):
+            replay_buffer.add(**transition)
+
+
+def _should_run_dqn_update(
+    *,
+    replay_size: int,
+    batch_size: int,
+    learning_starts: int,
+    global_step: int,
+    train_frequency: int,
+) -> bool:
+    return replay_size >= max(batch_size, learning_starts) and global_step % train_frequency == 0
+
+
+def _update_with_prioritized_replay(
+    *,
+    algorithm: object,
+    replay_buffer: PrioritizedReplayBuffer,
+    batch_size: int,
+    global_step: int,
+    total_timesteps: int,
+    prioritized_beta_start: float,
+    prioritized_beta_end: float,
+    prioritized_beta_fraction: float,
+):
+    beta = _beta_at_step(
+        global_step,
+        total_timesteps=total_timesteps,
+        beta_start=prioritized_beta_start,
+        beta_end=prioritized_beta_end,
+        beta_fraction=prioritized_beta_fraction,
+    )
+    batch = replay_buffer.sample(batch_size, beta=beta)
+    result = algorithm.update(batch, global_step=global_step)  # type: ignore[attr-defined]
+    td_errors = getattr(algorithm, "last_td_errors", None)
+    if td_errors is not None:
+        replay_buffer.update_priorities(batch["indices"], td_errors)
+    return result
+
+
+def _build_dqn_metrics(
+    *,
+    latest_update_metrics: MetricDict,
+    epsilon: float,
+    global_step: int,
+    replay_size: int,
+    update_count: int,
+    include_beta: bool,
+    total_timesteps: int,
+    prioritized_beta_start: float,
+    prioritized_beta_end: float,
+    prioritized_beta_fraction: float,
+) -> MetricDict:
+    metrics: MetricDict = {
+        **latest_update_metrics,
+        "epsilon": epsilon,
+        "global_step": float(global_step),
+        "buffer_size": float(replay_size),
+        "gradient_steps": float(update_count),
+    }
+    if include_beta:
+        metrics["beta"] = float(
+            _beta_at_step(
+                global_step,
+                total_timesteps=total_timesteps,
+                beta_start=prioritized_beta_start,
+                beta_end=prioritized_beta_end,
+                beta_fraction=prioritized_beta_fraction,
+            )
+        )
+    return metrics
 
 
 def _evaluate_q_policy(
@@ -316,15 +709,19 @@ def train_dqn(
             raise ValueError(f"n_step must be > 0, got {n_step}")
 
         obs_shape, action_dim = _infer_spaces(envs)
+        use_n_step_returns = _uses_n_step_returns(config.algo, n_step=n_step)
+        use_prioritized_replay = _uses_prioritized_replay(config.algo)
         q_network = _build_q_network(
             config,
             obs_shape=obs_shape,
             action_dim=action_dim,
             hidden_sizes=hidden_sizes,
         ).to(device)
-        algorithm_gamma = gamma
-        if config.algo in {"n_step_dqn", "rainbow_dqn"} and n_step > 1:
-            algorithm_gamma = gamma**n_step
+        algorithm_gamma = _resolve_algorithm_gamma(
+            gamma=gamma,
+            n_step=n_step,
+            use_n_step_returns=use_n_step_returns,
+        )
 
         algorithm = _build_algorithm(
             config,
@@ -333,30 +730,25 @@ def train_dqn(
             gamma=algorithm_gamma,
             target_update_interval=target_update_interval,
         )
-        if config.algo in {"prioritized_dqn", "rainbow_dqn"}:
-            replay_buffer: ReplayBuffer | PrioritizedReplayBuffer = PrioritizedReplayBuffer(
-                capacity=buffer_capacity,
-                obs_shape=obs_shape,
-                action_shape=(),
-                alpha=prioritized_alpha,
-                priority_eps=prioritized_eps,
-                device=device,
-            )
-        else:
-            replay_buffer = ReplayBuffer(
-                capacity=buffer_capacity,
-                obs_shape=obs_shape,
-                action_shape=(),
-                device=device,
-            )
+        replay_buffer = _build_dqn_replay_buffer(
+            use_prioritized_replay=use_prioritized_replay,
+            buffer_capacity=buffer_capacity,
+            obs_shape=obs_shape,
+            device=device,
+            prioritized_alpha=prioritized_alpha,
+            prioritized_eps=prioritized_eps,
+        )
         if checkpoint_state is not None:
             algorithm.load_state_dict(checkpoint_state.algorithm_state)
             if checkpoint_state.buffer_state is not None:
                 replay_buffer.load_state_dict(checkpoint_state.buffer_state)
 
-        n_step_accumulator: NStepAccumulator | None = None
-        if config.algo in {"n_step_dqn", "rainbow_dqn"} and n_step > 1:
-            n_step_accumulator = NStepAccumulator(num_envs=config.num_envs, n_step=n_step, gamma=gamma)
+        n_step_accumulator = _build_n_step_accumulator(
+            use_n_step_returns=use_n_step_returns,
+            num_envs=config.num_envs,
+            n_step=n_step,
+            gamma=gamma,
+        )
 
         obs, _ = envs.reset(seed=config.seed)
         global_step = int(checkpoint_state.trainer_state.get("global_step", 0)) if checkpoint_state is not None else 0
@@ -381,28 +773,16 @@ def train_dqn(
             next_obs, rewards, terminated, truncated, _ = envs.step(actions.cpu().numpy())
             dones = np.logical_or(terminated, truncated).astype(np.float32)
 
-            for env_index in range(config.num_envs):
-                action = int(actions[env_index].item())
-                reward = float(rewards[env_index])
-                done = bool(dones[env_index])
-                if n_step_accumulator is None:
-                    replay_buffer.add(
-                        obs=obs[env_index],
-                        actions=action,
-                        rewards=reward,
-                        next_obs=next_obs[env_index],
-                        dones=float(done),
-                    )
-                else:
-                    for transition in n_step_accumulator.add(
-                        env_index,
-                        obs[env_index],
-                        action,
-                        reward,
-                        next_obs[env_index],
-                        done,
-                    ):
-                        replay_buffer.add(**transition)
+            _store_transitions(
+                replay_buffer=replay_buffer,
+                n_step_accumulator=n_step_accumulator,
+                num_envs=config.num_envs,
+                obs=obs,
+                actions=actions,
+                rewards=rewards,
+                next_obs=next_obs,
+                dones=dones,
+            )
 
             obs = next_obs
             global_step += config.num_envs
@@ -417,42 +797,42 @@ def train_dqn(
                 ),
             )
 
-            if len(replay_buffer) >= max(batch_size, learning_starts) and global_step % train_frequency == 0:
-                if config.algo in {"prioritized_dqn", "rainbow_dqn"}:
-                    beta = _beta_at_step(
-                        global_step,
+            if _should_run_dqn_update(
+                replay_size=len(replay_buffer),
+                batch_size=batch_size,
+                learning_starts=learning_starts,
+                global_step=global_step,
+                train_frequency=train_frequency,
+            ):
+                if use_prioritized_replay:
+                    result = _update_with_prioritized_replay(
+                        algorithm=algorithm,
+                        replay_buffer=replay_buffer,  # type: ignore[arg-type]
+                        batch_size=batch_size,
+                        global_step=global_step,
                         total_timesteps=config.total_timesteps,
-                        beta_start=prioritized_beta_start,
-                        beta_end=prioritized_beta_end,
-                        beta_fraction=prioritized_beta_fraction,
+                        prioritized_beta_start=prioritized_beta_start,
+                        prioritized_beta_end=prioritized_beta_end,
+                        prioritized_beta_fraction=prioritized_beta_fraction,
                     )
-                    batch = replay_buffer.sample(batch_size, beta=beta)  # type: ignore[arg-type]
-                    result = algorithm.update(batch, global_step=global_step)
-                    if algorithm.last_td_errors is not None:
-                        replay_buffer.update_priorities(batch["indices"], algorithm.last_td_errors)  # type: ignore[union-attr]
                 else:
                     result = algorithm.update(replay_buffer.sample(batch_size), global_step=global_step)  # type: ignore[arg-type]
                 latest_update_metrics = result.metrics
                 update_count += result.num_gradient_steps
                 callback_list.on_update_end(trainer_state, result)
 
-            metrics = {
-                **latest_update_metrics,
-                "epsilon": epsilon,
-                "global_step": float(global_step),
-                "buffer_size": float(len(replay_buffer)),
-                "gradient_steps": float(update_count),
-            }
-            if config.algo in {"prioritized_dqn", "rainbow_dqn"}:
-                metrics["beta"] = float(
-                    _beta_at_step(
-                        global_step,
-                        total_timesteps=config.total_timesteps,
-                        beta_start=prioritized_beta_start,
-                        beta_end=prioritized_beta_end,
-                        beta_fraction=prioritized_beta_fraction,
-                    )
-                )
+            metrics = _build_dqn_metrics(
+                latest_update_metrics=latest_update_metrics,
+                epsilon=epsilon,
+                global_step=global_step,
+                replay_size=len(replay_buffer),
+                update_count=update_count,
+                include_beta=use_prioritized_replay,
+                total_timesteps=config.total_timesteps,
+                prioritized_beta_start=prioritized_beta_start,
+                prioritized_beta_end=prioritized_beta_end,
+                prioritized_beta_fraction=prioritized_beta_fraction,
+            )
             if should_run_evaluation(
                 global_step=global_step,
                 total_timesteps=config.total_timesteps,

@@ -1,4 +1,5 @@
 import torch
+import pytest
 from torch import nn
 
 from rl_training.algorithms.dqn import DQN, dqn_loss
@@ -121,4 +122,4 @@ def test_double_dqn_uses_online_argmax_for_bootstrap_target() -> None:
 
     result = algorithm.update(batch, global_step=1)
 
-    assert result.metrics["target_mean"] == 2.0
+    assert result.metrics["target_mean"] == pytest.approx(2.0)

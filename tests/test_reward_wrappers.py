@@ -2,6 +2,7 @@ from pathlib import Path
 
 import gymnasium as gym
 import numpy as np
+import pytest
 
 from rl_training.envs import apply_reward_wrappers, resolve_reward_preset, resolve_reward_wrapper_config
 from rl_training.envs.factory import build_env
@@ -42,26 +43,26 @@ def test_resolve_reward_wrapper_config_accepts_scale_shift_and_clip() -> None:
     )
 
     assert config is not None
-    assert config.scale == 0.5
-    assert config.shift == 1.0
-    assert config.clip_min == -1.0
-    assert config.clip_max == 1.5
+    assert config.scale == pytest.approx(0.5)
+    assert config.shift == pytest.approx(1.0)
+    assert config.clip_min == pytest.approx(-1.0)
+    assert config.clip_max == pytest.approx(1.5)
 
 
 def test_resolve_reward_wrapper_config_supports_named_preset() -> None:
     config = resolve_reward_wrapper_config({"reward": {"preset": "sparse_goal_zero_one"}})
 
     assert config is not None
-    assert config.shift == 1.0
-    assert config.clip_min == 0.0
-    assert config.clip_max == 1.0
+    assert config.shift == pytest.approx(1.0)
+    assert config.clip_min == pytest.approx(0.0)
+    assert config.clip_max == pytest.approx(1.0)
 
 
 def test_resolve_reward_preset_returns_sign_clip_transform() -> None:
     config = resolve_reward_preset("sign_clip")
 
     assert config.sign is True
-    assert config.scale == 1.0
+    assert config.scale == pytest.approx(1.0)
 
 
 def test_apply_reward_wrappers_scales_shifts_and_clips_reward() -> None:
@@ -72,7 +73,7 @@ def test_apply_reward_wrappers_scales_shifts_and_clips_reward() -> None:
     env.reset()
     _, reward, terminated, truncated, _ = env.step(0)
 
-    assert reward == 1.5
+    assert reward == pytest.approx(1.5)
     assert terminated is True
     assert truncated is False
 
@@ -87,7 +88,7 @@ def test_apply_reward_wrappers_supports_sign_clip_preset() -> None:
     env.reset()
     _, reward, terminated, truncated, _ = env.step(0)
 
-    assert reward == 1.0
+    assert reward == pytest.approx(1.0)
     assert terminated is True
     assert truncated is False
 
@@ -119,7 +120,7 @@ def test_build_env_applies_generic_reward_wrapper_config(monkeypatch, tmp_path: 
     env.reset(seed=config.seed)
     _, reward, terminated, truncated, _ = env.step(1)
 
-    assert reward == 2.5
+    assert reward == pytest.approx(2.5)
     assert terminated or truncated
 
     env.close()
@@ -147,7 +148,7 @@ def test_build_env_applies_reward_preset(monkeypatch, tmp_path: Path) -> None:
     env.reset(seed=config.seed)
     _, reward, terminated, truncated, _ = env.step(1)
 
-    assert reward == 1.0
+    assert reward == pytest.approx(1.0)
     assert terminated or truncated
 
     env.close()

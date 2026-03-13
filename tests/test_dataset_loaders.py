@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import numpy as np
+import pytest
 import torch
 
 from rl_training.data import (
@@ -52,7 +53,7 @@ def test_load_transition_dataset_reads_npz_and_combines_episode_end_flags(tmp_pa
     assert torch.equal(dataset.dones, torch.tensor([0.0, 0.0, 1.0, 0.0, 1.0]))
 
 
-def test_load_transition_dataset_reads_torch_payload(tmp_path: Path) -> None:
+def test_load_transition_dataset_rejects_torch_payloads(tmp_path: Path) -> None:
     dataset_path = tmp_path / "dataset.pt"
     torch.save(
         {
@@ -67,14 +68,26 @@ def test_load_transition_dataset_reads_torch_payload(tmp_path: Path) -> None:
         dataset_path,
     )
 
-    dataset = load_transition_dataset("pt", dataset_path=dataset_path)
+    with pytest.raises(ValueError, match="unsafe for untrusted datasets"):
+        load_transition_dataset("pt", dataset_path=dataset_path)
 
-    assert len(dataset) == 6
-    assert dataset.obs.shape == (6, 4)
-    assert dataset.next_actions is not None
-    assert dataset.next_actions.shape == (6, 2)
-    assert dataset.returns_to_go is not None
-    assert dataset.returns_to_go.shape == (6,)
+
+def test_load_transition_dataset_rejects_torch_aliases(tmp_path: Path) -> None:
+    dataset_path = tmp_path / "dataset.pt"
+    torch.save(
+        {
+            "obs": torch.zeros((2, 3), dtype=torch.float32),
+            "actions": torch.zeros((2, 1), dtype=torch.float32),
+            "rewards": torch.ones((2,), dtype=torch.float32),
+            "next_obs": torch.ones((2, 3), dtype=torch.float32),
+            "dones": torch.zeros((2,), dtype=torch.float32),
+        },
+        dataset_path,
+    )
+
+    for dataset_kind in ("pt", "pth", "torch"):
+        with pytest.raises(ValueError, match="unsafe for untrusted datasets"):
+            load_transition_dataset(dataset_kind, dataset_path=dataset_path)
 
 
 def test_transition_dataset_reward_transform_scales_shifts_and_clips() -> None:
@@ -136,7 +149,7 @@ def test_mix_transition_datasets_respects_total_size_and_seed() -> None:
     assert len(mixed_a) == 12
     assert torch.equal(mixed_a.obs, mixed_b.obs)
     assert torch.equal(mixed_a.rewards, mixed_b.rewards)
-    assert set(torch.unique(mixed_a.rewards).tolist()) <= {1.0, 10.0}
+    assert set(torch.unique(mixed_a.rewards, dim=0).tolist()) <= {1.0, 10.0}
     assert mixed_a.next_actions is not None
     assert torch.equal(mixed_a.next_actions, mixed_b.next_actions)
     assert mixed_a.returns_to_go is not None

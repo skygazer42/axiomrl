@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 from dataclasses import replace
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import yaml
 
@@ -102,7 +102,7 @@ def _apply_overrides(config: TrainConfig, args: argparse.Namespace) -> TrainConf
     if getattr(args, "eval_episodes", None) is not None:
         overrides["eval_episodes"] = int(args.eval_episodes)
 
-    return replace(config, **overrides)
+    return cast(TrainConfig, replace(config, **overrides))
 
 
 def _print_result(result: TrainResult) -> None:

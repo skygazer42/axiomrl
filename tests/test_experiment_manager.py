@@ -7,20 +7,30 @@ from rl_training.experiment.registry import get_algorithm_spec
 
 def test_builtin_algorithm_specs_are_registered() -> None:
     a2c = get_algorithm_spec("a2c")
+    ars = get_algorithm_spec("ars")
+    openai_es = get_algorithm_spec("openai_es")
     awr = get_algorithm_spec("awr")
     awac = get_algorithm_spec("awac")
     marwil = get_algorithm_spec("marwil")
     bear = get_algorithm_spec("bear")
     bc = get_algorithm_spec("bc")
+    decision_transformer = get_algorithm_spec("decision_transformer")
+    impala = get_algorithm_spec("impala")
+    appo = get_algorithm_spec("appo")
     bcq = get_algorithm_spec("bcq")
+    mopo = get_algorithm_spec("mopo")
+    pets = get_algorithm_spec("pets")
     cal_ql = get_algorithm_spec("cal_ql")
     crossq = get_algorithm_spec("crossq")
     crr = get_algorithm_spec("crr")
     edac = get_algorithm_spec("edac")
+    curl = get_algorithm_spec("curl")
     rlpd = get_algorithm_spec("rlpd")
     rebrac = get_algorithm_spec("rebrac")
     xql = get_algorithm_spec("xql")
+    drq = get_algorithm_spec("drq")
     drqv2 = get_algorithm_spec("drqv2")
+    ppg = get_algorithm_spec("ppg")
     her = get_algorithm_spec("her")
     ppo = get_algorithm_spec("ppo")
     trpo = get_algorithm_spec("trpo")
@@ -36,20 +46,30 @@ def test_builtin_algorithm_specs_are_registered() -> None:
     td3 = get_algorithm_spec("td3")
 
     assert a2c.name == "a2c"
+    assert ars.name == "ars"
+    assert openai_es.name == "openai_es"
     assert awr.name == "awr"
     assert awac.name == "awac"
     assert marwil.name == "marwil"
     assert bear.name == "bear"
     assert bc.name == "bc"
+    assert decision_transformer.name == "decision_transformer"
+    assert impala.name == "impala"
+    assert appo.name == "appo"
     assert bcq.name == "bcq"
+    assert mopo.name == "mopo"
+    assert pets.name == "pets"
     assert cal_ql.name == "cal_ql"
     assert crossq.name == "crossq"
     assert crr.name == "crr"
     assert edac.name == "edac"
+    assert curl.name == "curl"
     assert rlpd.name == "rlpd"
     assert rebrac.name == "rebrac"
     assert xql.name == "xql"
+    assert drq.name == "drq"
     assert drqv2.name == "drqv2"
+    assert ppg.name == "ppg"
     assert her.name == "her"
     assert ppo.name == "ppo"
     assert trpo.name == "trpo"
@@ -66,6 +86,12 @@ def test_builtin_algorithm_specs_are_registered() -> None:
     assert callable(a2c.train_fn)
     assert callable(a2c.evaluate_fn)
     assert callable(a2c.predict_fn)
+    assert callable(ars.train_fn)
+    assert callable(ars.evaluate_fn)
+    assert callable(ars.predict_fn)
+    assert callable(openai_es.train_fn)
+    assert callable(openai_es.evaluate_fn)
+    assert callable(openai_es.predict_fn)
     assert callable(awr.train_fn)
     assert callable(awr.evaluate_fn)
     assert callable(awr.predict_fn)
@@ -81,9 +107,24 @@ def test_builtin_algorithm_specs_are_registered() -> None:
     assert callable(bc.train_fn)
     assert callable(bc.evaluate_fn)
     assert callable(bc.predict_fn)
+    assert callable(decision_transformer.train_fn)
+    assert callable(decision_transformer.evaluate_fn)
+    assert callable(decision_transformer.predict_fn)
+    assert callable(impala.train_fn)
+    assert callable(impala.evaluate_fn)
+    assert callable(impala.predict_fn)
+    assert callable(appo.train_fn)
+    assert callable(appo.evaluate_fn)
+    assert callable(appo.predict_fn)
     assert callable(bcq.train_fn)
     assert callable(bcq.evaluate_fn)
     assert callable(bcq.predict_fn)
+    assert callable(mopo.train_fn)
+    assert callable(mopo.evaluate_fn)
+    assert callable(mopo.predict_fn)
+    assert callable(pets.train_fn)
+    assert callable(pets.evaluate_fn)
+    assert callable(pets.predict_fn)
     assert callable(cal_ql.train_fn)
     assert callable(cal_ql.evaluate_fn)
     assert callable(cal_ql.predict_fn)
@@ -96,6 +137,9 @@ def test_builtin_algorithm_specs_are_registered() -> None:
     assert callable(edac.train_fn)
     assert callable(edac.evaluate_fn)
     assert callable(edac.predict_fn)
+    assert callable(curl.train_fn)
+    assert callable(curl.evaluate_fn)
+    assert callable(curl.predict_fn)
     assert callable(rlpd.train_fn)
     assert callable(rlpd.evaluate_fn)
     assert callable(rlpd.predict_fn)
@@ -105,9 +149,15 @@ def test_builtin_algorithm_specs_are_registered() -> None:
     assert callable(xql.train_fn)
     assert callable(xql.evaluate_fn)
     assert callable(xql.predict_fn)
+    assert callable(drq.train_fn)
+    assert callable(drq.evaluate_fn)
+    assert callable(drq.predict_fn)
     assert callable(drqv2.train_fn)
     assert callable(drqv2.evaluate_fn)
     assert callable(drqv2.predict_fn)
+    assert callable(ppg.train_fn)
+    assert callable(ppg.evaluate_fn)
+    assert callable(ppg.predict_fn)
     assert callable(her.train_fn)
     assert callable(her.evaluate_fn)
     assert callable(her.predict_fn)

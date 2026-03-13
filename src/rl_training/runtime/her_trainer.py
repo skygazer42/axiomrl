@@ -95,6 +95,107 @@ def _evaluate_her_policy(
     }
 
 
+def _restore_training_state(
+    *,
+    algorithm: HER,
+    replay_buffer: HERReplayBuffer,
+    checkpoint_state: CheckpointState | None,
+) -> int:
+    if checkpoint_state is None:
+        return 0
+    algorithm.load_state_dict(checkpoint_state.algorithm_state)
+    if checkpoint_state.buffer_state is not None:
+        replay_buffer.load_state_dict(checkpoint_state.buffer_state)
+    return int(checkpoint_state.trainer_state.get("global_step", 0))
+
+
+def _as_goal_observation_mapping(obs: object, *, source: str) -> Mapping[str, np.ndarray]:
+    if not isinstance(obs, Mapping):
+        raise TypeError(f"expected goal-conditioned Mapping observations from {source}, got {type(obs)!r}")
+    return obs
+
+
+def _store_her_transitions(
+    replay_buffer: HERReplayBuffer,
+    *,
+    obs: Mapping[str, np.ndarray],
+    actions: torch.Tensor,
+    rewards: np.ndarray,
+    next_obs: Mapping[str, np.ndarray],
+    terminated: np.ndarray,
+    truncated: np.ndarray,
+    num_envs: int,
+) -> None:
+    for env_index in range(num_envs):
+        replay_buffer.add(
+            env_index=env_index,
+            obs=_slice_goal_observation(obs, env_index),
+            actions=actions[env_index].detach().cpu().numpy(),
+            rewards=float(rewards[env_index]),
+            next_obs=_slice_goal_observation(next_obs, env_index),
+            terminated=bool(terminated[env_index]),
+            truncated=bool(truncated[env_index]),
+        )
+
+
+def _maybe_update_algorithm(
+    *,
+    algorithm: HER,
+    replay_buffer: HERReplayBuffer,
+    reward_env: gym.Env,
+    batch_size: int,
+    learning_starts: int,
+    global_step: int,
+    train_frequency: int,
+    callback_list: CallbackList,
+    trainer_state: TrainerState,
+    latest_update_metrics: MetricDict,
+    update_count: int,
+) -> tuple[MetricDict, int]:
+    if len(replay_buffer) < max(batch_size, learning_starts):
+        return latest_update_metrics, update_count
+    if global_step % train_frequency != 0:
+        return latest_update_metrics, update_count
+
+    result = algorithm.update(replay_buffer.sample(batch_size, env=reward_env), global_step=global_step)
+    callback_list.on_update_end(trainer_state, result)
+    return result.metrics, update_count + result.num_gradient_steps
+
+
+def _maybe_run_evaluation(
+    *,
+    algorithm: HER,
+    model: MLPDDPGModel,
+    config: TrainConfig,
+    logger,
+    callback_list: CallbackList,
+    trainer_state: TrainerState,
+    metrics: MetricDict,
+    global_step: int,
+    eval_interval: int,
+    device: torch.device,
+) -> tuple[MetricDict, bool]:
+    if not should_run_evaluation(
+        global_step=global_step,
+        total_timesteps=config.total_timesteps,
+        eval_interval=eval_interval,
+    ):
+        return metrics, False
+
+    algorithm.set_eval_mode()
+    eval_metrics = _evaluate_her_policy(
+        model,
+        config,
+        device=device,
+        num_episodes=config.eval_episodes,
+    )
+    algorithm.set_train_mode()
+    evaluated_metrics = {**metrics, **eval_metrics}
+    logger.log_metrics(evaluated_metrics, step=global_step)
+    callback_list.on_eval_end(trainer_state, evaluated_metrics)
+    return evaluated_metrics, trainer_state.should_stop
+
+
 def train_her(
     config: TrainConfig,
     *,
@@ -158,15 +259,14 @@ def train_her(
             goal_selection_strategy=goal_selection_strategy,
             device=device,
         )
-        if checkpoint_state is not None:
-            algorithm.load_state_dict(checkpoint_state.algorithm_state)
-            if checkpoint_state.buffer_state is not None:
-                replay_buffer.load_state_dict(checkpoint_state.buffer_state)
 
-        obs, _ = envs.reset(seed=config.seed)
-        if not isinstance(obs, Mapping):
-            raise TypeError(f"expected goal-conditioned Mapping observations from vector env, got {type(obs)!r}")
-        global_step = int(checkpoint_state.trainer_state.get("global_step", 0)) if checkpoint_state is not None else 0
+        initial_obs, _ = envs.reset(seed=config.seed)
+        obs = _as_goal_observation_mapping(initial_obs, source="vector env")
+        global_step = _restore_training_state(
+            algorithm=algorithm,
+            replay_buffer=replay_buffer,
+            checkpoint_state=checkpoint_state,
+        )
         update_count = 0
         latest_update_metrics: MetricDict = {}
         trainer_state.global_step = global_step
@@ -179,21 +279,20 @@ def train_her(
                 normalized_actions = _apply_exploration_noise(normalized_actions, std=exploration_noise)
                 env_actions = _scale_actions(normalized_actions, low=low, high=high)
 
-            next_obs, rewards, terminated, truncated, _ = envs.step(env_actions.cpu().numpy())
-            if not isinstance(next_obs, Mapping):
-                raise TypeError(f"expected goal-conditioned Mapping observations from vector env, got {type(next_obs)!r}")
+            raw_next_obs, rewards, terminated, truncated, _ = envs.step(env_actions.cpu().numpy())
+            next_obs = _as_goal_observation_mapping(raw_next_obs, source="vector env")
             dones = np.logical_or(terminated, truncated).astype(np.float32)
 
-            for env_index in range(config.num_envs):
-                replay_buffer.add(
-                    env_index=env_index,
-                    obs=_slice_goal_observation(obs, env_index),
-                    actions=normalized_actions[env_index].detach().cpu().numpy(),
-                    rewards=float(rewards[env_index]),
-                    next_obs=_slice_goal_observation(next_obs, env_index),
-                    terminated=bool(terminated[env_index]),
-                    truncated=bool(truncated[env_index]),
-                )
+            _store_her_transitions(
+                replay_buffer,
+                obs=obs,
+                actions=normalized_actions,
+                rewards=rewards,
+                next_obs=next_obs,
+                terminated=terminated,
+                truncated=truncated,
+                num_envs=config.num_envs,
+            )
 
             obs = next_obs
             global_step += config.num_envs
@@ -208,11 +307,19 @@ def train_her(
                 ),
             )
 
-            if len(replay_buffer) >= max(batch_size, learning_starts) and global_step % train_frequency == 0:
-                result = algorithm.update(replay_buffer.sample(batch_size, env=reward_env), global_step=global_step)
-                latest_update_metrics = result.metrics
-                update_count += result.num_gradient_steps
-                callback_list.on_update_end(trainer_state, result)
+            latest_update_metrics, update_count = _maybe_update_algorithm(
+                algorithm=algorithm,
+                replay_buffer=replay_buffer,
+                reward_env=reward_env,
+                batch_size=batch_size,
+                learning_starts=learning_starts,
+                global_step=global_step,
+                train_frequency=train_frequency,
+                callback_list=callback_list,
+                trainer_state=trainer_state,
+                latest_update_metrics=latest_update_metrics,
+                update_count=update_count,
+            )
 
             metrics = {
                 **latest_update_metrics,
@@ -221,24 +328,20 @@ def train_her(
                 "buffer_size": float(len(replay_buffer)),
                 "gradient_steps": float(update_count),
             }
-            if should_run_evaluation(
+            metrics, should_stop = _maybe_run_evaluation(
+                algorithm=algorithm,
+                model=model,
+                config=config,
+                logger=logger,
+                callback_list=callback_list,
+                trainer_state=trainer_state,
+                metrics=metrics,
                 global_step=global_step,
-                total_timesteps=config.total_timesteps,
                 eval_interval=eval_interval,
-            ):
-                algorithm.set_eval_mode()
-                eval_metrics = _evaluate_her_policy(
-                    model,
-                    config,
-                    device=device,
-                    num_episodes=config.eval_episodes,
-                )
-                algorithm.set_train_mode()
-                metrics = {**metrics, **eval_metrics}
-                logger.log_metrics(metrics, step=global_step)
-                callback_list.on_eval_end(trainer_state, metrics)
-                if trainer_state.should_stop:
-                    break
+                device=device,
+            )
+            if should_stop:
+                break
 
         checkpoint_path = save_training_checkpoint(
             run_context=run_context,

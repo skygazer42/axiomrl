@@ -1,3 +1,5 @@
+import pytest
+
 from rl_training.data.n_step import NStepAccumulator
 
 
@@ -13,9 +15,9 @@ def test_n_step_accumulator_emits_transition_after_n_steps() -> None:
     transition = transitions[0]
     assert transition["obs"] == "s0"
     assert transition["actions"] == 0
-    assert transition["rewards"] == 6.0
+    assert transition["rewards"] == pytest.approx(6.0)
     assert transition["next_obs"] == "s3"
-    assert transition["dones"] == 0.0
+    assert transition["dones"] == pytest.approx(0.0)
 
 
 def test_n_step_accumulator_applies_discounting() -> None:
@@ -39,9 +41,9 @@ def test_n_step_accumulator_flushes_remaining_transitions_on_done() -> None:
 
     assert [transition["obs"] for transition in flushed] == ["s0", "s1", "s2"]
     assert [transition["actions"] for transition in flushed] == [0, 1, 2]
-    assert [transition["rewards"] for transition in flushed] == [6.0, 5.0, 3.0]
+    assert [transition["rewards"] for transition in flushed] == pytest.approx([6.0, 5.0, 3.0])
     assert [transition["next_obs"] for transition in flushed] == ["terminal", "terminal", "terminal"]
-    assert [transition["dones"] for transition in flushed] == [1.0, 1.0, 1.0]
+    assert [transition["dones"] for transition in flushed] == pytest.approx([1.0, 1.0, 1.0])
 
 
 def test_n_step_accumulator_is_isolated_per_env() -> None:
@@ -55,9 +57,8 @@ def test_n_step_accumulator_is_isolated_per_env() -> None:
 
     assert len(transitions_env0) == 1
     assert transitions_env0[0]["obs"] == "s0"
-    assert transitions_env0[0]["rewards"] == 3.0
+    assert transitions_env0[0]["rewards"] == pytest.approx(3.0)
 
     assert len(transitions_env1) == 1
     assert transitions_env1[0]["obs"] == "t0"
-    assert transitions_env1[0]["rewards"] == 12.0
-
+    assert transitions_env1[0]["rewards"] == pytest.approx(12.0)

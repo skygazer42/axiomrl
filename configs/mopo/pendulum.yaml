@@ -1,0 +1,30 @@
+algo: mopo
+env_id: Pendulum-v1
+seed: 131
+total_timesteps: 5000
+output_dir: runs
+device: auto
+num_envs: 1
+eval_episodes: 5
+algo_kwargs:
+  dataset_kind: random
+  dataset_size: 10000
+  dataset_seed: 31
+  batch_size: 256
+  hidden_sizes: [256, 256]
+  model_hidden_sizes: [256, 256]
+  num_ensembles: 5
+  model_batch_size: 256
+  model_updates: 1000
+  rollout_batch_size: 1024
+  rollout_horizon: 3
+  rollout_refresh_interval: 250
+  synthetic_buffer_capacity: 100000
+  synthetic_batch_ratio: 0.5
+  policy_learning_rate: 0.0003
+  model_learning_rate: 0.001
+  gamma: 0.99
+  alpha: 0.2
+  tau: 0.005
+  penalty_coef: 1.0
+  eval_interval: 1000

@@ -34,6 +34,9 @@ def test_readme_describes_core_contrib_and_zoo_workflows() -> None:
 
     assert "core + contrib + zoo" in readme_text
     assert "rl-training train --config configs/ppo/cartpole.yaml" in readme_text
+    assert "rl-training train --config configs/ars/pendulum.yaml" in readme_text
+    assert "rl-training train --config configs/openai_es/pendulum.yaml" in readme_text
+    assert "rl-training train --config configs/pets/pendulum.yaml" in readme_text
     assert "rl-training train --config configs/crr/pendulum.yaml" in readme_text
     assert "rl-training train --config configs/awr/pendulum.yaml" in readme_text
     assert "rl-training train --config configs/marwil/pendulum.yaml" in readme_text
@@ -58,7 +61,15 @@ def test_readme_describes_core_contrib_and_zoo_workflows() -> None:
     assert "configs/xql/pendulum.yaml" in readme_text
     assert "configs/rebrac/pendulum.yaml" in readme_text
     assert "configs/crossq/pendulum.yaml" in readme_text
+    assert "configs/decision_transformer/pendulum.yaml" in readme_text
+    assert "configs/impala/cartpole.yaml" in readme_text
+    assert "configs/appo/cartpole.yaml" in readme_text
+    assert "configs/mopo/pendulum.yaml" in readme_text
+    assert "configs/pets/pendulum.yaml" in readme_text
+    assert "configs/curl/pendulum_pixels.yaml" in readme_text
+    assert "configs/drq/pendulum_pixels.yaml" in readme_text
     assert "configs/drqv2/pendulum_pixels.yaml" in readme_text
+    assert "configs/ppg/cartpole.yaml" in readme_text
     assert "configs/discrete_sac/cartpole.yaml" in readme_text
     assert "configs/trpo/cartpole.yaml" in readme_text
     assert "render_mode: rgb_array" in readme_text
@@ -73,6 +84,8 @@ def test_readme_describes_core_contrib_and_zoo_workflows() -> None:
 
 def test_packaged_assets_include_core_configs_and_zoo_manifest() -> None:
     awac_config = find_packaged_asset("configs/awac/pendulum.yaml")
+    ars_config = find_packaged_asset("configs/ars/pendulum.yaml")
+    openai_es_config = find_packaged_asset("configs/openai_es/pendulum.yaml")
     awr_config = find_packaged_asset("configs/awr/pendulum.yaml")
     marwil_config = find_packaged_asset("configs/marwil/pendulum.yaml")
     bear_config = find_packaged_asset("configs/bear/pendulum.yaml")
@@ -85,7 +98,15 @@ def test_packaged_assets_include_core_configs_and_zoo_manifest() -> None:
     xql_config = find_packaged_asset("configs/xql/pendulum.yaml")
     rebrac_config = find_packaged_asset("configs/rebrac/pendulum.yaml")
     crossq_config = find_packaged_asset("configs/crossq/pendulum.yaml")
+    decision_transformer_config = find_packaged_asset("configs/decision_transformer/pendulum.yaml")
+    impala_config = find_packaged_asset("configs/impala/cartpole.yaml")
+    appo_config = find_packaged_asset("configs/appo/cartpole.yaml")
+    mopo_config = find_packaged_asset("configs/mopo/pendulum.yaml")
+    pets_config = find_packaged_asset("configs/pets/pendulum.yaml")
+    curl_config = find_packaged_asset("configs/curl/pendulum_pixels.yaml")
+    drq_config = find_packaged_asset("configs/drq/pendulum_pixels.yaml")
     drqv2_config = find_packaged_asset("configs/drqv2/pendulum_pixels.yaml")
+    ppg_config = find_packaged_asset("configs/ppg/cartpole.yaml")
     her_config = find_packaged_asset("configs/her/point_goal.yaml")
     discrete_sac_config = find_packaged_asset("configs/discrete_sac/cartpole.yaml")
     ppo_config = find_packaged_asset("configs/ppo/cartpole.yaml")
@@ -94,6 +115,8 @@ def test_packaged_assets_include_core_configs_and_zoo_manifest() -> None:
     zoo_readme = find_packaged_asset("zoo/README.md")
 
     assert awac_config is not None
+    assert ars_config is not None
+    assert openai_es_config is not None
     assert awr_config is not None
     assert marwil_config is not None
     assert bear_config is not None
@@ -106,7 +129,15 @@ def test_packaged_assets_include_core_configs_and_zoo_manifest() -> None:
     assert xql_config is not None
     assert rebrac_config is not None
     assert crossq_config is not None
+    assert decision_transformer_config is not None
+    assert impala_config is not None
+    assert appo_config is not None
+    assert mopo_config is not None
+    assert pets_config is not None
+    assert curl_config is not None
+    assert drq_config is not None
     assert drqv2_config is not None
+    assert ppg_config is not None
     assert her_config is not None
     assert discrete_sac_config is not None
     assert ppo_config is not None
@@ -114,6 +145,8 @@ def test_packaged_assets_include_core_configs_and_zoo_manifest() -> None:
     assert zoo_manifest is not None
     assert zoo_readme is not None
     assert awac_config.exists()
+    assert ars_config.exists()
+    assert openai_es_config.exists()
     assert awr_config.exists()
     assert marwil_config.exists()
     assert bear_config.exists()
@@ -126,7 +159,15 @@ def test_packaged_assets_include_core_configs_and_zoo_manifest() -> None:
     assert xql_config.exists()
     assert rebrac_config.exists()
     assert crossq_config.exists()
+    assert decision_transformer_config.exists()
+    assert impala_config.exists()
+    assert appo_config.exists()
+    assert mopo_config.exists()
+    assert pets_config.exists()
+    assert curl_config.exists()
+    assert drq_config.exists()
     assert drqv2_config.exists()
+    assert ppg_config.exists()
     assert her_config.exists()
     assert discrete_sac_config.exists()
     assert ppo_config.exists()

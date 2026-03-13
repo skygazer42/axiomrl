@@ -30,11 +30,7 @@ class RunningMeanStd:
         if x_tensor.numel() == 0:
             return
 
-        if x_tensor.ndim == 0:
-            batch_count = 1
-            batch_mean = x_tensor
-            batch_var = torch.zeros_like(batch_mean)
-        elif x_tensor.ndim == 1:
+        if x_tensor.ndim <= 1:
             batch_count = 1
             batch_mean = x_tensor
             batch_var = torch.zeros_like(batch_mean)
@@ -43,7 +39,7 @@ class RunningMeanStd:
             if batch_count == 0:
                 return
             batch_mean = x_tensor.mean(dim=0)
-            batch_var = x_tensor.var(dim=0, unbiased=False)
+            batch_var = x_tensor.var(dim=0, correction=0)
 
         if self._count == 0:
             self._mean = batch_mean.detach().clone()
@@ -72,4 +68,3 @@ class RunningMeanStd:
         self._mean = new_mean
         self._var = new_var
         self._count += int(batch_count)
-

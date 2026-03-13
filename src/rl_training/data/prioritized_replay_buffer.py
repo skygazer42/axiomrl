@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+import math
 
 import torch
 
@@ -82,7 +83,7 @@ class PrioritizedReplayBuffer:
             raise ValueError(f"beta must be >= 0, got {beta}")
 
         priorities = self.priorities[: self.size].clamp(min=self.priority_eps)
-        if self.alpha == 0.0:
+        if math.isclose(self.alpha, 0.0):
             probs = torch.full_like(priorities, 1.0 / float(self.size))
         else:
             scaled = priorities.pow(self.alpha)

@@ -25,7 +25,7 @@ class BC:
     ) -> None:
         self.model = model
         self.policy = model
-        self.optimizer = torch.optim.Adam(self.model.actor_parameters(), lr=float(learning_rate))
+        self.optimizer = torch.optim.Adam(self.model.actor_parameters(), lr=float(learning_rate), weight_decay=0.0)
 
     def update(self, batch: dict[str, Any], *, global_step: int) -> UpdateResult:
         del global_step

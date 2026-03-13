@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+import math
 
 import gymnasium as gym
 import numpy as np
@@ -58,6 +59,16 @@ _REWARD_PRESET_REGISTRY: dict[str, RewardTransformConfig] = {
 }
 
 
+def _is_identity_reward_config(config: RewardTransformConfig) -> bool:
+    return (
+        not config.sign
+        and math.isclose(config.scale, 1.0)
+        and math.isclose(config.shift, 0.0)
+        and config.clip_min is None
+        and config.clip_max is None
+    )
+
+
 def resolve_reward_preset(name: str) -> RewardTransformConfig:
     normalized_name = str(name).strip().lower()
     try:
@@ -99,13 +110,7 @@ def resolve_reward_wrapper_config(wrapper_kwargs: Mapping[str, object]) -> Rewar
         clip_min=float(clip_min) if clip_min is not None else preset_config.clip_min,
         clip_max=float(clip_max) if clip_max is not None else preset_config.clip_max,
     )
-    if (
-        config.sign is False
-        and config.scale == 1.0
-        and config.shift == 0.0
-        and config.clip_min is None
-        and config.clip_max is None
-    ):
+    if _is_identity_reward_config(config):
         return None
     return config
 
@@ -117,9 +122,9 @@ def apply_reward_wrappers(env: gym.Env, reward_config: RewardTransformConfig | N
     wrapped = env
     if reward_config.sign:
         wrapped = RewardSignWrapper(wrapped)
-    if reward_config.scale != 1.0:
+    if not math.isclose(reward_config.scale, 1.0):
         wrapped = RewardScaleWrapper(wrapped, scale=reward_config.scale)
-    if reward_config.shift != 0.0:
+    if not math.isclose(reward_config.shift, 0.0):
         wrapped = RewardShiftWrapper(wrapped, shift=reward_config.shift)
     if reward_config.clip_min is not None or reward_config.clip_max is not None:
         wrapped = RewardClipWrapper(

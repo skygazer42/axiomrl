@@ -56,12 +56,11 @@ def main(argv: list[str] | None = None) -> int:
         for preset in presets:
             config_path = preset["config"]
             print(f"rl-training train --config {config_path}")
-        return 0
-
-    suite = manifest.get("suite", "unknown")
-    print(f"suite={suite}")
-    for preset in presets:
-        print(f"{preset['name']}: {preset['config']}")
+    else:
+        suite = manifest.get("suite", "unknown")
+        print(f"suite={suite}")
+        for preset in presets:
+            print(f"{preset['name']}: {preset['config']}")
     return 0
 
 

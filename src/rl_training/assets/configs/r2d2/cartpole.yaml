@@ -1,0 +1,29 @@
+algo: r2d2
+env_id: CartPole-v1
+seed: 131
+total_timesteps: 5000
+output_dir: runs
+device: auto
+num_envs: 2
+eval_episodes: 5
+algo_kwargs:
+  buffer_capacity: 10000
+  batch_size: 8
+  learning_starts: 32
+  train_frequency: 1
+  target_update_interval: 32
+  hidden_sizes: [128]
+  head_hidden_sizes: [128]
+  features_dim: 128
+  recurrent_hidden_size: 128
+  recurrent_num_layers: 1
+  sequence_length: 8
+  epsilon_start: 1.0
+  epsilon_end: 0.05
+  exploration_fraction: 0.3
+  prioritized_alpha: 0.6
+  prioritized_beta_start: 0.4
+  prioritized_beta_end: 1.0
+  prioritized_beta_fraction: 1.0
+  priority_eta: 0.9
+  n_step: 3

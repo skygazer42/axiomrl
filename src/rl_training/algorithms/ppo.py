@@ -15,7 +15,7 @@ def _normalize_advantages(advantages: torch.Tensor) -> torch.Tensor:
         return advantages
 
     mean = advantages.mean()
-    std = advantages.std(unbiased=False)
+    std = advantages.std(correction=0)
     if std < 1e-8:
         return advantages - mean
     return (advantages - mean) / (std + 1e-8)
@@ -82,7 +82,7 @@ class PPO:
         max_grad_norm: float = 0.5,
     ) -> None:
         self.policy = policy
-        self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=learning_rate)
+        self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=learning_rate, weight_decay=0.0)
         self.clip_coef = clip_coef
         self.ent_coef = ent_coef
         self.vf_coef = vf_coef

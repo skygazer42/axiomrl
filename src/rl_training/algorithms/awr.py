@@ -11,7 +11,7 @@ from rl_training.models.mlp_iql import MLPIQLModel
 
 def _normalize_advantages(advantages: torch.Tensor) -> torch.Tensor:
     centered = advantages - advantages.mean()
-    return centered / (advantages.std(unbiased=False) + 1e-8)
+    return centered / (advantages.std(correction=0) + 1e-8)
 
 
 def _awr_loss_terms(batch: dict[str, torch.Tensor | float]) -> dict[str, torch.Tensor]:
@@ -56,8 +56,8 @@ class AWR:
 
         self.model = model
         self.policy = model
-        self.actor_optimizer = torch.optim.Adam(self.model.actor_parameters(), lr=float(learning_rate))
-        self.value_optimizer = torch.optim.Adam(self.model.value_parameters(), lr=float(learning_rate))
+        self.actor_optimizer = torch.optim.Adam(self.model.actor_parameters(), lr=float(learning_rate), weight_decay=0.0)
+        self.value_optimizer = torch.optim.Adam(self.model.value_parameters(), lr=float(learning_rate), weight_decay=0.0)
         self.beta = float(beta)
         self.max_weight = float(max_weight)
         self.normalize_advantages = bool(normalize_advantages)

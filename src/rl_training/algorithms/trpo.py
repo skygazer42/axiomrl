@@ -18,7 +18,7 @@ def _normalize_advantages(advantages: torch.Tensor) -> torch.Tensor:
         return advantages
 
     mean = advantages.mean()
-    std = advantages.std(unbiased=False)
+    std = advantages.std(correction=0)
     if std < 1e-8:
         return advantages - mean
     return (advantages - mean) / (std + 1e-8)
@@ -168,7 +168,7 @@ class TRPO:
             raise ValueError(f"ent_coef must be >= 0, got {ent_coef}")
 
         self.policy = policy
-        self.value_optimizer = torch.optim.Adam(self.policy.critic.parameters(), lr=value_learning_rate)
+        self.value_optimizer = torch.optim.Adam(self.policy.critic.parameters(), lr=value_learning_rate, weight_decay=0.0)
         self.max_kl = float(max_kl)
         self.cg_iterations = int(cg_iterations)
         self.cg_damping = float(cg_damping)
@@ -194,11 +194,13 @@ class TRPO:
         approx_kl = kl_divergence(old_dist, distribution).mean()
         return objective, surrogate_gain, entropy, approx_kl, new_logprobs
 
-    def update(self, batch: dict[str, Any], *, global_step: int) -> UpdateResult:
-        del global_step
-        self.set_train_mode()
-
-        device = next(self.policy.parameters()).device
+    def _prepare_batch_tensors(
+        self,
+        batch: dict[str, Any],
+        *,
+        device: torch.device,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        del self
         obs = torch.as_tensor(batch["obs"], dtype=torch.float32, device=device)
         if obs.ndim == 1:
             obs = obs.unsqueeze(0)
@@ -206,12 +208,19 @@ class TRPO:
         returns = torch.as_tensor(batch["returns"], dtype=torch.float32, device=device)
         advantages = _normalize_advantages(torch.as_tensor(batch["advantages"], dtype=torch.float32, device=device))
         old_logprobs = torch.as_tensor(batch.get("old_logprobs", batch["logprobs"]), dtype=torch.float32, device=device)
+        return obs, actions, returns, advantages, old_logprobs
 
-        actor_params = tuple(self.policy.actor.parameters())
-        with torch.no_grad():
-            old_dist = Categorical(logits=self.policy.actor(obs).detach())
-
-        objective, old_surrogate, _, _, _ = self._evaluate_actor(obs, actions, old_dist, old_logprobs, advantages)
+    def _attempt_policy_step(
+        self,
+        *,
+        obs: torch.Tensor,
+        actions: torch.Tensor,
+        old_dist: Categorical,
+        old_logprobs: torch.Tensor,
+        advantages: torch.Tensor,
+        actor_params: tuple[nn.Parameter, ...],
+        objective: torch.Tensor,
+    ) -> tuple[float, float, float, float, int]:
         flat_policy_grad = _flatten_tensors(
             torch.autograd.grad(objective, actor_params, retain_graph=True, allow_unused=True),
             actor_params,
@@ -223,80 +232,119 @@ class TRPO:
         step_norm = 0.0
         cg_iteration_count = 0
 
-        if torch.isfinite(flat_policy_grad).all() and torch.norm(flat_policy_grad) > 1e-8:
+        if not torch.isfinite(flat_policy_grad).all():
+            return accepted_step, accepted_fraction, backtrack_steps, step_norm, cg_iteration_count
+        if torch.linalg.vector_norm(flat_policy_grad, ord=2, dim=0) <= 1e-8:
+            return accepted_step, accepted_fraction, backtrack_steps, step_norm, cg_iteration_count
 
-            def fisher_vector_product(vector: torch.Tensor) -> torch.Tensor:
-                _, _, _, approx_kl, _ = self._evaluate_actor(obs, actions, old_dist, old_logprobs, advantages)
-                flat_kl_grad = _flatten_tensors(
-                    torch.autograd.grad(approx_kl, actor_params, create_graph=True, allow_unused=True),
-                    actor_params,
-                )
-                directional_kl = torch.dot(flat_kl_grad, vector)
-                hessian_vector = _flatten_tensors(
-                    torch.autograd.grad(directional_kl, actor_params, allow_unused=True),
-                    actor_params,
-                ).detach()
-                return hessian_vector + self.cg_damping * vector
-
-            step_direction, cg_iteration_count = _conjugate_gradient(
-                fisher_vector_product,
-                flat_policy_grad,
-                num_iterations=self.cg_iterations,
+        def fisher_vector_product(vector: torch.Tensor) -> torch.Tensor:
+            _, _, _, approx_kl, _ = self._evaluate_actor(obs, actions, old_dist, old_logprobs, advantages)
+            flat_kl_grad = _flatten_tensors(
+                torch.autograd.grad(approx_kl, actor_params, create_graph=True, allow_unused=True),
+                actor_params,
             )
-            fisher_step = fisher_vector_product(step_direction)
-            step_curvature = torch.dot(step_direction, fisher_step)
+            directional_kl = torch.dot(flat_kl_grad, vector)
+            hessian_vector = _flatten_tensors(
+                torch.autograd.grad(directional_kl, actor_params, allow_unused=True),
+                actor_params,
+            ).detach()
+            return hessian_vector + self.cg_damping * vector
 
-            if torch.isfinite(step_curvature) and step_curvature > 1e-8:
-                full_step = step_direction * torch.sqrt(
-                    torch.as_tensor(2.0 * self.max_kl, dtype=torch.float32, device=device) / (step_curvature + 1e-8)
+        step_direction, cg_iteration_count = _conjugate_gradient(
+            fisher_vector_product,
+            flat_policy_grad,
+            num_iterations=self.cg_iterations,
+        )
+        fisher_step = fisher_vector_product(step_direction)
+        step_curvature = torch.dot(step_direction, fisher_step)
+        if not (torch.isfinite(step_curvature) and step_curvature > 1e-8):
+            return accepted_step, accepted_fraction, backtrack_steps, step_norm, cg_iteration_count
+
+        full_step = step_direction * torch.sqrt(
+            torch.as_tensor(2.0 * self.max_kl, dtype=torch.float32, device=obs.device) / (step_curvature + 1e-8)
+        )
+        old_actor_params = _flat_parameters(actor_params)
+        old_objective = objective.detach()
+
+        for backtrack_index in range(self.line_search_steps):
+            fraction = self.line_search_shrink**backtrack_index
+            candidate_step = fraction * full_step
+            _set_flat_parameters(actor_params, old_actor_params + candidate_step)
+
+            with torch.no_grad():
+                candidate_objective, _, _, candidate_kl, _ = self._evaluate_actor(
+                    obs,
+                    actions,
+                    old_dist,
+                    old_logprobs,
+                    advantages,
                 )
-                old_actor_params = _flat_parameters(actor_params)
-                old_objective = objective.detach()
 
-                for backtrack_index in range(self.line_search_steps):
-                    fraction = self.line_search_shrink**backtrack_index
-                    candidate_step = fraction * full_step
-                    _set_flat_parameters(actor_params, old_actor_params + candidate_step)
+            if (
+                torch.isfinite(candidate_objective)
+                and torch.isfinite(candidate_kl)
+                and candidate_objective > old_objective
+                and candidate_kl <= self.max_kl
+            ):
+                accepted_step = 1.0
+                accepted_fraction = float(fraction)
+                backtrack_steps = float(backtrack_index)
+                step_norm = float(candidate_step.norm().detach().cpu().item())
+                break
 
-                    with torch.no_grad():
-                        candidate_objective, _, _, candidate_kl, _ = self._evaluate_actor(
-                            obs,
-                            actions,
-                            old_dist,
-                            old_logprobs,
-                            advantages,
-                        )
+        if not accepted_step:
+            _set_flat_parameters(actor_params, old_actor_params)
+        return accepted_step, accepted_fraction, backtrack_steps, step_norm, cg_iteration_count
 
-                    if (
-                        torch.isfinite(candidate_objective)
-                        and torch.isfinite(candidate_kl)
-                        and candidate_objective > old_objective
-                        and candidate_kl <= self.max_kl
-                    ):
-                        accepted_step = 1.0
-                        accepted_fraction = float(fraction)
-                        backtrack_steps = float(backtrack_index)
-                        step_norm = float(candidate_step.norm().detach().cpu().item())
-                        break
-
-                if not accepted_step:
-                    _set_flat_parameters(actor_params, old_actor_params)
-
-        final_value_loss = torch.zeros((), dtype=torch.float32, device=device)
+    def _run_value_updates(
+        self,
+        *,
+        obs: torch.Tensor,
+        returns: torch.Tensor,
+    ) -> torch.Tensor:
+        final_value_loss = torch.zeros((), dtype=torch.float32, device=obs.device)
         for _ in range(self.value_updates):
             values = self.policy.critic(obs).squeeze(-1)
             final_value_loss = 0.5 * F.mse_loss(values, returns)
             self.value_optimizer.zero_grad(set_to_none=True)
             final_value_loss.backward()
             self.value_optimizer.step()
+        return final_value_loss
 
+    def _collect_policy_value_tensors(
+        self,
+        *,
+        obs: torch.Tensor,
+        actions: torch.Tensor,
+        old_dist: Categorical,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         with torch.no_grad():
             distribution = Categorical(logits=self.policy.actor(obs))
             new_logprobs = distribution.log_prob(actions)
             entropy = distribution.entropy()
             approx_kl = kl_divergence(old_dist, distribution).mean()
             values = self.policy.critic(obs).squeeze(-1)
+        return new_logprobs, entropy, approx_kl, values
 
+    def _build_update_metrics(
+        self,
+        *,
+        device: torch.device,
+        old_logprobs: torch.Tensor,
+        new_logprobs: torch.Tensor,
+        advantages: torch.Tensor,
+        returns: torch.Tensor,
+        values: torch.Tensor,
+        entropy: torch.Tensor,
+        approx_kl: torch.Tensor,
+        accepted_step: float,
+        step_norm: float,
+        backtrack_steps: float,
+        cg_iteration_count: int,
+        accepted_fraction: float,
+        final_value_loss: torch.Tensor,
+        old_surrogate: torch.Tensor,
+    ) -> dict[str, float]:
         metrics = trpo_loss(
             {
                 "logprobs": old_logprobs,
@@ -317,6 +365,52 @@ class TRPO:
         metrics["final_value_loss"] = float(final_value_loss.detach().cpu().item())
         metrics["surrogate_improvement"] = float(
             (metrics["surrogate_gain"] - old_surrogate.detach().cpu().item())
+        )
+        return metrics
+
+    def update(self, batch: dict[str, Any], *, global_step: int) -> UpdateResult:
+        del global_step
+        self.set_train_mode()
+
+        device = next(self.policy.parameters()).device
+        obs, actions, returns, advantages, old_logprobs = self._prepare_batch_tensors(batch, device=device)
+
+        actor_params = tuple(self.policy.actor.parameters())
+        with torch.no_grad():
+            old_dist = Categorical(logits=self.policy.actor(obs).detach())
+
+        objective, old_surrogate, _, _, _ = self._evaluate_actor(obs, actions, old_dist, old_logprobs, advantages)
+        accepted_step, accepted_fraction, backtrack_steps, step_norm, cg_iteration_count = self._attempt_policy_step(
+            obs=obs,
+            actions=actions,
+            old_dist=old_dist,
+            old_logprobs=old_logprobs,
+            advantages=advantages,
+            actor_params=actor_params,
+            objective=objective,
+        )
+        final_value_loss = self._run_value_updates(obs=obs, returns=returns)
+        new_logprobs, entropy, approx_kl, values = self._collect_policy_value_tensors(
+            obs=obs,
+            actions=actions,
+            old_dist=old_dist,
+        )
+        metrics = self._build_update_metrics(
+            device=device,
+            old_logprobs=old_logprobs,
+            new_logprobs=new_logprobs,
+            advantages=advantages,
+            returns=returns,
+            values=values,
+            entropy=entropy,
+            approx_kl=approx_kl,
+            accepted_step=accepted_step,
+            step_norm=step_norm,
+            backtrack_steps=backtrack_steps,
+            cg_iteration_count=cg_iteration_count,
+            accepted_fraction=accepted_fraction,
+            final_value_loss=final_value_loss,
+            old_surrogate=old_surrogate,
         )
         return UpdateResult(metrics=metrics, num_gradient_steps=1 + self.value_updates)
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from typing import Any
 
 import torch
@@ -73,8 +74,8 @@ class MARWIL:
 
         self.model = model
         self.policy = model
-        self.actor_optimizer = torch.optim.Adam(self.model.actor_parameters(), lr=float(learning_rate))
-        self.value_optimizer = torch.optim.Adam(self.model.value_parameters(), lr=float(learning_rate))
+        self.actor_optimizer = torch.optim.Adam(self.model.actor_parameters(), lr=float(learning_rate), weight_decay=0.0)
+        self.value_optimizer = torch.optim.Adam(self.model.value_parameters(), lr=float(learning_rate), weight_decay=0.0)
         self.beta = float(beta)
         self.vf_coeff = float(vf_coeff)
         self.moving_average_sqd_adv_norm = float(moving_average_sqd_adv_norm_start)
@@ -111,7 +112,7 @@ class MARWIL:
                 (1.0 - self.moving_average_sqd_adv_norm_update_rate) * self.moving_average_sqd_adv_norm
                 + self.moving_average_sqd_adv_norm_update_rate * batch_sqd_adv_norm
             )
-            if self.beta == 0.0:
+            if math.isclose(self.beta, 0.0):
                 advantage_weights = torch.ones_like(advantages)
             else:
                 advantage_weights = torch.exp(self.beta * (advantages / self.advantage_norm_scale))

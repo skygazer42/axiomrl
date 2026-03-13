@@ -79,8 +79,8 @@ class CRR:
         self.model = model
         self.policy = model
         self.target_model = copy.deepcopy(model)
-        self.actor_optimizer = torch.optim.Adam(self.model.actor_parameters(), lr=float(learning_rate))
-        self.critic_optimizer = torch.optim.Adam(self.model.critic_parameters(), lr=float(learning_rate))
+        self.actor_optimizer = torch.optim.Adam(self.model.actor_parameters(), lr=float(learning_rate), weight_decay=0.0)
+        self.critic_optimizer = torch.optim.Adam(self.model.critic_parameters(), lr=float(learning_rate), weight_decay=0.0)
         self.gamma = float(gamma)
         self.tau = float(tau)
         self.beta = float(beta)

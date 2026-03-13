@@ -63,8 +63,8 @@ class DrQv2:
         self.model = model
         self.policy = model
         self.target_model = copy.deepcopy(model)
-        self.actor_optimizer = torch.optim.Adam(self.model.actor_parameters(), lr=learning_rate)
-        self.critic_optimizer = torch.optim.Adam(self.model.critic_parameters(), lr=learning_rate)
+        self.actor_optimizer = torch.optim.Adam(self.model.actor_parameters(), lr=learning_rate, weight_decay=0.0)
+        self.critic_optimizer = torch.optim.Adam(self.model.critic_parameters(), lr=learning_rate, weight_decay=0.0)
         self.gamma = gamma
         self.tau = tau
         self.policy_delay = policy_delay

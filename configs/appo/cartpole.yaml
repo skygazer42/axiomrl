@@ -1,0 +1,20 @@
+algo: appo
+env_id: CartPole-v1
+seed: 143
+total_timesteps: 5000
+output_dir: runs
+device: auto
+num_envs: 4
+eval_episodes: 5
+algo_kwargs:
+  num_steps: 128
+  hidden_sizes: [64, 64]
+  learning_rate: 0.0003
+  clip_coef: 0.2
+  ent_coef: 0.01
+  vf_coef: 0.5
+  gamma: 0.99
+  rho_clip: 1.0
+  c_clip: 1.0
+  pg_rho_clip: 1.0
+  max_grad_norm: 0.5

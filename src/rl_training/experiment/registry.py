@@ -10,10 +10,17 @@ import numpy as np
 import torch
 
 from rl_training.algorithms.a2c import A2C as A2CAlgorithm
+from rl_training.algorithms.ars import ARS as ARSAlgorithm
+from rl_training.algorithms.openai_es import OpenAIES as OpenAIESAlgorithm
+from rl_training.algorithms.impala import IMPALA as IMPALAAlgorithm
+from rl_training.algorithms.appo import APPO as APPOAlgorithm
 from rl_training.algorithms.awr import AWR as AWRAlgorithm
 from rl_training.algorithms.awac import AWAC as AWACAlgorithm
 from rl_training.algorithms.marwil import MARWIL as MARWILAlgorithm
 from rl_training.algorithms.bc import BC as BCAlgorithm
+from rl_training.algorithms.decision_transformer import DecisionTransformer as DecisionTransformerAlgorithm
+from rl_training.algorithms.mopo import MOPO as MOPOAlgorithm
+from rl_training.algorithms.pets import PETS as PETSAlgorithm
 from rl_training.algorithms.bcq import BCQ as BCQAlgorithm
 from rl_training.algorithms.bear import BEAR as BEARAlgorithm
 from rl_training.algorithms.cal_ql import CalQL as CalQLAlgorithm
@@ -21,21 +28,43 @@ from rl_training.algorithms.c51_dqn import C51DQN as C51DQNAlgorithm
 from rl_training.algorithms.crossq import CrossQ as CrossQAlgorithm
 from rl_training.algorithms.crr import CRR as CRRAlgorithm
 from rl_training.algorithms.cql import CQL as CQLAlgorithm
+from rl_training.algorithms.curl import CURL as CURLAlgorithm
+from rl_training.algorithms.d4pg import D4PG as D4PGAlgorithm
 from rl_training.algorithms.ddpg import DDPG as DDPGAlgorithm
+from rl_training.algorithms.drqn import DRQN as DRQNAlgorithm
+from rl_training.algorithms.r2d2 import R2D2 as R2D2Algorithm
+from rl_training.algorithms.naf import NAF as NAFAlgorithm
 from rl_training.algorithms.edac import EDAC as EDACAlgorithm
+from rl_training.algorithms.drq import DrQ as DrQAlgorithm
 from rl_training.algorithms.drqv2 import DrQv2 as DrQv2Algorithm
 from rl_training.algorithms.discrete_sac import DiscreteSAC as DiscreteSACAlgorithm
+from rl_training.algorithms.ppg import PPG as PPGAlgorithm
 from rl_training.algorithms.dqn import DQN as DQNAlgorithm
+from rl_training.algorithms.dqn import AdvantageLearningDQN as AdvantageLearningDQNAlgorithm
+from rl_training.algorithms.dqn import BoltzmannDQN as BoltzmannDQNAlgorithm
+from rl_training.algorithms.dqn import BoltzmannDoubleDQN as BoltzmannDoubleDQNAlgorithm
+from rl_training.algorithms.dqn import CQLDQN as CQLDQNAlgorithm
+from rl_training.algorithms.dqn import CQLDoubleDQN as CQLDoubleDQNAlgorithm
+from rl_training.algorithms.dqn import ClippedDoubleDQN as ClippedDoubleDQNAlgorithm
 from rl_training.algorithms.dqn import DoubleDQN as DoubleDQNAlgorithm
 from rl_training.algorithms.dqn import DuelingDQN as DuelingDQNAlgorithm
+from rl_training.algorithms.dqn import ExpectedDoubleDQN as ExpectedDoubleDQNAlgorithm
+from rl_training.algorithms.dqn import ExpectedSARSA as ExpectedSARSAAlgorithm
 from rl_training.algorithms.her import HER as HERAlgorithm
 from rl_training.algorithms.iql import IQL as IQLAlgorithm
 from rl_training.algorithms.iqn import IQN as IQNAlgorithm
+from rl_training.algorithms.dqn import HystereticDQN as HystereticDQNAlgorithm
+from rl_training.algorithms.dqn import MunchausenDQN as MunchausenDQNAlgorithm
+from rl_training.algorithms.dqn import MunchausenDoubleDQN as MunchausenDoubleDQNAlgorithm
+from rl_training.algorithms.dqn import PersistentAdvantageLearningDQN as PersistentAdvantageLearningDQNAlgorithm
 from rl_training.algorithms.xql import XQL as XQLAlgorithm
 from rl_training.algorithms.rlpd import RLPD as RLPDAlgorithm
+from rl_training.algorithms.dqn import MellowmaxDQN as MellowmaxDQNAlgorithm
 from rl_training.algorithms.dqn import NoisyDQN as NoisyDQNAlgorithm
 from rl_training.algorithms.dqn import PrioritizedDQN as PrioritizedDQNAlgorithm
 from rl_training.algorithms.dqn import RainbowDQN as RainbowDQNAlgorithm
+from rl_training.algorithms.dqn import SoftDQN as SoftDQNAlgorithm
+from rl_training.algorithms.dqn import SoftDoubleDQN as SoftDoubleDQNAlgorithm
 from rl_training.algorithms.ppo import PPO as PPOAlgorithm
 from rl_training.algorithms.qr_dqn import QRDQN as QRDQNAlgorithm
 from rl_training.algorithms.redq import REDQ as REDQAlgorithm
@@ -50,48 +79,72 @@ from rl_training.experiment.checkpointing import CheckpointState
 from rl_training.experiment.config import TrainConfig
 from rl_training.envs.factory import build_env
 from rl_training.envs.goals import flatten_goal_observation
-from rl_training.models.cnn import CNNActorCritic, CNNDrQv2Model, CNNQNetwork
+from rl_training.models.cnn import CNNActorCritic, CNNCURLModel, CNNDrQModel, CNNDrQv2Model, CNNQNetwork
+from rl_training.models.decision_transformer import DecisionTransformerModel
 from rl_training.models.mlp_actor_critic import MLPActorCritic
+from rl_training.models.mlp_ars import MLPARSModel
 from rl_training.models.mlp_bc import MLPBCModel
 from rl_training.models.mlp_bcq import MLPBCQModel
 from rl_training.models.mlp_bear import MLPBEARModel
 from rl_training.models.mlp_c51_q_network import MLPC51QNetwork
 from rl_training.models.mlp_crossq import MLPCrossQModel
+from rl_training.models.mlp_d4pg import MLPD4PGModel
 from rl_training.models.mlp_ddpg import MLPDDPGModel
 from rl_training.models.mlp_discrete_sac import MLPDiscreteSACModel
 from rl_training.models.mlp_dueling_noisy_q_network import MLPDuelingNoisyQNetwork
 from rl_training.models.mlp_dueling_q_network import MLPDuelingQNetwork
 from rl_training.models.mlp_iql import MLPIQLModel
 from rl_training.models.mlp_iqn_network import MLPIQNetwork
+from rl_training.models.mlp_mopo import MLPMOPOEnsembleModel
+from rl_training.models.mlp_naf import MLPNAFModel
 from rl_training.models.mlp_noisy_q_network import MLPNoisyQNetwork
+from rl_training.models.mlp_ppg import MLPPPGModel
 from rl_training.models.mlp_q_network import MLPQNetwork
 from rl_training.models.mlp_qr_q_network import MLPQRQNetwork
 from rl_training.models.mlp_redq import MLPREDQModel
 from rl_training.models.mlp_sac import MLPSACModel
 from rl_training.models.mlp_tqc import MLPTQCModel
 from rl_training.models.mlp_td3 import MLPTD3Model
-from rl_training.models.recurrent import LSTMActorCritic
+from rl_training.models.recurrent import LSTMActorCritic, LSTMQNetwork
 from rl_training.runtime.a2c_trainer import _evaluate_policy as _evaluate_a2c_policy
 from rl_training.runtime.a2c_trainer import train_a2c
+from rl_training.runtime.ars_trainer import _evaluate_ars_policy, train_ars
+from rl_training.runtime.openai_es_trainer import _evaluate_openai_es_policy, train_openai_es
+from rl_training.runtime.impala_trainer import _evaluate_impala_policy, train_impala
+from rl_training.runtime.appo_trainer import _evaluate_appo_policy, train_appo
 from rl_training.runtime.awr_trainer import train_awr
 from rl_training.runtime.awac_trainer import train_awac
 from rl_training.runtime.marwil_trainer import train_marwil
 from rl_training.runtime.bc_trainer import _evaluate_bc_policy, train_bc
+from rl_training.runtime.decision_transformer_trainer import (
+    _build_autoregressive_window,
+    _evaluate_decision_transformer_policy,
+    train_decision_transformer,
+)
+from rl_training.runtime.mopo_trainer import train_mopo
+from rl_training.runtime.pets_trainer import _evaluate_pets_policy, train_pets
 from rl_training.runtime.bcq_trainer import _evaluate_bcq_policy, train_bcq
 from rl_training.runtime.bear_trainer import train_bear
 from rl_training.runtime.cal_ql_trainer import train_cal_ql
 from rl_training.runtime.cql_trainer import train_cql
+from rl_training.runtime.curl_trainer import _evaluate_curl_policy, train_curl
 from rl_training.runtime.crossq_trainer import _evaluate_crossq_policy, train_crossq
 from rl_training.runtime.crr_trainer import train_crr
+from rl_training.runtime.d4pg_trainer import _evaluate_d4pg_policy, train_d4pg
 from rl_training.runtime.ddpg_trainer import _evaluate_ddpg_policy, train_ddpg
+from rl_training.runtime.drqn_trainer import _evaluate_drqn_policy, train_drqn
+from rl_training.runtime.r2d2_trainer import _evaluate_r2d2_policy, train_r2d2
 from rl_training.runtime.edac_trainer import train_edac
+from rl_training.runtime.drq_trainer import _evaluate_drq_policy, train_drq
 from rl_training.runtime.drqv2_trainer import _evaluate_drqv2_policy, train_drqv2
 from rl_training.runtime.discrete_sac_trainer import _evaluate_discrete_sac_policy, train_discrete_sac
 from rl_training.runtime.dqn_trainer import _evaluate_q_policy, train_dqn
+from rl_training.runtime.naf_trainer import _evaluate_naf_policy, train_naf
 from rl_training.runtime.her_trainer import _evaluate_her_policy, _infer_her_spaces, train_her
 from rl_training.runtime.iql_trainer import _evaluate_iql_policy, train_iql
 from rl_training.runtime.xql_trainer import train_xql
 from rl_training.runtime.ppo_trainer import _evaluate_policy, train_ppo
+from rl_training.runtime.ppg_trainer import _evaluate_ppg_policy, train_ppg
 from rl_training.runtime.recurrent_ppo_trainer import _evaluate_recurrent_policy, train_recurrent_ppo
 from rl_training.runtime.redq_trainer import _evaluate_redq_policy, train_redq
 from rl_training.runtime.rlpd_trainer import train_rlpd
@@ -230,12 +283,164 @@ def _load_a2c_algorithm(config: TrainConfig, checkpoint_state: CheckpointState, 
     return algorithm
 
 
+def _load_ars_algorithm(config: TrainConfig, checkpoint_state: CheckpointState, *, device: torch.device) -> ARSAlgorithm:
+    obs_dim, action_dim = _infer_continuous_env_spaces(config)
+    hidden_sizes = tuple(config.algo_kwargs.get("hidden_sizes", (64, 64)))
+    algorithm = ARSAlgorithm(
+        model=MLPARSModel(obs_dim=obs_dim, action_dim=action_dim, hidden_sizes=hidden_sizes).to(device),
+        step_size=float(config.algo_kwargs.get("step_size", 0.02)),
+        noise_std=float(config.algo_kwargs.get("noise_std", 0.03)),
+        num_top_directions=int(
+            config.algo_kwargs.get(
+                "num_top_directions",
+                max(1, int(config.algo_kwargs.get("num_directions", 8)) // 2),
+            )
+        ),
+    )
+    algorithm.load_state_dict(checkpoint_state.algorithm_state)
+    return algorithm
+
+
+def _load_openai_es_algorithm(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    *,
+    device: torch.device,
+) -> OpenAIESAlgorithm:
+    obs_dim, action_dim = _infer_continuous_env_spaces(config)
+    hidden_sizes = tuple(config.algo_kwargs.get("hidden_sizes", (64, 64)))
+    algorithm = OpenAIESAlgorithm(
+        model=MLPARSModel(obs_dim=obs_dim, action_dim=action_dim, hidden_sizes=hidden_sizes).to(device),
+        step_size=float(config.algo_kwargs.get("step_size", 0.02)),
+        noise_std=float(config.algo_kwargs.get("noise_std", 0.03)),
+        weight_decay=float(config.algo_kwargs.get("weight_decay", 0.0)),
+    )
+    algorithm.load_state_dict(checkpoint_state.algorithm_state)
+    return algorithm
+
+
+def _load_impala_algorithm(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    *,
+    device: torch.device,
+) -> IMPALAAlgorithm:
+    obs_shape, action_dim = _infer_discrete_env_spaces(config)
+    if len(obs_shape) != 1:
+        raise ValueError("impala checkpoint loading currently supports flat observations only")
+    obs_dim = obs_shape[0]
+    hidden_sizes = tuple(config.algo_kwargs.get("hidden_sizes", (64, 64)))
+    algorithm = IMPALAAlgorithm(
+        policy=MLPActorCritic(obs_dim=obs_dim, action_dim=action_dim, hidden_sizes=hidden_sizes).to(device),
+        learning_rate=float(config.algo_kwargs.get("learning_rate", 3e-4)),
+        ent_coef=float(config.algo_kwargs.get("ent_coef", 0.01)),
+        vf_coef=float(config.algo_kwargs.get("vf_coef", 0.5)),
+        gamma=float(config.algo_kwargs.get("gamma", 0.99)),
+        rho_clip=float(config.algo_kwargs.get("rho_clip", 1.0)),
+        c_clip=float(config.algo_kwargs.get("c_clip", 1.0)),
+        pg_rho_clip=float(config.algo_kwargs.get("pg_rho_clip", config.algo_kwargs.get("rho_clip", 1.0))),
+        max_grad_norm=float(config.algo_kwargs.get("max_grad_norm", 0.5)),
+    )
+    algorithm.load_state_dict(checkpoint_state.algorithm_state)
+    return algorithm
+
+
+def _load_appo_algorithm(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    *,
+    device: torch.device,
+) -> APPOAlgorithm:
+    obs_shape, action_dim = _infer_discrete_env_spaces(config)
+    if len(obs_shape) != 1:
+        raise ValueError("appo checkpoint loading currently supports flat observations only")
+    obs_dim = obs_shape[0]
+    hidden_sizes = tuple(config.algo_kwargs.get("hidden_sizes", (64, 64)))
+    algorithm = APPOAlgorithm(
+        policy=MLPActorCritic(obs_dim=obs_dim, action_dim=action_dim, hidden_sizes=hidden_sizes).to(device),
+        learning_rate=float(config.algo_kwargs.get("learning_rate", 3e-4)),
+        clip_coef=float(config.algo_kwargs.get("clip_coef", 0.2)),
+        ent_coef=float(config.algo_kwargs.get("ent_coef", 0.01)),
+        vf_coef=float(config.algo_kwargs.get("vf_coef", 0.5)),
+        gamma=float(config.algo_kwargs.get("gamma", 0.99)),
+        rho_clip=float(config.algo_kwargs.get("rho_clip", 1.0)),
+        c_clip=float(config.algo_kwargs.get("c_clip", 1.0)),
+        pg_rho_clip=float(config.algo_kwargs.get("pg_rho_clip", config.algo_kwargs.get("rho_clip", 1.0))),
+        max_grad_norm=float(config.algo_kwargs.get("max_grad_norm", 0.5)),
+    )
+    algorithm.load_state_dict(checkpoint_state.algorithm_state)
+    return algorithm
+
+
 def _load_bc_algorithm(config: TrainConfig, checkpoint_state: CheckpointState, *, device: torch.device) -> BCAlgorithm:
     obs_dim, action_dim = _infer_continuous_env_spaces(config)
     hidden_sizes = tuple(config.algo_kwargs.get("hidden_sizes", (256, 256)))
     algorithm = BCAlgorithm(
         model=MLPBCModel(obs_dim=obs_dim, action_dim=action_dim, hidden_sizes=hidden_sizes).to(device),
         learning_rate=float(config.algo_kwargs.get("learning_rate", 3e-4)),
+    )
+    algorithm.load_state_dict(checkpoint_state.algorithm_state)
+    return algorithm
+
+
+def _load_decision_transformer_algorithm(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    *,
+    device: torch.device,
+) -> DecisionTransformerAlgorithm:
+    obs_dim, action_dim = _infer_continuous_env_spaces(config)
+    algorithm = DecisionTransformerAlgorithm(
+        model=DecisionTransformerModel(
+            obs_dim=obs_dim,
+            action_dim=action_dim,
+            context_length=int(config.algo_kwargs.get("context_length", 20)),
+            hidden_size=int(config.algo_kwargs.get("hidden_size", 128)),
+            num_layers=int(config.algo_kwargs.get("num_layers", 3)),
+            num_heads=int(config.algo_kwargs.get("num_heads", 4)),
+            max_timestep=int(config.algo_kwargs.get("max_timestep", 1024)),
+            dropout=float(config.algo_kwargs.get("dropout", 0.1)),
+        ).to(device),
+        learning_rate=float(config.algo_kwargs.get("learning_rate", 1e-4)),
+    )
+    algorithm.load_state_dict(checkpoint_state.algorithm_state)
+    return algorithm
+
+
+def _load_mopo_algorithm(config: TrainConfig, checkpoint_state: CheckpointState, *, device: torch.device) -> MOPOAlgorithm:
+    obs_dim, action_dim = _infer_continuous_env_spaces(config)
+    hidden_sizes = tuple(config.algo_kwargs.get("hidden_sizes", (256, 256)))
+    model_hidden_sizes = tuple(config.algo_kwargs.get("model_hidden_sizes", hidden_sizes))
+    algorithm = MOPOAlgorithm(
+        policy_model=MLPSACModel(obs_dim=obs_dim, action_dim=action_dim, hidden_sizes=hidden_sizes).to(device),
+        dynamics_model=MLPMOPOEnsembleModel(
+            obs_dim=obs_dim,
+            action_dim=action_dim,
+            hidden_sizes=model_hidden_sizes,
+            num_ensembles=int(config.algo_kwargs.get("num_ensembles", 5)),
+        ).to(device),
+        policy_learning_rate=float(config.algo_kwargs.get("policy_learning_rate", 3e-4)),
+        model_learning_rate=float(config.algo_kwargs.get("model_learning_rate", 1e-3)),
+        gamma=float(config.algo_kwargs.get("gamma", 0.99)),
+        alpha=float(config.algo_kwargs.get("alpha", 0.2)),
+        tau=float(config.algo_kwargs.get("tau", 0.005)),
+        penalty_coef=float(config.algo_kwargs.get("penalty_coef", 1.0)),
+    )
+    algorithm.load_state_dict(checkpoint_state.algorithm_state)
+    return algorithm
+
+
+def _load_pets_algorithm(config: TrainConfig, checkpoint_state: CheckpointState, *, device: torch.device) -> PETSAlgorithm:
+    obs_dim, action_dim = _infer_continuous_env_spaces(config)
+    model_hidden_sizes = tuple(config.algo_kwargs.get("model_hidden_sizes", (256, 256)))
+    algorithm = PETSAlgorithm(
+        dynamics_model=MLPMOPOEnsembleModel(
+            obs_dim=obs_dim,
+            action_dim=action_dim,
+            hidden_sizes=model_hidden_sizes,
+            num_ensembles=int(config.algo_kwargs.get("num_ensembles", 5)),
+        ).to(device),
+        learning_rate=float(config.algo_kwargs.get("model_learning_rate", 1e-3)),
     )
     algorithm.load_state_dict(checkpoint_state.algorithm_state)
     return algorithm
@@ -294,7 +499,6 @@ def _load_awac_algorithm(config: TrainConfig, checkpoint_state: CheckpointState,
         model=MLPSACModel(obs_dim=obs_dim, action_dim=action_dim, hidden_sizes=hidden_sizes).to(device),
         learning_rate=float(config.algo_kwargs.get("learning_rate", 3e-4)),
         gamma=float(config.algo_kwargs.get("gamma", 0.99)),
-        alpha=float(config.algo_kwargs.get("alpha", 0.2)),
         tau=float(config.algo_kwargs.get("tau", 0.005)),
         awac_lambda=float(config.algo_kwargs.get("awac_lambda", 1.0)),
         max_advantage_weight=float(config.algo_kwargs.get("max_advantage_weight", 20.0)),
@@ -426,6 +630,31 @@ def _load_ppo_algorithm(config: TrainConfig, checkpoint_state: CheckpointState, 
     return algorithm
 
 
+def _load_ppg_algorithm(config: TrainConfig, checkpoint_state: CheckpointState, *, device: torch.device) -> PPGAlgorithm:
+    obs_shape, action_dim = _infer_discrete_env_spaces(config)
+    if len(obs_shape) != 1:
+        raise ValueError("ppg checkpoint loading currently supports flat observations only")
+
+    algorithm = PPGAlgorithm(
+        model=MLPPPGModel(
+            obs_dim=obs_shape[0],
+            action_dim=action_dim,
+            hidden_sizes=tuple(config.algo_kwargs.get("hidden_sizes", (64, 64))),
+        ).to(device),
+        learning_rate=float(config.algo_kwargs.get("learning_rate", 3e-4)),
+        aux_learning_rate=float(config.algo_kwargs.get("aux_learning_rate", config.algo_kwargs.get("learning_rate", 3e-4))),
+        clip_coef=float(config.algo_kwargs.get("clip_coef", 0.2)),
+        ent_coef=float(config.algo_kwargs.get("ent_coef", 0.01)),
+        vf_coef=float(config.algo_kwargs.get("vf_coef", 0.5)),
+        aux_value_coef=float(config.algo_kwargs.get("aux_value_coef", 1.0)),
+        behavior_clone_coef=float(config.algo_kwargs.get("behavior_clone_coef", 1.0)),
+        value_clone_coef=float(config.algo_kwargs.get("value_clone_coef", 1.0)),
+        max_grad_norm=float(config.algo_kwargs.get("max_grad_norm", 0.5)),
+    )
+    algorithm.load_state_dict(checkpoint_state.algorithm_state)
+    return algorithm
+
+
 def _load_trpo_algorithm(config: TrainConfig, checkpoint_state: CheckpointState, *, device: torch.device) -> TRPOAlgorithm:
     obs_shape, action_dim = _infer_discrete_env_spaces(config)
     if len(obs_shape) != 1:
@@ -515,17 +744,81 @@ def _load_dqn_algorithm(config: TrainConfig, checkpoint_state: CheckpointState, 
             q_network = MLPQNetwork(obs_dim=obs_dim, action_dim=action_dim, hidden_sizes=hidden_sizes).to(device)
             if config.algo == "double_dqn":
                 algorithm_cls = DoubleDQNAlgorithm
+            elif config.algo == "expected_sarsa":
+                algorithm_cls = ExpectedSARSAAlgorithm
+            elif config.algo == "expected_double_dqn":
+                algorithm_cls = ExpectedDoubleDQNAlgorithm
+            elif config.algo == "boltzmann_dqn":
+                algorithm_cls = BoltzmannDQNAlgorithm
+            elif config.algo == "boltzmann_double_dqn":
+                algorithm_cls = BoltzmannDoubleDQNAlgorithm
+            elif config.algo == "mellowmax_dqn":
+                algorithm_cls = MellowmaxDQNAlgorithm
+            elif config.algo == "soft_dqn":
+                algorithm_cls = SoftDQNAlgorithm
+            elif config.algo == "soft_double_dqn":
+                algorithm_cls = SoftDoubleDQNAlgorithm
+            elif config.algo == "advantage_learning_dqn":
+                algorithm_cls = AdvantageLearningDQNAlgorithm
+            elif config.algo == "persistent_advantage_learning_dqn":
+                algorithm_cls = PersistentAdvantageLearningDQNAlgorithm
+            elif config.algo == "munchausen_dqn":
+                algorithm_cls = MunchausenDQNAlgorithm
+            elif config.algo == "munchausen_double_dqn":
+                algorithm_cls = MunchausenDoubleDQNAlgorithm
+            elif config.algo == "cql_dqn":
+                algorithm_cls = CQLDQNAlgorithm
+            elif config.algo == "cql_double_dqn":
+                algorithm_cls = CQLDoubleDQNAlgorithm
+            elif config.algo == "clipped_double_dqn":
+                algorithm_cls = ClippedDoubleDQNAlgorithm
+            elif config.algo == "hysteretic_dqn":
+                algorithm_cls = HystereticDQNAlgorithm
             elif config.algo == "prioritized_dqn":
                 algorithm_cls = PrioritizedDQNAlgorithm
             else:
                 algorithm_cls = DQNAlgorithm
 
-    algorithm = algorithm_cls(
-        q_network=q_network,
-        learning_rate=float(config.algo_kwargs.get("learning_rate", 1e-3)),
-        gamma=float(config.algo_kwargs.get("gamma", 0.99)),
-        target_update_interval=int(config.algo_kwargs.get("target_update_interval", 250)),
-    )
+    algorithm_kwargs = {
+        "q_network": q_network,
+        "learning_rate": float(config.algo_kwargs.get("learning_rate", 1e-3)),
+        "gamma": float(config.algo_kwargs.get("gamma", 0.99)),
+        "target_update_interval": int(config.algo_kwargs.get("target_update_interval", 250)),
+    }
+    if algorithm_cls is ExpectedSARSAAlgorithm:
+        algorithm_kwargs["target_epsilon"] = float(config.algo_kwargs.get("target_epsilon", 0.05))
+    elif algorithm_cls is ExpectedDoubleDQNAlgorithm:
+        algorithm_kwargs["target_epsilon"] = float(config.algo_kwargs.get("target_epsilon", 0.05))
+    elif algorithm_cls is BoltzmannDQNAlgorithm:
+        algorithm_kwargs["boltzmann_temperature"] = float(config.algo_kwargs.get("boltzmann_temperature", 0.5))
+    elif algorithm_cls is BoltzmannDoubleDQNAlgorithm:
+        algorithm_kwargs["boltzmann_temperature"] = float(config.algo_kwargs.get("boltzmann_temperature", 0.5))
+    elif algorithm_cls is MellowmaxDQNAlgorithm:
+        algorithm_kwargs["mellowmax_omega"] = float(config.algo_kwargs.get("mellowmax_omega", 5.0))
+    elif algorithm_cls is SoftDQNAlgorithm:
+        algorithm_kwargs["entropy_temperature"] = float(config.algo_kwargs.get("entropy_temperature", 0.03))
+    elif algorithm_cls is SoftDoubleDQNAlgorithm:
+        algorithm_kwargs["entropy_temperature"] = float(config.algo_kwargs.get("entropy_temperature", 0.03))
+    elif algorithm_cls is AdvantageLearningDQNAlgorithm:
+        algorithm_kwargs["advantage_alpha"] = float(config.algo_kwargs.get("advantage_alpha", 0.9))
+    elif algorithm_cls is PersistentAdvantageLearningDQNAlgorithm:
+        algorithm_kwargs["persistent_advantage_alpha"] = float(config.algo_kwargs.get("persistent_advantage_alpha", 0.9))
+    elif algorithm_cls is MunchausenDQNAlgorithm:
+        algorithm_kwargs["munchausen_alpha"] = float(config.algo_kwargs.get("munchausen_alpha", 0.9))
+        algorithm_kwargs["entropy_temperature"] = float(config.algo_kwargs.get("entropy_temperature", 0.03))
+        algorithm_kwargs["munchausen_clip_min"] = float(config.algo_kwargs.get("munchausen_clip_min", -1.0))
+    elif algorithm_cls is MunchausenDoubleDQNAlgorithm:
+        algorithm_kwargs["munchausen_alpha"] = float(config.algo_kwargs.get("munchausen_alpha", 0.9))
+        algorithm_kwargs["entropy_temperature"] = float(config.algo_kwargs.get("entropy_temperature", 0.03))
+        algorithm_kwargs["munchausen_clip_min"] = float(config.algo_kwargs.get("munchausen_clip_min", -1.0))
+    elif algorithm_cls is CQLDQNAlgorithm:
+        algorithm_kwargs["cql_alpha"] = float(config.algo_kwargs.get("cql_alpha", 1.0))
+    elif algorithm_cls is CQLDoubleDQNAlgorithm:
+        algorithm_kwargs["cql_alpha"] = float(config.algo_kwargs.get("cql_alpha", 1.0))
+    elif algorithm_cls is HystereticDQNAlgorithm:
+        algorithm_kwargs["hysteretic_beta"] = float(config.algo_kwargs.get("hysteretic_beta", 0.1))
+
+    algorithm = algorithm_cls(**algorithm_kwargs)
     algorithm.load_state_dict(checkpoint_state.algorithm_state)
     return algorithm
 
@@ -803,6 +1096,136 @@ def _load_ddpg_algorithm(config: TrainConfig, checkpoint_state: CheckpointState,
     return algorithm
 
 
+def _load_naf_algorithm(config: TrainConfig, checkpoint_state: CheckpointState, *, device: torch.device) -> NAFAlgorithm:
+    obs_dim, action_dim = _infer_continuous_env_spaces(config)
+    hidden_sizes = tuple(config.algo_kwargs.get("hidden_sizes", (256, 256)))
+    algorithm = NAFAlgorithm(
+        model=MLPNAFModel(obs_dim=obs_dim, action_dim=action_dim, hidden_sizes=hidden_sizes).to(device),
+        learning_rate=float(config.algo_kwargs.get("learning_rate", 3e-4)),
+        gamma=float(config.algo_kwargs.get("gamma", 0.99)),
+        tau=float(config.algo_kwargs.get("tau", 0.005)),
+    )
+    algorithm.load_state_dict(checkpoint_state.algorithm_state)
+    return algorithm
+
+
+def _load_d4pg_algorithm(config: TrainConfig, checkpoint_state: CheckpointState, *, device: torch.device) -> D4PGAlgorithm:
+    obs_dim, action_dim = _infer_continuous_env_spaces(config)
+    hidden_sizes = tuple(config.algo_kwargs.get("hidden_sizes", (256, 256)))
+    v_min = float(config.algo_kwargs.get("v_min", -100.0))
+    v_max = float(config.algo_kwargs.get("v_max", 100.0))
+    num_atoms = int(config.algo_kwargs.get("num_atoms", 51))
+    algorithm = D4PGAlgorithm(
+        model=MLPD4PGModel(
+            obs_dim=obs_dim,
+            action_dim=action_dim,
+            hidden_sizes=hidden_sizes,
+            v_min=v_min,
+            v_max=v_max,
+            num_atoms=num_atoms,
+        ).to(device),
+        learning_rate=float(config.algo_kwargs.get("learning_rate", 3e-4)),
+        gamma=float(config.algo_kwargs.get("gamma", 0.99)),
+        tau=float(config.algo_kwargs.get("tau", 0.005)),
+        v_min=v_min,
+        v_max=v_max,
+        num_atoms=num_atoms,
+    )
+    algorithm.load_state_dict(checkpoint_state.algorithm_state)
+    return algorithm
+
+
+def _load_drqn_algorithm(config: TrainConfig, checkpoint_state: CheckpointState, *, device: torch.device) -> DRQNAlgorithm:
+    obs_shape, action_dim = _infer_discrete_env_spaces(config)
+    if len(obs_shape) != 1:
+        raise ValueError("drqn checkpoint loading currently supports flat observations only")
+
+    algorithm = DRQNAlgorithm(
+        q_network=LSTMQNetwork(
+            obs_shape=obs_shape,
+            action_dim=action_dim,
+            features_dim=int(config.algo_kwargs.get("features_dim", 256)),
+            encoder_hidden_sizes=tuple(config.algo_kwargs.get("hidden_sizes", (128,))),
+            head_hidden_sizes=tuple(config.algo_kwargs.get("head_hidden_sizes", (128,))),
+            hidden_size=int(config.algo_kwargs.get("recurrent_hidden_size", 256)),
+            num_layers=int(config.algo_kwargs.get("recurrent_num_layers", 1)),
+        ).to(device),
+        learning_rate=float(config.algo_kwargs.get("learning_rate", 1e-3)),
+        gamma=float(config.algo_kwargs.get("gamma", 0.99)),
+        target_update_interval=int(config.algo_kwargs.get("target_update_interval", 250)),
+    )
+    algorithm.load_state_dict(checkpoint_state.algorithm_state)
+    return algorithm
+
+
+def _load_r2d2_algorithm(config: TrainConfig, checkpoint_state: CheckpointState, *, device: torch.device) -> R2D2Algorithm:
+    obs_shape, action_dim = _infer_discrete_env_spaces(config)
+    if len(obs_shape) != 1:
+        raise ValueError("r2d2 checkpoint loading currently supports flat observations only")
+
+    algorithm = R2D2Algorithm(
+        q_network=LSTMQNetwork(
+            obs_shape=obs_shape,
+            action_dim=action_dim,
+            features_dim=int(config.algo_kwargs.get("features_dim", 256)),
+            encoder_hidden_sizes=tuple(config.algo_kwargs.get("hidden_sizes", (128,))),
+            head_hidden_sizes=tuple(config.algo_kwargs.get("head_hidden_sizes", (128,))),
+            hidden_size=int(config.algo_kwargs.get("recurrent_hidden_size", 256)),
+            num_layers=int(config.algo_kwargs.get("recurrent_num_layers", 1)),
+        ).to(device),
+        learning_rate=float(config.algo_kwargs.get("learning_rate", 1e-3)),
+        gamma=float(config.algo_kwargs.get("gamma", 0.99)) ** int(config.algo_kwargs.get("n_step", 3)),
+        target_update_interval=int(config.algo_kwargs.get("target_update_interval", 250)),
+        double_q=True,
+        priority_eta=float(config.algo_kwargs.get("priority_eta", 0.9)),
+    )
+    algorithm.load_state_dict(checkpoint_state.algorithm_state)
+    return algorithm
+
+
+def _load_drq_algorithm(config: TrainConfig, checkpoint_state: CheckpointState, *, device: torch.device) -> DrQAlgorithm:
+    obs_shape, action_dim = _infer_image_continuous_env_spaces(config)
+    algorithm = DrQAlgorithm(
+        model=CNNDrQModel(
+            obs_shape=obs_shape,
+            action_dim=action_dim,
+            features_dim=int(config.algo_kwargs.get("features_dim", 256)),
+            actor_hidden_sizes=tuple(config.algo_kwargs.get("actor_hidden_sizes", (256, 256))),
+            critic_hidden_sizes=tuple(config.algo_kwargs.get("critic_hidden_sizes", (256, 256))),
+        ).to(device),
+        learning_rate=float(config.algo_kwargs.get("learning_rate", 1e-4)),
+        gamma=float(config.algo_kwargs.get("gamma", 0.99)),
+        alpha=float(config.algo_kwargs.get("alpha", 0.1)),
+        tau=float(config.algo_kwargs.get("tau", 0.01)),
+        augmentation_pad=int(config.algo_kwargs.get("augmentation_pad", 4)),
+    )
+    algorithm.load_state_dict(checkpoint_state.algorithm_state)
+    return algorithm
+
+
+def _load_curl_algorithm(config: TrainConfig, checkpoint_state: CheckpointState, *, device: torch.device) -> CURLAlgorithm:
+    obs_shape, action_dim = _infer_image_continuous_env_spaces(config)
+    algorithm = CURLAlgorithm(
+        model=CNNCURLModel(
+            obs_shape=obs_shape,
+            action_dim=action_dim,
+            features_dim=int(config.algo_kwargs.get("features_dim", 256)),
+            actor_hidden_sizes=tuple(config.algo_kwargs.get("actor_hidden_sizes", (256, 256))),
+            critic_hidden_sizes=tuple(config.algo_kwargs.get("critic_hidden_sizes", (256, 256))),
+            projection_dim=int(config.algo_kwargs.get("projection_dim", 128)),
+        ).to(device),
+        learning_rate=float(config.algo_kwargs.get("learning_rate", 1e-4)),
+        gamma=float(config.algo_kwargs.get("gamma", 0.99)),
+        alpha=float(config.algo_kwargs.get("alpha", 0.1)),
+        tau=float(config.algo_kwargs.get("tau", 0.01)),
+        augmentation_pad=int(config.algo_kwargs.get("augmentation_pad", 4)),
+        curl_temperature=float(config.algo_kwargs.get("curl_temperature", 0.1)),
+        curl_coef=float(config.algo_kwargs.get("curl_coef", 1.0)),
+    )
+    algorithm.load_state_dict(checkpoint_state.algorithm_state)
+    return algorithm
+
+
 def _load_drqv2_algorithm(config: TrainConfig, checkpoint_state: CheckpointState, *, device: torch.device) -> DrQv2Algorithm:
     obs_shape, action_dim = _infer_image_continuous_env_spaces(config)
     algorithm = DrQv2Algorithm(
@@ -908,6 +1331,41 @@ def _evaluate_a2c(config: TrainConfig, checkpoint_state: CheckpointState, device
     return _evaluate_a2c_policy(algorithm.policy, config, device=device, num_episodes=num_episodes)
 
 
+def _evaluate_ars(config: TrainConfig, checkpoint_state: CheckpointState, device: torch.device, num_episodes: int) -> MetricDict:
+    algorithm = _load_ars_algorithm(config, checkpoint_state, device=device)
+    return _evaluate_ars_policy(algorithm.model, config, device=device, num_episodes=num_episodes)
+
+
+def _evaluate_openai_es(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    num_episodes: int,
+) -> MetricDict:
+    algorithm = _load_openai_es_algorithm(config, checkpoint_state, device=device)
+    return _evaluate_openai_es_policy(algorithm.model, config, device=device, num_episodes=num_episodes)
+
+
+def _evaluate_impala(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    num_episodes: int,
+) -> MetricDict:
+    algorithm = _load_impala_algorithm(config, checkpoint_state, device=device)
+    return _evaluate_impala_policy(algorithm.policy, config, device=device, num_episodes=num_episodes)
+
+
+def _evaluate_appo(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    num_episodes: int,
+) -> MetricDict:
+    algorithm = _load_appo_algorithm(config, checkpoint_state, device=device)
+    return _evaluate_appo_policy(algorithm.policy, config, device=device, num_episodes=num_episodes)
+
+
 def _evaluate_bc(config: TrainConfig, checkpoint_state: CheckpointState, device: torch.device, num_episodes: int) -> MetricDict:
     algorithm = _load_bc_algorithm(config, checkpoint_state, device=device)
     return _evaluate_bc_policy(algorithm.model, config, device=device, num_episodes=num_episodes)
@@ -932,6 +1390,35 @@ def _evaluate_bcq(
 def _evaluate_bear(config: TrainConfig, checkpoint_state: CheckpointState, device: torch.device, num_episodes: int) -> MetricDict:
     algorithm = _load_bear_algorithm(config, checkpoint_state, device=device)
     return _evaluate_sac_policy(algorithm.model, config, device=device, num_episodes=num_episodes)
+
+
+def _evaluate_decision_transformer(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    num_episodes: int,
+) -> MetricDict:
+    algorithm = _load_decision_transformer_algorithm(config, checkpoint_state, device=device)
+    return _evaluate_decision_transformer_policy(
+        algorithm.model,
+        config,
+        device=device,
+        num_episodes=num_episodes,
+        context_length=int(config.algo_kwargs.get("context_length", 20)),
+        target_return=float(config.algo_kwargs.get("target_return", 0.0)),
+        max_timestep=int(config.algo_kwargs.get("max_timestep", 1024)),
+        gamma=float(config.algo_kwargs.get("gamma", 0.99)),
+    )
+
+
+def _evaluate_mopo(config: TrainConfig, checkpoint_state: CheckpointState, device: torch.device, num_episodes: int) -> MetricDict:
+    algorithm = _load_mopo_algorithm(config, checkpoint_state, device=device)
+    return _evaluate_sac_policy(algorithm.policy_model, config, device=device, num_episodes=num_episodes)
+
+
+def _evaluate_pets(config: TrainConfig, checkpoint_state: CheckpointState, device: torch.device, num_episodes: int) -> MetricDict:
+    algorithm = _load_pets_algorithm(config, checkpoint_state, device=device)
+    return _evaluate_pets_policy(algorithm, config, device=device, num_episodes=num_episodes)
 
 
 def _evaluate_awac(config: TrainConfig, checkpoint_state: CheckpointState, device: torch.device, num_episodes: int) -> MetricDict:
@@ -1080,6 +1567,43 @@ def _evaluate_ddpg(config: TrainConfig, checkpoint_state: CheckpointState, devic
     return _evaluate_ddpg_policy(algorithm.model, config, device=device, num_episodes=num_episodes)
 
 
+def _evaluate_naf(config: TrainConfig, checkpoint_state: CheckpointState, device: torch.device, num_episodes: int) -> MetricDict:
+    algorithm = _load_naf_algorithm(config, checkpoint_state, device=device)
+    return _evaluate_naf_policy(algorithm.model, config, device=device, num_episodes=num_episodes)
+
+
+def _evaluate_d4pg(config: TrainConfig, checkpoint_state: CheckpointState, device: torch.device, num_episodes: int) -> MetricDict:
+    algorithm = _load_d4pg_algorithm(config, checkpoint_state, device=device)
+    return _evaluate_d4pg_policy(algorithm.model, config, device=device, num_episodes=num_episodes)
+
+
+def _evaluate_drqn(config: TrainConfig, checkpoint_state: CheckpointState, device: torch.device, num_episodes: int) -> MetricDict:
+    algorithm = _load_drqn_algorithm(config, checkpoint_state, device=device)
+    algorithm.set_eval_mode()
+    return _evaluate_drqn_policy(algorithm.q_network, config, device=device, num_episodes=num_episodes)
+
+
+def _evaluate_r2d2(config: TrainConfig, checkpoint_state: CheckpointState, device: torch.device, num_episodes: int) -> MetricDict:
+    algorithm = _load_r2d2_algorithm(config, checkpoint_state, device=device)
+    algorithm.set_eval_mode()
+    return _evaluate_r2d2_policy(algorithm.q_network, config, device=device, num_episodes=num_episodes)
+
+
+def _evaluate_drq(config: TrainConfig, checkpoint_state: CheckpointState, device: torch.device, num_episodes: int) -> MetricDict:
+    algorithm = _load_drq_algorithm(config, checkpoint_state, device=device)
+    return _evaluate_drq_policy(algorithm.model, config, device=device, num_episodes=num_episodes)
+
+
+def _evaluate_curl(config: TrainConfig, checkpoint_state: CheckpointState, device: torch.device, num_episodes: int) -> MetricDict:
+    algorithm = _load_curl_algorithm(config, checkpoint_state, device=device)
+    return _evaluate_curl_policy(algorithm.model, config, device=device, num_episodes=num_episodes)
+
+
+def _evaluate_ppg(config: TrainConfig, checkpoint_state: CheckpointState, device: torch.device, num_episodes: int) -> MetricDict:
+    algorithm = _load_ppg_algorithm(config, checkpoint_state, device=device)
+    return _evaluate_ppg_policy(algorithm.model, config, device=device, num_episodes=num_episodes)
+
+
 def _evaluate_drqv2(
     config: TrainConfig,
     checkpoint_state: CheckpointState,
@@ -1120,6 +1644,68 @@ def _predict_a2c(
     deterministic: bool,
 ) -> int | np.ndarray:
     algorithm = _load_a2c_algorithm(config, checkpoint_state, device=device)
+    obs_tensor = _prepare_observation(obs, device=device)
+    with torch.no_grad():
+        actions = algorithm.policy.act(obs_tensor, deterministic=deterministic).actions
+    return _format_action_output(actions, discrete=True)
+
+
+def _predict_ars(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    obs: object,
+    deterministic: bool,
+) -> int | np.ndarray:
+    del deterministic
+    algorithm = _load_ars_algorithm(config, checkpoint_state, device=device)
+    obs_tensor = _prepare_observation(obs, device=device)
+    low, high = _continuous_action_bounds(config, device=device)
+    with torch.no_grad():
+        normalized_actions = algorithm.model.actor(obs_tensor)
+        actions = _scale_continuous_actions(normalized_actions, low=low, high=high)
+    return _format_action_output(actions, discrete=False)
+
+
+def _predict_openai_es(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    obs: object,
+    deterministic: bool,
+) -> int | np.ndarray:
+    del deterministic
+    algorithm = _load_openai_es_algorithm(config, checkpoint_state, device=device)
+    obs_tensor = _prepare_observation(obs, device=device)
+    low, high = _continuous_action_bounds(config, device=device)
+    with torch.no_grad():
+        normalized_actions = algorithm.model.actor(obs_tensor)
+        actions = _scale_continuous_actions(normalized_actions, low=low, high=high)
+    return _format_action_output(actions, discrete=False)
+
+
+def _predict_impala(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    obs: object,
+    deterministic: bool,
+) -> int | np.ndarray:
+    algorithm = _load_impala_algorithm(config, checkpoint_state, device=device)
+    obs_tensor = _prepare_observation(obs, device=device)
+    with torch.no_grad():
+        actions = algorithm.policy.act(obs_tensor, deterministic=deterministic).actions
+    return _format_action_output(actions, discrete=True)
+
+
+def _predict_appo(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    obs: object,
+    deterministic: bool,
+) -> int | np.ndarray:
+    algorithm = _load_appo_algorithm(config, checkpoint_state, device=device)
     obs_tensor = _prepare_observation(obs, device=device)
     with torch.no_grad():
         actions = algorithm.policy.act(obs_tensor, deterministic=deterministic).actions
@@ -1210,6 +1796,76 @@ def _predict_bcq(
         )
         actions = _scale_continuous_actions(normalized_actions, low=low, high=high)
     return _format_action_output(actions, discrete=False)
+
+
+def _predict_decision_transformer(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    obs: object,
+    deterministic: bool,
+) -> int | np.ndarray:
+    del deterministic
+    algorithm = _load_decision_transformer_algorithm(config, checkpoint_state, device=device)
+    low, high = _continuous_action_bounds(config, device=device)
+    obs_array = np.asarray(obs, dtype=np.float32)
+    action_dim = int(low.numel())
+    autoregressive_batch = _build_autoregressive_window(
+        [obs_array],
+        [],
+        [float(config.algo_kwargs.get("target_return", 0.0))],
+        context_length=int(config.algo_kwargs.get("context_length", 20)),
+        action_dim=action_dim,
+        max_timestep=int(config.algo_kwargs.get("max_timestep", 1024)),
+        device=device,
+    )
+    with torch.no_grad():
+        normalized_actions = torch.nan_to_num(
+            algorithm.model.predict_last_action(**autoregressive_batch),
+            nan=0.0,
+            posinf=1.0,
+            neginf=-1.0,
+        )
+        actions = _scale_continuous_actions(normalized_actions, low=low, high=high)
+    return _format_action_output(actions, discrete=False)
+
+
+def _predict_mopo(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    obs: object,
+    deterministic: bool,
+) -> int | np.ndarray:
+    algorithm = _load_mopo_algorithm(config, checkpoint_state, device=device)
+    obs_tensor = _prepare_observation(obs, device=device)
+    low, high = _continuous_action_bounds(config, device=device)
+    with torch.no_grad():
+        normalized_actions = algorithm.policy_model.sample_actions(obs_tensor, deterministic=deterministic).actions
+        actions = _scale_continuous_actions(normalized_actions, low=low, high=high)
+    return _format_action_output(actions, discrete=False)
+
+
+def _predict_pets(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    obs: object,
+    deterministic: bool,
+) -> int | np.ndarray:
+    algorithm = _load_pets_algorithm(config, checkpoint_state, device=device)
+    low, high = _continuous_action_bounds(config, device=device)
+    return algorithm.plan_action(
+        obs,
+        action_low=low.detach().cpu().numpy(),
+        action_high=high.detach().cpu().numpy(),
+        horizon=int(config.algo_kwargs.get("planning_horizon", 5)),
+        num_candidates=int(config.algo_kwargs.get("planning_candidates", 256)),
+        num_iterations=int(config.algo_kwargs.get("planning_iterations", 4)),
+        num_topk=int(config.algo_kwargs.get("planning_topk", 32)),
+        num_particles=int(config.algo_kwargs.get("planning_particles", 8)),
+        deterministic=deterministic,
+    )
 
 
 def _predict_bear(
@@ -1547,6 +2203,86 @@ def _predict_ddpg(
     return _format_action_output(actions, discrete=False)
 
 
+def _predict_naf(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    obs: object,
+    deterministic: bool,
+) -> int | np.ndarray:
+    del deterministic
+    algorithm = _load_naf_algorithm(config, checkpoint_state, device=device)
+    obs_tensor = _prepare_observation(obs, device=device)
+    low, high = _continuous_action_bounds(config, device=device)
+    with torch.no_grad():
+        normalized_actions = algorithm.model.actor(obs_tensor)
+        actions = _scale_continuous_actions(normalized_actions, low=low, high=high)
+    return _format_action_output(actions, discrete=False)
+
+
+def _predict_d4pg(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    obs: object,
+    deterministic: bool,
+) -> int | np.ndarray:
+    del deterministic
+    algorithm = _load_d4pg_algorithm(config, checkpoint_state, device=device)
+    obs_tensor = _prepare_observation(obs, device=device)
+    low, high = _continuous_action_bounds(config, device=device)
+    with torch.no_grad():
+        normalized_actions = algorithm.model.actor(obs_tensor)
+        actions = _scale_continuous_actions(normalized_actions, low=low, high=high)
+    return _format_action_output(actions, discrete=False)
+
+
+def _predict_ppg(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    obs: object,
+    deterministic: bool,
+) -> int | np.ndarray:
+    algorithm = _load_ppg_algorithm(config, checkpoint_state, device=device)
+    obs_tensor = _prepare_observation(obs, device=device)
+    with torch.no_grad():
+        actions = algorithm.model.act(obs_tensor, deterministic=deterministic).actions
+    return _format_action_output(actions, discrete=True)
+
+
+def _predict_drq(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    obs: object,
+    deterministic: bool,
+) -> int | np.ndarray:
+    algorithm = _load_drq_algorithm(config, checkpoint_state, device=device)
+    obs_tensor = _prepare_observation(obs, device=device)
+    low, high = _continuous_action_bounds(config, device=device)
+    with torch.no_grad():
+        normalized_actions = algorithm.model.sample_actions(obs_tensor, deterministic=deterministic).actions
+        actions = _scale_continuous_actions(normalized_actions, low=low, high=high)
+    return _format_action_output(actions, discrete=False)
+
+
+def _predict_curl(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    obs: object,
+    deterministic: bool,
+) -> int | np.ndarray:
+    algorithm = _load_curl_algorithm(config, checkpoint_state, device=device)
+    obs_tensor = _prepare_observation(obs, device=device)
+    low, high = _continuous_action_bounds(config, device=device)
+    with torch.no_grad():
+        normalized_actions = algorithm.model.sample_actions(obs_tensor, deterministic=deterministic).actions
+        actions = _scale_continuous_actions(normalized_actions, low=low, high=high)
+    return _format_action_output(actions, discrete=False)
+
+
 def _predict_drqv2(
     config: TrainConfig,
     checkpoint_state: CheckpointState,
@@ -1634,12 +2370,82 @@ def _predict_td3_bc(
     return _format_action_output(actions, discrete=False)
 
 
+def _predict_drqn(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    obs: object,
+    deterministic: bool,
+) -> int | np.ndarray:
+    algorithm = _load_drqn_algorithm(config, checkpoint_state, device=device)
+    algorithm.set_eval_mode()
+    obs_tensor = _prepare_observation(obs, device=device)
+    initial_state = algorithm.q_network.initial_state(int(obs_tensor.shape[0]), device=device)
+    episode_starts = torch.ones(int(obs_tensor.shape[0]), dtype=torch.bool, device=device)
+    with torch.no_grad():
+        actions = algorithm.q_network.act(
+            obs_tensor,
+            state=initial_state,
+            epsilon=0.0,
+            deterministic=deterministic,
+            episode_starts=episode_starts,
+        ).actions
+    return _format_action_output(actions, discrete=True)
+
+
+def _predict_r2d2(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    obs: object,
+    deterministic: bool,
+) -> int | np.ndarray:
+    algorithm = _load_r2d2_algorithm(config, checkpoint_state, device=device)
+    algorithm.set_eval_mode()
+    obs_tensor = _prepare_observation(obs, device=device)
+    initial_state = algorithm.q_network.initial_state(int(obs_tensor.shape[0]), device=device)
+    episode_starts = torch.ones(int(obs_tensor.shape[0]), dtype=torch.bool, device=device)
+    with torch.no_grad():
+        actions = algorithm.q_network.act(
+            obs_tensor,
+            state=initial_state,
+            epsilon=0.0,
+            deterministic=deterministic,
+            episode_starts=episode_starts,
+        ).actions
+    return _format_action_output(actions, discrete=True)
+
+
 _ALGORITHM_REGISTRY: dict[str, AlgorithmSpec] = {
     "a2c": AlgorithmSpec(
         name="a2c",
         train_fn=train_a2c,
         evaluate_fn=_evaluate_a2c,
         predict_fn=_predict_a2c,
+    ),
+    "ars": AlgorithmSpec(
+        name="ars",
+        train_fn=train_ars,
+        evaluate_fn=_evaluate_ars,
+        predict_fn=_predict_ars,
+    ),
+    "openai_es": AlgorithmSpec(
+        name="openai_es",
+        train_fn=train_openai_es,
+        evaluate_fn=_evaluate_openai_es,
+        predict_fn=_predict_openai_es,
+    ),
+    "impala": AlgorithmSpec(
+        name="impala",
+        train_fn=train_impala,
+        evaluate_fn=_evaluate_impala,
+        predict_fn=_predict_impala,
+    ),
+    "appo": AlgorithmSpec(
+        name="appo",
+        train_fn=train_appo,
+        evaluate_fn=_evaluate_appo,
+        predict_fn=_predict_appo,
     ),
     "awac": AlgorithmSpec(
         name="awac",
@@ -1658,6 +2464,24 @@ _ALGORITHM_REGISTRY: dict[str, AlgorithmSpec] = {
         train_fn=train_bc,
         evaluate_fn=_evaluate_bc,
         predict_fn=_predict_bc,
+    ),
+    "decision_transformer": AlgorithmSpec(
+        name="decision_transformer",
+        train_fn=train_decision_transformer,
+        evaluate_fn=_evaluate_decision_transformer,
+        predict_fn=_predict_decision_transformer,
+    ),
+    "mopo": AlgorithmSpec(
+        name="mopo",
+        train_fn=train_mopo,
+        evaluate_fn=_evaluate_mopo,
+        predict_fn=_predict_mopo,
+    ),
+    "pets": AlgorithmSpec(
+        name="pets",
+        train_fn=train_pets,
+        evaluate_fn=_evaluate_pets,
+        predict_fn=_predict_pets,
     ),
     "bcq": AlgorithmSpec(
         name="bcq",
@@ -1709,6 +2533,96 @@ _ALGORITHM_REGISTRY: dict[str, AlgorithmSpec] = {
     ),
     "n_step_dqn": AlgorithmSpec(
         name="n_step_dqn",
+        train_fn=train_dqn,
+        evaluate_fn=_evaluate_dqn,
+        predict_fn=_predict_dqn,
+    ),
+    "expected_sarsa": AlgorithmSpec(
+        name="expected_sarsa",
+        train_fn=train_dqn,
+        evaluate_fn=_evaluate_dqn,
+        predict_fn=_predict_dqn,
+    ),
+    "expected_double_dqn": AlgorithmSpec(
+        name="expected_double_dqn",
+        train_fn=train_dqn,
+        evaluate_fn=_evaluate_dqn,
+        predict_fn=_predict_dqn,
+    ),
+    "boltzmann_dqn": AlgorithmSpec(
+        name="boltzmann_dqn",
+        train_fn=train_dqn,
+        evaluate_fn=_evaluate_dqn,
+        predict_fn=_predict_dqn,
+    ),
+    "boltzmann_double_dqn": AlgorithmSpec(
+        name="boltzmann_double_dqn",
+        train_fn=train_dqn,
+        evaluate_fn=_evaluate_dqn,
+        predict_fn=_predict_dqn,
+    ),
+    "mellowmax_dqn": AlgorithmSpec(
+        name="mellowmax_dqn",
+        train_fn=train_dqn,
+        evaluate_fn=_evaluate_dqn,
+        predict_fn=_predict_dqn,
+    ),
+    "soft_dqn": AlgorithmSpec(
+        name="soft_dqn",
+        train_fn=train_dqn,
+        evaluate_fn=_evaluate_dqn,
+        predict_fn=_predict_dqn,
+    ),
+    "soft_double_dqn": AlgorithmSpec(
+        name="soft_double_dqn",
+        train_fn=train_dqn,
+        evaluate_fn=_evaluate_dqn,
+        predict_fn=_predict_dqn,
+    ),
+    "advantage_learning_dqn": AlgorithmSpec(
+        name="advantage_learning_dqn",
+        train_fn=train_dqn,
+        evaluate_fn=_evaluate_dqn,
+        predict_fn=_predict_dqn,
+    ),
+    "persistent_advantage_learning_dqn": AlgorithmSpec(
+        name="persistent_advantage_learning_dqn",
+        train_fn=train_dqn,
+        evaluate_fn=_evaluate_dqn,
+        predict_fn=_predict_dqn,
+    ),
+    "munchausen_dqn": AlgorithmSpec(
+        name="munchausen_dqn",
+        train_fn=train_dqn,
+        evaluate_fn=_evaluate_dqn,
+        predict_fn=_predict_dqn,
+    ),
+    "munchausen_double_dqn": AlgorithmSpec(
+        name="munchausen_double_dqn",
+        train_fn=train_dqn,
+        evaluate_fn=_evaluate_dqn,
+        predict_fn=_predict_dqn,
+    ),
+    "cql_dqn": AlgorithmSpec(
+        name="cql_dqn",
+        train_fn=train_dqn,
+        evaluate_fn=_evaluate_dqn,
+        predict_fn=_predict_dqn,
+    ),
+    "cql_double_dqn": AlgorithmSpec(
+        name="cql_double_dqn",
+        train_fn=train_dqn,
+        evaluate_fn=_evaluate_dqn,
+        predict_fn=_predict_dqn,
+    ),
+    "clipped_double_dqn": AlgorithmSpec(
+        name="clipped_double_dqn",
+        train_fn=train_dqn,
+        evaluate_fn=_evaluate_dqn,
+        predict_fn=_predict_dqn,
+    ),
+    "hysteretic_dqn": AlgorithmSpec(
+        name="hysteretic_dqn",
         train_fn=train_dqn,
         evaluate_fn=_evaluate_dqn,
         predict_fn=_predict_dqn,
@@ -1778,6 +2692,48 @@ _ALGORITHM_REGISTRY: dict[str, AlgorithmSpec] = {
         train_fn=train_ddpg,
         evaluate_fn=_evaluate_ddpg,
         predict_fn=_predict_ddpg,
+    ),
+    "naf": AlgorithmSpec(
+        name="naf",
+        train_fn=train_naf,
+        evaluate_fn=_evaluate_naf,
+        predict_fn=_predict_naf,
+    ),
+    "d4pg": AlgorithmSpec(
+        name="d4pg",
+        train_fn=train_d4pg,
+        evaluate_fn=_evaluate_d4pg,
+        predict_fn=_predict_d4pg,
+    ),
+    "drqn": AlgorithmSpec(
+        name="drqn",
+        train_fn=train_drqn,
+        evaluate_fn=_evaluate_drqn,
+        predict_fn=_predict_drqn,
+    ),
+    "r2d2": AlgorithmSpec(
+        name="r2d2",
+        train_fn=train_r2d2,
+        evaluate_fn=_evaluate_r2d2,
+        predict_fn=_predict_r2d2,
+    ),
+    "drq": AlgorithmSpec(
+        name="drq",
+        train_fn=train_drq,
+        evaluate_fn=_evaluate_drq,
+        predict_fn=_predict_drq,
+    ),
+    "curl": AlgorithmSpec(
+        name="curl",
+        train_fn=train_curl,
+        evaluate_fn=_evaluate_curl,
+        predict_fn=_predict_curl,
+    ),
+    "ppg": AlgorithmSpec(
+        name="ppg",
+        train_fn=train_ppg,
+        evaluate_fn=_evaluate_ppg,
+        predict_fn=_predict_ppg,
     ),
     "drqv2": AlgorithmSpec(
         name="drqv2",

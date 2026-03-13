@@ -8,6 +8,61 @@ import torch
 from rl_training.data.offline_dataset import TransitionDataset
 
 
+def _sample_dataset_indices(
+    rng: np.random.Generator,
+    *,
+    dataset_size: int,
+    count: int,
+) -> torch.Tensor:
+    return torch.as_tensor(
+        rng.integers(0, dataset_size, size=count),
+        dtype=torch.int64,
+    )
+
+
+def _append_sampled_transition_parts(
+    *,
+    dataset: TransitionDataset,
+    indices: torch.Tensor,
+    obs_parts: list[torch.Tensor],
+    action_parts: list[torch.Tensor],
+    reward_parts: list[torch.Tensor],
+    next_obs_parts: list[torch.Tensor],
+    done_parts: list[torch.Tensor],
+    next_action_parts: list[torch.Tensor],
+    returns_to_go_parts: list[torch.Tensor],
+    include_next_actions: bool,
+    include_returns_to_go: bool,
+) -> None:
+    obs_parts.append(dataset.obs.index_select(0, indices))
+    action_parts.append(dataset.actions.index_select(0, indices))
+    reward_parts.append(dataset.rewards.index_select(0, indices))
+    next_obs_parts.append(dataset.next_obs.index_select(0, indices))
+    done_parts.append(dataset.dones.index_select(0, indices))
+
+    if include_next_actions:
+        source_next_actions = dataset.next_actions if dataset.next_actions is not None else dataset.actions
+        next_action_parts.append(source_next_actions.index_select(0, indices))
+    if include_returns_to_go:
+        assert dataset.returns_to_go is not None
+        returns_to_go_parts.append(dataset.returns_to_go.index_select(0, indices))
+
+
+def _cat_and_permute(parts: list[torch.Tensor], *, permutation: torch.Tensor) -> torch.Tensor:
+    return torch.cat(parts, dim=0).index_select(0, permutation)
+
+
+def _resolve_optional_mixed_field(
+    parts: list[torch.Tensor],
+    *,
+    include_field: bool,
+    permutation: torch.Tensor,
+) -> torch.Tensor | None:
+    if not include_field:
+        return None
+    return _cat_and_permute(parts, permutation=permutation)
+
+
 def _validate_mix_inputs(
     datasets: Sequence[TransitionDataset],
     *,
@@ -75,39 +130,42 @@ def mix_transition_datasets(
     for dataset, count in zip(datasets, counts, strict=True):
         if int(count) == 0:
             continue
-        indices = torch.as_tensor(
-            rng.integers(0, len(dataset), size=int(count)),
-            dtype=torch.int64,
+        indices = _sample_dataset_indices(
+            rng,
+            dataset_size=len(dataset),
+            count=int(count),
         )
-        obs_parts.append(dataset.obs.index_select(0, indices))
-        action_parts.append(dataset.actions.index_select(0, indices))
-        reward_parts.append(dataset.rewards.index_select(0, indices))
-        next_obs_parts.append(dataset.next_obs.index_select(0, indices))
-        done_parts.append(dataset.dones.index_select(0, indices))
-        if include_next_actions:
-            source_next_actions = dataset.next_actions if dataset.next_actions is not None else dataset.actions
-            next_action_parts.append(source_next_actions.index_select(0, indices))
-        if include_returns_to_go:
-            assert dataset.returns_to_go is not None
-            returns_to_go_parts.append(dataset.returns_to_go.index_select(0, indices))
-
-    mixed_obs = torch.cat(obs_parts, dim=0)
-    mixed_actions = torch.cat(action_parts, dim=0)
-    mixed_rewards = torch.cat(reward_parts, dim=0)
-    mixed_next_obs = torch.cat(next_obs_parts, dim=0)
-    mixed_dones = torch.cat(done_parts, dim=0)
+        _append_sampled_transition_parts(
+            dataset=dataset,
+            indices=indices,
+            obs_parts=obs_parts,
+            action_parts=action_parts,
+            reward_parts=reward_parts,
+            next_obs_parts=next_obs_parts,
+            done_parts=done_parts,
+            next_action_parts=next_action_parts,
+            returns_to_go_parts=returns_to_go_parts,
+            include_next_actions=include_next_actions,
+            include_returns_to_go=include_returns_to_go,
+        )
 
     permutation = torch.as_tensor(rng.permutation(resolved_total_size), dtype=torch.int64)
-    next_actions = torch.cat(next_action_parts, dim=0).index_select(0, permutation) if include_next_actions else None
-    returns_to_go = (
-        torch.cat(returns_to_go_parts, dim=0).index_select(0, permutation) if include_returns_to_go else None
+    next_actions = _resolve_optional_mixed_field(
+        next_action_parts,
+        include_field=include_next_actions,
+        permutation=permutation,
+    )
+    returns_to_go = _resolve_optional_mixed_field(
+        returns_to_go_parts,
+        include_field=include_returns_to_go,
+        permutation=permutation,
     )
     return TransitionDataset(
-        obs=mixed_obs.index_select(0, permutation),
-        actions=mixed_actions.index_select(0, permutation),
-        rewards=mixed_rewards.index_select(0, permutation),
-        next_obs=mixed_next_obs.index_select(0, permutation),
-        dones=mixed_dones.index_select(0, permutation),
+        obs=_cat_and_permute(obs_parts, permutation=permutation),
+        actions=_cat_and_permute(action_parts, permutation=permutation),
+        rewards=_cat_and_permute(reward_parts, permutation=permutation),
+        next_obs=_cat_and_permute(next_obs_parts, permutation=permutation),
+        dones=_cat_and_permute(done_parts, permutation=permutation),
         next_actions=next_actions,
         returns_to_go=returns_to_go,
     )

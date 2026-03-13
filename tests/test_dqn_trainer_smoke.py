@@ -277,7 +277,7 @@ def test_train_rainbow_dqn_uses_n_step_accumulator_and_effective_gamma(tmp_path:
 
     assert build_kwargs["gamma"] == pytest.approx(gamma**n_step)
     assert result.metrics["global_step"] >= 2
-    assert result.metrics["buffer_size"] == 0.0
+    assert result.metrics["buffer_size"] == pytest.approx(0.0)
 
 
 def test_train_qr_dqn_checkpoint_can_be_evaluated(tmp_path: Path) -> None:

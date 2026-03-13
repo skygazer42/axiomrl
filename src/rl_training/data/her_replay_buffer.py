@@ -49,6 +49,7 @@ class HERReplayBuffer:
         self.device = torch.device(device)
         self.obs_dtype = obs_dtype
         self.action_dtype = action_dtype
+        self._rng = np.random.default_rng()
 
         self._episodes: list[dict[str, Any]] = []
         self._current_episodes: list[dict[str, list[Any]]] = [self._empty_episode() for _ in range(self.num_envs)]
@@ -145,7 +146,7 @@ class HERReplayBuffer:
 
         episode_lengths = np.asarray([int(episode["length"]) for episode in self._episodes], dtype=np.float64)
         episode_probabilities = episode_lengths / episode_lengths.sum()
-        episode_indices = np.random.choice(len(self._episodes), size=batch_size, p=episode_probabilities)
+        episode_indices = self._rng.choice(len(self._episodes), size=batch_size, p=episode_probabilities)
 
         obs_batch: list[torch.Tensor] = []
         action_batch: list[torch.Tensor] = []
@@ -156,8 +157,8 @@ class HERReplayBuffer:
         for episode_index in episode_indices:
             episode = self._episodes[int(episode_index)]
             episode_length = int(episode["length"])
-            transition_index = int(np.random.randint(0, episode_length))
-            relabel = self.her_ratio > 0.0 and np.random.random() < self.her_ratio
+            transition_index = int(self._rng.integers(0, episode_length))
+            relabel = self.her_ratio > 0.0 and float(self._rng.random()) < self.her_ratio
 
             observation = episode["observations"][transition_index]
             next_observation = episode["next_observations"][transition_index]
@@ -166,7 +167,7 @@ class HERReplayBuffer:
             done = float((episode["terminateds"][transition_index] + episode["truncateds"][transition_index]).clamp(max=1.0).item())
 
             if relabel:
-                future_index = int(np.random.randint(transition_index, episode_length))
+                future_index = int(self._rng.integers(transition_index, episode_length))
                 desired_goal = episode["next_achieved_goals"][future_index]
                 reward = goal_env_compute_reward(
                     env,

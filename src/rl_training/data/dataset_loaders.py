@@ -1,19 +1,17 @@
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
 
 import numpy as np
-import torch
 
 from rl_training.data.offline_dataset import TransitionDataset
 
-
-def _as_mapping(payload: Any) -> Mapping[str, Any]:
-    if isinstance(payload, Mapping):
-        return payload
-    raise TypeError(f"expected mapping payload, got {type(payload)!r}")
+_UNTRUSTED_TORCH_DATASET_ERROR = (
+    "dataset_kind='pt'/'pth'/'torch' is unsafe for untrusted datasets; "
+    "convert the dataset to .npz or use Minari instead"
+)
 
 
 def _resolve_dataset_path(path: str | Path | None) -> Path:
@@ -25,11 +23,6 @@ def _resolve_dataset_path(path: str | Path | None) -> Path:
 def _load_npz_payload(path: Path) -> dict[str, Any]:
     with np.load(path, allow_pickle=False) as payload:
         return {key: payload[key] for key in payload.files}
-
-
-def _load_pt_payload(path: Path) -> Mapping[str, Any]:
-    payload = torch.load(path, map_location="cpu")
-    return _as_mapping(payload)
 
 
 def _iterate_minari_episodes(dataset: object) -> Iterable[object]:
@@ -95,7 +88,8 @@ def load_transition_dataset(
     if normalized_kind == "npz":
         payload = _load_npz_payload(_resolve_dataset_path(dataset_path))
     elif normalized_kind in {"pt", "pth", "torch"}:
-        payload = _load_pt_payload(_resolve_dataset_path(dataset_path))
+        _resolve_dataset_path(dataset_path)
+        raise ValueError(_UNTRUSTED_TORCH_DATASET_ERROR)
     elif normalized_kind == "minari":
         if not dataset_id:
             raise ValueError("dataset_id must be provided for dataset_kind='minari'")

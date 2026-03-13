@@ -9,7 +9,7 @@ from rl_training.runtime.workflows import evaluate_checkpoint
 
 
 class TinyRenderContinuousEnv(gym.Env):
-    metadata = {"render_modes": ["rgb_array"]}
+    metadata = {"render_modes": ["rgb_array"], "render_fps": 30}
 
     def __init__(self, render_mode: str | None = None) -> None:
         super().__init__()

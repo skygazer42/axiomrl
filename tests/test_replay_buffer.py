@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import pytest
 import torch
 
 from rl_training.data.replay_buffer import ReplayBuffer
@@ -44,4 +45,4 @@ def test_replay_buffer_state_roundtrip(tmp_path: Path) -> None:
     assert len(restored) == 1
     sample = restored.sample(1)
     assert sample["actions"].item() == 1
-    assert sample["rewards"].item() == 1.0
+    assert sample["rewards"].item() == pytest.approx(1.0)

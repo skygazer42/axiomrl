@@ -92,7 +92,7 @@ class C51DQN:
         self.q_network = q_network
         self.policy = q_network
         self.target_network = copy.deepcopy(q_network)
-        self.optimizer = torch.optim.Adam(self.q_network.parameters(), lr=learning_rate)
+        self.optimizer = torch.optim.Adam(self.q_network.parameters(), lr=learning_rate, weight_decay=0.0)
         self.gamma = float(gamma)
         self.target_update_interval = int(target_update_interval)
         self.v_min = float(v_min)

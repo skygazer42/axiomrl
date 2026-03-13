@@ -15,6 +15,8 @@ from rl_training.runtime.run_utils import resolve_device
 from rl_training.runtime.trainer import TrainResult
 from rl_training.runtime.types import MetricDict
 
+_CHECKPOINT_PATH_REQUIRED_ERROR = "checkpoint_path must not be None"
+
 
 def _config_from_payload(payload: dict[str, Any]) -> TrainConfig:
     return TrainConfig(
@@ -41,7 +43,7 @@ def evaluate_checkpoint(
     device: str = "auto",
 ) -> MetricDict:
     if checkpoint_path is None:
-        raise ValueError("checkpoint_path must not be None")
+        raise ValueError(_CHECKPOINT_PATH_REQUIRED_ERROR)
 
     checkpoint_state = load_checkpoint(Path(checkpoint_path))
     config = _config_from_payload(checkpoint_state.config)
@@ -61,7 +63,7 @@ def predict_checkpoint(
     device: str = "auto",
 ) -> int | np.ndarray:
     if checkpoint_path is None:
-        raise ValueError("checkpoint_path must not be None")
+        raise ValueError(_CHECKPOINT_PATH_REQUIRED_ERROR)
 
     checkpoint_state = load_checkpoint(Path(checkpoint_path))
     config = _config_from_payload(checkpoint_state.config)
@@ -80,7 +82,7 @@ def resume_training(
     callbacks: Sequence[Callback] | None = None,
 ) -> TrainResult:
     if checkpoint_path is None:
-        raise ValueError("checkpoint_path must not be None")
+        raise ValueError(_CHECKPOINT_PATH_REQUIRED_ERROR)
 
     checkpoint_state = load_checkpoint(Path(checkpoint_path))
     config = _config_from_payload(checkpoint_state.config)

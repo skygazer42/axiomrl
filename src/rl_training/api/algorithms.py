@@ -12,6 +12,8 @@ from rl_training.runtime.trainer import TrainResult
 from rl_training.runtime.types import MetricDict
 from rl_training.runtime.workflows import evaluate_checkpoint, predict_checkpoint
 
+_NO_CHECKPOINT_ERROR = "no checkpoint available; call learn() or load() first"
+
 
 def _config_from_payload(payload: dict) -> TrainConfig:
     return TrainConfig(
@@ -66,17 +68,17 @@ class ManagedAlgorithm:
 
     def evaluate(self, *, num_episodes: int | None = None) -> MetricDict:
         if self.checkpoint_path is None:
-            raise ValueError("no checkpoint available; call learn() or load() first")
+            raise ValueError(_NO_CHECKPOINT_ERROR)
         return evaluate_checkpoint(self.checkpoint_path, num_episodes=num_episodes)
 
     def predict(self, obs: object, *, deterministic: bool = True):
         if self.checkpoint_path is None:
-            raise ValueError("no checkpoint available; call learn() or load() first")
+            raise ValueError(_NO_CHECKPOINT_ERROR)
         return predict_checkpoint(self.checkpoint_path, obs, deterministic=deterministic)
 
     def save(self, path: str | Path) -> Path:
         if self.checkpoint_path is None:
-            raise ValueError("no checkpoint available; call learn() or load() first")
+            raise ValueError(_NO_CHECKPOINT_ERROR)
 
         destination = Path(path)
         destination.parent.mkdir(parents=True, exist_ok=True)
@@ -111,6 +113,22 @@ class A2C(ManagedAlgorithm):
     algo_name = "a2c"
 
 
+class ARS(ManagedAlgorithm):
+    algo_name = "ars"
+
+
+class OpenAIES(ManagedAlgorithm):
+    algo_name = "openai_es"
+
+
+class IMPALA(ManagedAlgorithm):
+    algo_name = "impala"
+
+
+class APPO(ManagedAlgorithm):
+    algo_name = "appo"
+
+
 class AWR(ManagedAlgorithm):
     algo_name = "awr"
 
@@ -125,6 +143,18 @@ class MARWIL(ManagedAlgorithm):
 
 class BC(ManagedAlgorithm):
     algo_name = "bc"
+
+
+class DecisionTransformer(ManagedAlgorithm):
+    algo_name = "decision_transformer"
+
+
+class MOPO(ManagedAlgorithm):
+    algo_name = "mopo"
+
+
+class PETS(ManagedAlgorithm):
+    algo_name = "pets"
 
 
 class BCQ(ManagedAlgorithm):
@@ -143,8 +173,24 @@ class CRR(ManagedAlgorithm):
     algo_name = "crr"
 
 
+class D4PG(ManagedAlgorithm):
+    algo_name = "d4pg"
+
+
+class DRQN(ManagedAlgorithm):
+    algo_name = "drqn"
+
+
+class R2D2(ManagedAlgorithm):
+    algo_name = "r2d2"
+
+
 class HER(ManagedAlgorithm):
     algo_name = "her"
+
+
+class NAF(ManagedAlgorithm):
+    algo_name = "naf"
 
 
 class DDPG(ManagedAlgorithm):
@@ -155,6 +201,14 @@ class EDAC(ManagedAlgorithm):
     algo_name = "edac"
 
 
+class CURL(ManagedAlgorithm):
+    algo_name = "curl"
+
+
+class DrQ(ManagedAlgorithm):
+    algo_name = "drq"
+
+
 class DrQv2(ManagedAlgorithm):
     algo_name = "drqv2"
 
@@ -163,8 +217,72 @@ class DiscreteSAC(ManagedAlgorithm):
     algo_name = "discrete_sac"
 
 
+class PPG(ManagedAlgorithm):
+    algo_name = "ppg"
+
+
 class DQN(ManagedAlgorithm):
     algo_name = "dqn"
+
+
+class ExpectedSARSA(ManagedAlgorithm):
+    algo_name = "expected_sarsa"
+
+
+class ExpectedDoubleDQN(ManagedAlgorithm):
+    algo_name = "expected_double_dqn"
+
+
+class BoltzmannDQN(ManagedAlgorithm):
+    algo_name = "boltzmann_dqn"
+
+
+class BoltzmannDoubleDQN(ManagedAlgorithm):
+    algo_name = "boltzmann_double_dqn"
+
+
+class MellowmaxDQN(ManagedAlgorithm):
+    algo_name = "mellowmax_dqn"
+
+
+class SoftDQN(ManagedAlgorithm):
+    algo_name = "soft_dqn"
+
+
+class SoftDoubleDQN(ManagedAlgorithm):
+    algo_name = "soft_double_dqn"
+
+
+class AdvantageLearningDQN(ManagedAlgorithm):
+    algo_name = "advantage_learning_dqn"
+
+
+class PersistentAdvantageLearningDQN(ManagedAlgorithm):
+    algo_name = "persistent_advantage_learning_dqn"
+
+
+class MunchausenDQN(ManagedAlgorithm):
+    algo_name = "munchausen_dqn"
+
+
+class MunchausenDoubleDQN(ManagedAlgorithm):
+    algo_name = "munchausen_double_dqn"
+
+
+class CQLDQN(ManagedAlgorithm):
+    algo_name = "cql_dqn"
+
+
+class CQLDoubleDQN(ManagedAlgorithm):
+    algo_name = "cql_double_dqn"
+
+
+class ClippedDoubleDQN(ManagedAlgorithm):
+    algo_name = "clipped_double_dqn"
+
+
+class HystereticDQN(ManagedAlgorithm):
+    algo_name = "hysteretic_dqn"
 
 
 class C51DQN(ManagedAlgorithm):
