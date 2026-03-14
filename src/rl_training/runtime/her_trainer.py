@@ -257,6 +257,7 @@ def train_her(
             action_shape=(action_dim,),
             her_ratio=her_ratio,
             goal_selection_strategy=goal_selection_strategy,
+            seed=config.seed,
             device=device,
         )
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from typing import Any
 
 import torch
@@ -35,14 +36,14 @@ class PrioritizedRecurrentReplayBuffer(RecurrentReplayBuffer):
         super()._store_chunk(chunk)
         self.priorities[position] = float(self.max_priority)
 
-    def sample(self, batch_size: int, *, beta: float) -> dict[str, torch.Tensor]:
+    def sample(self, batch_size: int, *, beta: float = 0.0) -> dict[str, torch.Tensor]:
         if self.size == 0:
             raise ValueError("cannot sample from an empty recurrent replay buffer")
         if beta < 0:
             raise ValueError(f"beta must be >= 0, got {beta}")
 
         priorities = self.priorities[: self.size].clamp(min=self.priority_eps)
-        if self.alpha == 0.0:
+        if math.isclose(self.alpha, 0.0, abs_tol=1e-12):
             probs = torch.full_like(priorities, 1.0 / float(self.size))
         else:
             scaled = priorities.pow(self.alpha)

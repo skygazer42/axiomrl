@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Sequence
+from dataclasses import dataclass
 from pathlib import Path
 
 import gymnasium as gym
@@ -26,11 +27,42 @@ from rl_training.runtime.controls import (
     stop_reason_for_training_limits,
 )
 from rl_training.runtime.iql_trainer import _build_offline_dataset
+from rl_training.runtime.off_policy_trainer_utils import maybe_run_evaluation, store_vector_transitions
 from rl_training.runtime.run_utils import create_training_run, resolve_device, save_training_checkpoint
 from rl_training.runtime.sac_trainer import _action_bounds, _evaluate_sac_policy, _infer_spaces, _scale_actions
 from rl_training.runtime.schedules import apply_learning_rate_scale, resolve_schedule_value
 from rl_training.runtime.trainer import TrainResult, TrainerState
 from rl_training.runtime.types import MetricDict
+
+
+@dataclass
+class _RLPDTrainingState:
+    global_step: int
+    update_count: int
+    epoch: int
+    pretrain_updates_done: int
+    latest_update_metrics: MetricDict
+    last_offline_batch_size: float
+    last_online_batch_size: float
+    last_lr_scale: float
+    last_learning_rate: float
+
+
+@dataclass(frozen=True)
+class _RLPDLoopConfig:
+    learning_rate_schedule: object
+    effective_total_updates: int
+    warmup_steps: int
+    batch_size: int
+    device: torch.device
+    alpha: float
+    offline_pretrain_updates: int
+    offline_batch_ratio: float
+    learning_starts: int
+    train_frequency: int
+    gradient_updates_per_step: int
+    max_epochs: int | None
+    max_updates: int | None
 
 
 def _validate_offline_batch_ratio(value: float) -> float:
@@ -97,6 +129,250 @@ def _resolve_effective_total_rlpd_updates(
     if resolved < 1:
         raise ValueError(f"effective total updates must be >= 1, got {resolved}")
     return resolved
+
+
+def _restore_rlpd_training_state(
+    checkpoint_state: CheckpointState | None,
+    *,
+    batch_size: int,
+    offline_pretrain_updates: int,
+    learning_rate: float,
+) -> _RLPDTrainingState:
+    if checkpoint_state is None:
+        return _RLPDTrainingState(
+            global_step=0,
+            update_count=0,
+            epoch=0,
+            pretrain_updates_done=0,
+            latest_update_metrics={},
+            last_offline_batch_size=0.0,
+            last_online_batch_size=0.0,
+            last_lr_scale=1.0,
+            last_learning_rate=learning_rate,
+        )
+
+    update_count = int(checkpoint_state.trainer_state.get("update_count", 0))
+    pretrain_updates_done = int(
+        checkpoint_state.trainer_state.get("pretrain_updates_done", min(update_count, offline_pretrain_updates))
+    )
+    return _RLPDTrainingState(
+        global_step=int(checkpoint_state.trainer_state.get("global_step", 0)),
+        update_count=update_count,
+        epoch=int(checkpoint_state.trainer_state.get("epoch", update_count)),
+        pretrain_updates_done=pretrain_updates_done,
+        latest_update_metrics={},
+        last_offline_batch_size=float(batch_size if pretrain_updates_done > 0 else 0.0),
+        last_online_batch_size=0.0,
+        last_lr_scale=1.0,
+        last_learning_rate=learning_rate,
+    )
+
+
+def _sync_rlpd_trainer_state(trainer_state: TrainerState, state: _RLPDTrainingState) -> None:
+    trainer_state.global_step = state.global_step
+    trainer_state.epoch = state.epoch
+    trainer_state.update_count = state.update_count
+
+
+def _build_rlpd_metrics(
+    state: _RLPDTrainingState,
+    *,
+    alpha: float,
+    offline_dataset_size: int,
+    replay_buffer_size: int,
+    offline_pretrain_updates: int,
+    offline_batch_ratio: float,
+) -> MetricDict:
+    return {
+        **state.latest_update_metrics,
+        "alpha": alpha,
+        "global_step": float(state.global_step),
+        "epoch": float(state.epoch),
+        "update_count": float(state.update_count),
+        "gradient_steps": float(state.update_count),
+        "offline_dataset_size": float(offline_dataset_size),
+        "online_buffer_size": float(replay_buffer_size),
+        "buffer_size": float(replay_buffer_size),
+        "offline_pretrain_updates": float(offline_pretrain_updates),
+        "pretrain_updates_done": float(state.pretrain_updates_done),
+        "offline_batch_ratio": float(offline_batch_ratio),
+        "offline_batch_size": state.last_offline_batch_size,
+        "online_batch_size": state.last_online_batch_size,
+        "lr_scale": float(state.last_lr_scale),
+        "learning_rate": float(state.last_learning_rate),
+    }
+
+
+def _request_stop_for_limits(
+    trainer_state: TrainerState,
+    *,
+    epoch: int,
+    update_count: int,
+    max_epochs: int | None,
+    max_updates: int | None,
+) -> bool:
+    stop_reason = stop_reason_for_training_limits(
+        epoch=epoch,
+        update_count=update_count,
+        max_epochs=max_epochs,
+        max_updates=max_updates,
+    )
+    if stop_reason is None:
+        return False
+    trainer_state.request_stop(stop_reason)
+    return True
+
+
+def _emit_offline_dataset_event(
+    callback_list: CallbackList,
+    trainer_state: TrainerState,
+    *,
+    offline_dataset_size: int,
+    replay_buffer_size: int,
+) -> None:
+    callback_list.on_collect_end(
+        trainer_state,
+        CollectResult(
+            num_env_steps=offline_dataset_size,
+            num_episodes=0,
+            metrics={
+                "offline_dataset_size": float(offline_dataset_size),
+                "online_buffer_size": float(replay_buffer_size),
+            },
+            last_obs=None,
+        ),
+    )
+
+
+def _emit_online_collect_event(
+    callback_list: CallbackList,
+    trainer_state: TrainerState,
+    *,
+    global_step: int,
+    dones: np.ndarray,
+    offline_dataset_size: int,
+    replay_buffer: ReplayBuffer,
+    obs: np.ndarray,
+) -> None:
+    callback_list.on_collect_end(
+        trainer_state,
+        CollectResult(
+            num_env_steps=int(dones.shape[0]),
+            num_episodes=int(np.sum(dones)),
+            metrics={
+                "global_step": float(global_step),
+                "offline_dataset_size": float(offline_dataset_size),
+                "online_buffer_size": float(len(replay_buffer)),
+            },
+            last_obs=obs,
+        ),
+    )
+
+
+def _run_rlpd_pretraining(
+    *,
+    algorithm: RLPD,
+    offline_dataset: TransitionDataset,
+    replay_buffer: ReplayBuffer,
+    callback_list: CallbackList,
+    trainer_state: TrainerState,
+    loop_config: _RLPDLoopConfig,
+    state: _RLPDTrainingState,
+) -> tuple[_RLPDTrainingState, MetricDict]:
+    metrics = _build_rlpd_metrics(
+        state,
+        alpha=loop_config.alpha,
+        offline_dataset_size=len(offline_dataset),
+        replay_buffer_size=len(replay_buffer),
+        offline_pretrain_updates=loop_config.offline_pretrain_updates,
+        offline_batch_ratio=loop_config.offline_batch_ratio,
+    )
+    while state.pretrain_updates_done < loop_config.offline_pretrain_updates and not trainer_state.should_stop:
+        state.last_lr_scale = resolve_schedule_value(
+            loop_config.learning_rate_schedule,
+            step=state.update_count,
+            total_steps=loop_config.effective_total_updates,
+            warmup_steps=loop_config.warmup_steps,
+        )
+        state.last_learning_rate = apply_learning_rate_scale(algorithm, scale=state.last_lr_scale)
+        result = algorithm.update(
+            offline_dataset.sample(loop_config.batch_size, device=loop_config.device),
+            global_step=state.global_step,
+        )
+        state.pretrain_updates_done += 1
+        state.update_count += result.num_gradient_steps
+        state.epoch += 1
+        state.latest_update_metrics = result.metrics
+        state.last_offline_batch_size = float(loop_config.batch_size)
+        state.last_online_batch_size = 0.0
+        _sync_rlpd_trainer_state(trainer_state, state)
+        callback_list.on_update_end(trainer_state, result)
+
+        metrics = _build_rlpd_metrics(
+            state,
+            alpha=loop_config.alpha,
+            offline_dataset_size=len(offline_dataset),
+            replay_buffer_size=len(replay_buffer),
+            offline_pretrain_updates=loop_config.offline_pretrain_updates,
+            offline_batch_ratio=loop_config.offline_batch_ratio,
+        )
+        if _request_stop_for_limits(
+            trainer_state,
+            epoch=state.epoch,
+            update_count=state.update_count,
+            max_epochs=loop_config.max_epochs,
+            max_updates=loop_config.max_updates,
+        ):
+            break
+    return state, metrics
+
+
+def _run_rlpd_online_updates(
+    *,
+    algorithm: RLPD,
+    offline_dataset: TransitionDataset,
+    replay_buffer: ReplayBuffer,
+    callback_list: CallbackList,
+    trainer_state: TrainerState,
+    loop_config: _RLPDLoopConfig,
+    global_step: int,
+    state: _RLPDTrainingState,
+) -> _RLPDTrainingState:
+    if len(replay_buffer) < loop_config.learning_starts or global_step % loop_config.train_frequency != 0:
+        return state
+
+    for _ in range(loop_config.gradient_updates_per_step):
+        state.last_lr_scale = resolve_schedule_value(
+            loop_config.learning_rate_schedule,
+            step=state.update_count,
+            total_steps=loop_config.effective_total_updates,
+            warmup_steps=loop_config.warmup_steps,
+        )
+        state.last_learning_rate = apply_learning_rate_scale(algorithm, scale=state.last_lr_scale)
+        batch, offline_batch_size, online_batch_size = _sample_mixed_batch(
+            offline_dataset=offline_dataset,
+            replay_buffer=replay_buffer,
+            batch_size=loop_config.batch_size,
+            offline_batch_ratio=loop_config.offline_batch_ratio,
+            device=loop_config.device,
+        )
+        result = algorithm.update(batch, global_step=global_step)
+        state.latest_update_metrics = result.metrics
+        state.update_count += result.num_gradient_steps
+        state.epoch += 1
+        state.last_offline_batch_size = float(offline_batch_size)
+        state.last_online_batch_size = float(online_batch_size)
+        _sync_rlpd_trainer_state(trainer_state, state)
+        callback_list.on_update_end(trainer_state, result)
+        if _request_stop_for_limits(
+            trainer_state,
+            epoch=state.epoch,
+            update_count=state.update_count,
+            max_epochs=loop_config.max_epochs,
+            max_updates=loop_config.max_updates,
+        ):
+            break
+    return state
 
 
 def train_rlpd(
@@ -188,97 +464,54 @@ def train_rlpd(
                 replay_buffer.load_state_dict(checkpoint_state.buffer_state)
 
         obs, _ = envs.reset(seed=config.seed)
-        global_step = int(checkpoint_state.trainer_state.get("global_step", 0)) if checkpoint_state is not None else 0
-        update_count = (
-            int(checkpoint_state.trainer_state.get("update_count", 0))
-            if checkpoint_state is not None
-            else 0
+        state = _restore_rlpd_training_state(
+            checkpoint_state,
+            batch_size=batch_size,
+            offline_pretrain_updates=offline_pretrain_updates,
+            learning_rate=learning_rate,
         )
-        epoch = int(checkpoint_state.trainer_state.get("epoch", update_count)) if checkpoint_state is not None else 0
-        pretrain_updates_done = (
-            int(checkpoint_state.trainer_state.get("pretrain_updates_done", min(update_count, offline_pretrain_updates)))
-            if checkpoint_state is not None
-            else 0
-        )
-        latest_update_metrics: MetricDict = {}
-        last_offline_batch_size = float(batch_size if pretrain_updates_done > 0 else 0.0)
-        last_online_batch_size = 0.0
-        last_lr_scale = 1.0
-        last_learning_rate = learning_rate
-        trainer_state.global_step = global_step
-        trainer_state.epoch = epoch
-        trainer_state.update_count = update_count
-        initial_stop_reason = stop_reason_for_training_limits(
-            epoch=epoch,
-            update_count=update_count,
+        loop_config = _RLPDLoopConfig(
+            learning_rate_schedule=learning_rate_schedule,
+            effective_total_updates=effective_total_updates,
+            warmup_steps=warmup_steps,
+            batch_size=batch_size,
+            device=device,
+            alpha=alpha,
+            offline_pretrain_updates=offline_pretrain_updates,
+            offline_batch_ratio=offline_batch_ratio,
+            learning_starts=learning_starts,
+            train_frequency=train_frequency,
+            gradient_updates_per_step=gradient_updates_per_step,
             max_epochs=max_epochs,
             max_updates=max_updates,
         )
-        if initial_stop_reason is not None:
-            trainer_state.request_stop(initial_stop_reason)
-        callback_list.on_train_start(trainer_state)
-        callback_list.on_collect_end(
+        _sync_rlpd_trainer_state(trainer_state, state)
+        _request_stop_for_limits(
             trainer_state,
-            CollectResult(
-                num_env_steps=len(offline_dataset),
-                num_episodes=0,
-                metrics={
-                    "offline_dataset_size": float(len(offline_dataset)),
-                    "online_buffer_size": float(len(replay_buffer)),
-                },
-                last_obs=None,
-            ),
+            epoch=state.epoch,
+            update_count=state.update_count,
+            max_epochs=max_epochs,
+            max_updates=max_updates,
+        )
+        callback_list.on_train_start(trainer_state)
+        _emit_offline_dataset_event(
+            callback_list,
+            trainer_state,
+            offline_dataset_size=len(offline_dataset),
+            replay_buffer_size=len(replay_buffer),
         )
 
-        while pretrain_updates_done < offline_pretrain_updates and not trainer_state.should_stop:
-            last_lr_scale = resolve_schedule_value(
-                learning_rate_schedule,
-                step=update_count,
-                total_steps=effective_total_updates,
-                warmup_steps=warmup_steps,
-            )
-            last_learning_rate = apply_learning_rate_scale(algorithm, scale=last_lr_scale)
-            result = algorithm.update(offline_dataset.sample(batch_size, device=device), global_step=global_step)
-            pretrain_updates_done += 1
-            update_count += result.num_gradient_steps
-            epoch += 1
-            latest_update_metrics = result.metrics
-            last_offline_batch_size = float(batch_size)
-            last_online_batch_size = 0.0
-            trainer_state.global_step = global_step
-            trainer_state.epoch = epoch
-            trainer_state.update_count = update_count
-            callback_list.on_update_end(trainer_state, result)
+        state, metrics = _run_rlpd_pretraining(
+            algorithm=algorithm,
+            offline_dataset=offline_dataset,
+            replay_buffer=replay_buffer,
+            callback_list=callback_list,
+            trainer_state=trainer_state,
+            loop_config=loop_config,
+            state=state,
+        )
 
-            metrics = {
-                **latest_update_metrics,
-                "alpha": alpha,
-                "global_step": float(global_step),
-                "epoch": float(epoch),
-                "update_count": float(update_count),
-                "gradient_steps": float(update_count),
-                "offline_dataset_size": float(len(offline_dataset)),
-                "online_buffer_size": float(len(replay_buffer)),
-                "buffer_size": float(len(replay_buffer)),
-                "offline_pretrain_updates": float(offline_pretrain_updates),
-                "pretrain_updates_done": float(pretrain_updates_done),
-                "offline_batch_ratio": float(offline_batch_ratio),
-                "offline_batch_size": last_offline_batch_size,
-                "online_batch_size": last_online_batch_size,
-                "lr_scale": float(last_lr_scale),
-                "learning_rate": float(last_learning_rate),
-            }
-            stop_reason = stop_reason_for_training_limits(
-                epoch=epoch,
-                update_count=update_count,
-                max_epochs=max_epochs,
-                max_updates=max_updates,
-            )
-            if stop_reason is not None:
-                trainer_state.request_stop(stop_reason)
-                break
-
-        while global_step < config.total_timesteps and not trainer_state.should_stop:
+        while state.global_step < config.total_timesteps and not trainer_state.should_stop:
             obs_tensor = torch.as_tensor(obs, dtype=torch.float32, device=device)
             with torch.no_grad():
                 normalized_actions = model.sample_actions(obs_tensor).actions
@@ -287,104 +520,69 @@ def train_rlpd(
             next_obs, rewards, terminated, truncated, _ = envs.step(env_actions.cpu().numpy())
             dones = np.logical_or(terminated, truncated).astype(np.float32)
 
-            for env_index in range(config.num_envs):
-                replay_buffer.add(
-                    obs=obs[env_index],
-                    actions=normalized_actions[env_index],
-                    rewards=float(rewards[env_index]),
-                    next_obs=next_obs[env_index],
-                    dones=float(dones[env_index]),
-                )
-
-            obs = next_obs
-            global_step += config.num_envs
-            trainer_state.global_step = global_step
-            callback_list.on_collect_end(
-                trainer_state,
-                CollectResult(
-                    num_env_steps=config.num_envs,
-                    num_episodes=int(np.sum(dones)),
-                    metrics={
-                        "global_step": float(global_step),
-                        "offline_dataset_size": float(len(offline_dataset)),
-                        "online_buffer_size": float(len(replay_buffer)),
-                    },
-                    last_obs=obs,
-                ),
+            store_vector_transitions(
+                replay_buffer,
+                obs=obs,
+                actions=normalized_actions,
+                rewards=rewards,
+                next_obs=next_obs,
+                dones=dones,
+                num_envs=config.num_envs,
             )
 
-            if len(replay_buffer) >= learning_starts and global_step % train_frequency == 0:
-                for _ in range(gradient_updates_per_step):
-                    last_lr_scale = resolve_schedule_value(
-                        learning_rate_schedule,
-                        step=update_count,
-                        total_steps=effective_total_updates,
-                        warmup_steps=warmup_steps,
-                    )
-                    last_learning_rate = apply_learning_rate_scale(algorithm, scale=last_lr_scale)
-                    batch, offline_batch_size, online_batch_size = _sample_mixed_batch(
-                        offline_dataset=offline_dataset,
-                        replay_buffer=replay_buffer,
-                        batch_size=batch_size,
-                        offline_batch_ratio=offline_batch_ratio,
-                        device=device,
-                    )
-                    result = algorithm.update(batch, global_step=global_step)
-                    latest_update_metrics = result.metrics
-                    update_count += result.num_gradient_steps
-                    epoch += 1
-                    last_offline_batch_size = float(offline_batch_size)
-                    last_online_batch_size = float(online_batch_size)
-                    trainer_state.epoch = epoch
-                    trainer_state.update_count = update_count
-                    callback_list.on_update_end(trainer_state, result)
+            obs = next_obs
+            state.global_step += config.num_envs
+            _sync_rlpd_trainer_state(trainer_state, state)
+            _emit_online_collect_event(
+                callback_list,
+                trainer_state,
+                global_step=state.global_step,
+                dones=dones,
+                offline_dataset_size=len(offline_dataset),
+                replay_buffer=replay_buffer,
+                obs=obs,
+            )
 
-                    stop_reason = stop_reason_for_training_limits(
-                        epoch=epoch,
-                        update_count=update_count,
-                        max_epochs=max_epochs,
-                        max_updates=max_updates,
-                    )
-                    if stop_reason is not None:
-                        trainer_state.request_stop(stop_reason)
-                        break
+            state = _run_rlpd_online_updates(
+                algorithm=algorithm,
+                offline_dataset=offline_dataset,
+                replay_buffer=replay_buffer,
+                callback_list=callback_list,
+                trainer_state=trainer_state,
+                loop_config=loop_config,
+                global_step=state.global_step,
+                state=state,
+            )
 
-            metrics = {
-                **latest_update_metrics,
-                "alpha": alpha,
-                "global_step": float(global_step),
-                "epoch": float(epoch),
-                "update_count": float(update_count),
-                "gradient_steps": float(update_count),
-                "offline_dataset_size": float(len(offline_dataset)),
-                "online_buffer_size": float(len(replay_buffer)),
-                "buffer_size": float(len(replay_buffer)),
-                "offline_pretrain_updates": float(offline_pretrain_updates),
-                "pretrain_updates_done": float(pretrain_updates_done),
-                "offline_batch_ratio": float(offline_batch_ratio),
-                "offline_batch_size": last_offline_batch_size,
-                "online_batch_size": last_online_batch_size,
-                "lr_scale": float(last_lr_scale),
-                "learning_rate": float(last_learning_rate),
-            }
-            if should_run_periodic_eval(
-                global_step=global_step,
-                total_timesteps=config.total_timesteps,
-                eval_interval=eval_interval,
-            ):
-                algorithm.set_eval_mode()
-                eval_metrics = _evaluate_sac_policy(
+            metrics = _build_rlpd_metrics(
+                state,
+                alpha=alpha,
+                offline_dataset_size=len(offline_dataset),
+                replay_buffer_size=len(replay_buffer),
+                offline_pretrain_updates=offline_pretrain_updates,
+                offline_batch_ratio=offline_batch_ratio,
+            )
+            metrics, should_stop = maybe_run_evaluation(
+                should_run_eval=should_run_periodic_eval(
+                    global_step=state.global_step,
+                    total_timesteps=config.total_timesteps,
+                    eval_interval=eval_interval,
+                ),
+                algorithm=algorithm,
+                evaluate=lambda: _evaluate_sac_policy(
                     model,
                     config,
                     device=device,
                     num_episodes=config.eval_episodes,
-                )
-                algorithm.set_train_mode()
-                metrics = {**metrics, **eval_metrics}
-                logger.log_metrics(metrics, step=global_step)
-                callback_list.on_eval_end(trainer_state, metrics)
-                if trainer_state.should_stop:
-                    break
+                ),
+                logger=logger,
+                callback_list=callback_list,
+                trainer_state=trainer_state,
+                metrics=metrics,
+                global_step=state.global_step,
+            )
+            if should_stop:
+                break
 
         checkpoint_path = save_training_checkpoint(
             run_context=run_context,
@@ -392,10 +590,10 @@ def train_rlpd(
             algorithm_state=algorithm.state_dict(),
             buffer_state=replay_buffer.state_dict(),
             trainer_state={
-                "global_step": global_step,
-                "epoch": epoch,
-                "update_count": update_count,
-                "pretrain_updates_done": pretrain_updates_done,
+                "global_step": state.global_step,
+                "epoch": state.epoch,
+                "update_count": state.update_count,
+                "pretrain_updates_done": state.pretrain_updates_done,
                 "should_stop": trainer_state.should_stop,
                 "stop_reason": trainer_state.stop_reason,
             },

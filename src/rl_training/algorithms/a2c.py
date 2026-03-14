@@ -6,19 +6,9 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
+from rl_training.algorithms._advantage_utils import normalize_advantages
 from rl_training.algorithms.base import UpdateResult
 from rl_training.models.mlp_actor_critic import MLPActorCritic
-
-
-def _normalize_advantages(advantages: torch.Tensor) -> torch.Tensor:
-    if advantages.numel() <= 1:
-        return advantages
-
-    mean = advantages.mean()
-    std = advantages.std(correction=0)
-    if std < 1e-8:
-        return advantages - mean
-    return (advantages - mean) / (std + 1e-8)
 
 
 def _a2c_loss_terms(
@@ -27,7 +17,7 @@ def _a2c_loss_terms(
     ent_coef: float,
     vf_coef: float,
 ) -> dict[str, torch.Tensor]:
-    advantages = _normalize_advantages(batch["advantages"])
+    advantages = normalize_advantages(batch["advantages"])
     policy_loss = -(batch["logprobs"] * advantages).mean()
     value_loss = 0.5 * F.mse_loss(batch["values"], batch["returns"])
     entropy_loss = -batch["entropy"].mean()

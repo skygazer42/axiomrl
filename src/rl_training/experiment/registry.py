@@ -715,109 +715,128 @@ def _load_recurrent_ppo_algorithm(
     return algorithm
 
 
-def _load_dqn_algorithm(config: TrainConfig, checkpoint_state: CheckpointState, *, device: torch.device) -> DQNAlgorithm:
-    obs_shape, action_dim = _infer_discrete_env_spaces(config)
-    hidden_sizes = tuple(config.algo_kwargs.get("hidden_sizes", (64, 64)))
+def _build_image_dqn_loader(
+    config: TrainConfig,
+    *,
+    obs_shape: tuple[int, ...],
+    action_dim: int,
+    device: torch.device,
+) -> tuple[CNNQNetwork, type[DQNAlgorithm]]:
+    if config.algo != "dqn":
+        raise ValueError(f"image observations are currently supported for algo='dqn' only, got {config.algo!r}")
+    q_network = CNNQNetwork(
+        obs_shape=obs_shape,
+        action_dim=action_dim,
+        hidden_sizes=tuple(config.algo_kwargs.get("head_hidden_sizes", config.algo_kwargs.get("hidden_sizes", (512,)))),
+        features_dim=int(config.algo_kwargs.get("features_dim", 512)),
+    ).to(device)
+    return q_network, DQNAlgorithm
 
-    if len(obs_shape) == 3:
-        if config.algo != "dqn":
-            raise ValueError(f"image observations are currently supported for algo='dqn' only, got {config.algo!r}")
-        q_network = CNNQNetwork(
-            obs_shape=obs_shape,
-            action_dim=action_dim,
-            hidden_sizes=tuple(config.algo_kwargs.get("head_hidden_sizes", config.algo_kwargs.get("hidden_sizes", (512,)))),
-            features_dim=int(config.algo_kwargs.get("features_dim", 512)),
-        ).to(device)
-        algorithm_cls = DQNAlgorithm
-    else:
-        obs_dim = obs_shape[0]
-        if config.algo == "rainbow_dqn":
-            q_network = MLPDuelingNoisyQNetwork(obs_dim=obs_dim, action_dim=action_dim, hidden_sizes=hidden_sizes).to(device)
-            algorithm_cls = RainbowDQNAlgorithm
-        elif config.algo == "dueling_dqn":
-            q_network = MLPDuelingQNetwork(obs_dim=obs_dim, action_dim=action_dim, hidden_sizes=hidden_sizes).to(device)
-            algorithm_cls = DuelingDQNAlgorithm
-        elif config.algo == "noisy_dqn":
-            q_network = MLPNoisyQNetwork(obs_dim=obs_dim, action_dim=action_dim, hidden_sizes=hidden_sizes).to(device)
-            algorithm_cls = NoisyDQNAlgorithm
-        else:
-            q_network = MLPQNetwork(obs_dim=obs_dim, action_dim=action_dim, hidden_sizes=hidden_sizes).to(device)
-            if config.algo == "double_dqn":
-                algorithm_cls = DoubleDQNAlgorithm
-            elif config.algo == "expected_sarsa":
-                algorithm_cls = ExpectedSARSAAlgorithm
-            elif config.algo == "expected_double_dqn":
-                algorithm_cls = ExpectedDoubleDQNAlgorithm
-            elif config.algo == "boltzmann_dqn":
-                algorithm_cls = BoltzmannDQNAlgorithm
-            elif config.algo == "boltzmann_double_dqn":
-                algorithm_cls = BoltzmannDoubleDQNAlgorithm
-            elif config.algo == "mellowmax_dqn":
-                algorithm_cls = MellowmaxDQNAlgorithm
-            elif config.algo == "soft_dqn":
-                algorithm_cls = SoftDQNAlgorithm
-            elif config.algo == "soft_double_dqn":
-                algorithm_cls = SoftDoubleDQNAlgorithm
-            elif config.algo == "advantage_learning_dqn":
-                algorithm_cls = AdvantageLearningDQNAlgorithm
-            elif config.algo == "persistent_advantage_learning_dqn":
-                algorithm_cls = PersistentAdvantageLearningDQNAlgorithm
-            elif config.algo == "munchausen_dqn":
-                algorithm_cls = MunchausenDQNAlgorithm
-            elif config.algo == "munchausen_double_dqn":
-                algorithm_cls = MunchausenDoubleDQNAlgorithm
-            elif config.algo == "cql_dqn":
-                algorithm_cls = CQLDQNAlgorithm
-            elif config.algo == "cql_double_dqn":
-                algorithm_cls = CQLDoubleDQNAlgorithm
-            elif config.algo == "clipped_double_dqn":
-                algorithm_cls = ClippedDoubleDQNAlgorithm
-            elif config.algo == "hysteretic_dqn":
-                algorithm_cls = HystereticDQNAlgorithm
-            elif config.algo == "prioritized_dqn":
-                algorithm_cls = PrioritizedDQNAlgorithm
-            else:
-                algorithm_cls = DQNAlgorithm
 
-    algorithm_kwargs = {
+def _resolve_vector_dqn_algorithm_class(algo_name: str) -> type[DQNAlgorithm]:
+    return {
+        "double_dqn": DoubleDQNAlgorithm,
+        "expected_sarsa": ExpectedSARSAAlgorithm,
+        "expected_double_dqn": ExpectedDoubleDQNAlgorithm,
+        "boltzmann_dqn": BoltzmannDQNAlgorithm,
+        "boltzmann_double_dqn": BoltzmannDoubleDQNAlgorithm,
+        "mellowmax_dqn": MellowmaxDQNAlgorithm,
+        "soft_dqn": SoftDQNAlgorithm,
+        "soft_double_dqn": SoftDoubleDQNAlgorithm,
+        "advantage_learning_dqn": AdvantageLearningDQNAlgorithm,
+        "persistent_advantage_learning_dqn": PersistentAdvantageLearningDQNAlgorithm,
+        "munchausen_dqn": MunchausenDQNAlgorithm,
+        "munchausen_double_dqn": MunchausenDoubleDQNAlgorithm,
+        "cql_dqn": CQLDQNAlgorithm,
+        "cql_double_dqn": CQLDoubleDQNAlgorithm,
+        "clipped_double_dqn": ClippedDoubleDQNAlgorithm,
+        "hysteretic_dqn": HystereticDQNAlgorithm,
+        "prioritized_dqn": PrioritizedDQNAlgorithm,
+    }.get(algo_name, DQNAlgorithm)
+
+
+def _build_vector_dqn_loader(
+    config: TrainConfig,
+    *,
+    obs_dim: int,
+    action_dim: int,
+    hidden_sizes: tuple[int, ...],
+    device: torch.device,
+) -> tuple[nn.Module, type[DQNAlgorithm]]:
+    if config.algo == "rainbow_dqn":
+        q_network = MLPDuelingNoisyQNetwork(obs_dim=obs_dim, action_dim=action_dim, hidden_sizes=hidden_sizes).to(device)
+        return q_network, RainbowDQNAlgorithm
+    if config.algo == "dueling_dqn":
+        q_network = MLPDuelingQNetwork(obs_dim=obs_dim, action_dim=action_dim, hidden_sizes=hidden_sizes).to(device)
+        return q_network, DuelingDQNAlgorithm
+    if config.algo == "noisy_dqn":
+        q_network = MLPNoisyQNetwork(obs_dim=obs_dim, action_dim=action_dim, hidden_sizes=hidden_sizes).to(device)
+        return q_network, NoisyDQNAlgorithm
+
+    q_network = MLPQNetwork(obs_dim=obs_dim, action_dim=action_dim, hidden_sizes=hidden_sizes).to(device)
+    return q_network, _resolve_vector_dqn_algorithm_class(config.algo)
+
+
+def _build_dqn_algorithm_kwargs(
+    config: TrainConfig,
+    *,
+    q_network: nn.Module,
+    algorithm_cls: type[DQNAlgorithm],
+) -> dict[str, float | int | nn.Module]:
+    algorithm_kwargs: dict[str, float | int | nn.Module] = {
         "q_network": q_network,
         "learning_rate": float(config.algo_kwargs.get("learning_rate", 1e-3)),
         "gamma": float(config.algo_kwargs.get("gamma", 0.99)),
         "target_update_interval": int(config.algo_kwargs.get("target_update_interval", 250)),
     }
-    if algorithm_cls is ExpectedSARSAAlgorithm:
+    if algorithm_cls in {ExpectedSARSAAlgorithm, ExpectedDoubleDQNAlgorithm}:
         algorithm_kwargs["target_epsilon"] = float(config.algo_kwargs.get("target_epsilon", 0.05))
-    elif algorithm_cls is ExpectedDoubleDQNAlgorithm:
-        algorithm_kwargs["target_epsilon"] = float(config.algo_kwargs.get("target_epsilon", 0.05))
-    elif algorithm_cls is BoltzmannDQNAlgorithm:
-        algorithm_kwargs["boltzmann_temperature"] = float(config.algo_kwargs.get("boltzmann_temperature", 0.5))
-    elif algorithm_cls is BoltzmannDoubleDQNAlgorithm:
+    elif algorithm_cls in {BoltzmannDQNAlgorithm, BoltzmannDoubleDQNAlgorithm}:
         algorithm_kwargs["boltzmann_temperature"] = float(config.algo_kwargs.get("boltzmann_temperature", 0.5))
     elif algorithm_cls is MellowmaxDQNAlgorithm:
         algorithm_kwargs["mellowmax_omega"] = float(config.algo_kwargs.get("mellowmax_omega", 5.0))
-    elif algorithm_cls is SoftDQNAlgorithm:
-        algorithm_kwargs["entropy_temperature"] = float(config.algo_kwargs.get("entropy_temperature", 0.03))
-    elif algorithm_cls is SoftDoubleDQNAlgorithm:
+    elif algorithm_cls in {SoftDQNAlgorithm, SoftDoubleDQNAlgorithm}:
         algorithm_kwargs["entropy_temperature"] = float(config.algo_kwargs.get("entropy_temperature", 0.03))
     elif algorithm_cls is AdvantageLearningDQNAlgorithm:
         algorithm_kwargs["advantage_alpha"] = float(config.algo_kwargs.get("advantage_alpha", 0.9))
     elif algorithm_cls is PersistentAdvantageLearningDQNAlgorithm:
         algorithm_kwargs["persistent_advantage_alpha"] = float(config.algo_kwargs.get("persistent_advantage_alpha", 0.9))
-    elif algorithm_cls is MunchausenDQNAlgorithm:
+    elif algorithm_cls in {MunchausenDQNAlgorithm, MunchausenDoubleDQNAlgorithm}:
         algorithm_kwargs["munchausen_alpha"] = float(config.algo_kwargs.get("munchausen_alpha", 0.9))
         algorithm_kwargs["entropy_temperature"] = float(config.algo_kwargs.get("entropy_temperature", 0.03))
         algorithm_kwargs["munchausen_clip_min"] = float(config.algo_kwargs.get("munchausen_clip_min", -1.0))
-    elif algorithm_cls is MunchausenDoubleDQNAlgorithm:
-        algorithm_kwargs["munchausen_alpha"] = float(config.algo_kwargs.get("munchausen_alpha", 0.9))
-        algorithm_kwargs["entropy_temperature"] = float(config.algo_kwargs.get("entropy_temperature", 0.03))
-        algorithm_kwargs["munchausen_clip_min"] = float(config.algo_kwargs.get("munchausen_clip_min", -1.0))
-    elif algorithm_cls is CQLDQNAlgorithm:
-        algorithm_kwargs["cql_alpha"] = float(config.algo_kwargs.get("cql_alpha", 1.0))
-    elif algorithm_cls is CQLDoubleDQNAlgorithm:
+    elif algorithm_cls in {CQLDQNAlgorithm, CQLDoubleDQNAlgorithm}:
         algorithm_kwargs["cql_alpha"] = float(config.algo_kwargs.get("cql_alpha", 1.0))
     elif algorithm_cls is HystereticDQNAlgorithm:
         algorithm_kwargs["hysteretic_beta"] = float(config.algo_kwargs.get("hysteretic_beta", 0.1))
+    return algorithm_kwargs
 
+
+def _load_dqn_algorithm(config: TrainConfig, checkpoint_state: CheckpointState, *, device: torch.device) -> DQNAlgorithm:
+    obs_shape, action_dim = _infer_discrete_env_spaces(config)
+    hidden_sizes = tuple(config.algo_kwargs.get("hidden_sizes", (64, 64)))
+
+    if len(obs_shape) == 3:
+        q_network, algorithm_cls = _build_image_dqn_loader(
+            config,
+            obs_shape=obs_shape,
+            action_dim=action_dim,
+            device=device,
+        )
+    else:
+        q_network, algorithm_cls = _build_vector_dqn_loader(
+            config,
+            obs_dim=obs_shape[0],
+            action_dim=action_dim,
+            hidden_sizes=hidden_sizes,
+            device=device,
+        )
+
+    algorithm_kwargs = _build_dqn_algorithm_kwargs(
+        config,
+        q_network=q_network,
+        algorithm_cls=algorithm_cls,
+    )
     algorithm = algorithm_cls(**algorithm_kwargs)
     algorithm.load_state_dict(checkpoint_state.algorithm_state)
     return algorithm

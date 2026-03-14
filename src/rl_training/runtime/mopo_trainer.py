@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from dataclasses import dataclass
 from pathlib import Path
 
 import gymnasium as gym
@@ -25,6 +26,7 @@ from rl_training.runtime.controls import (
     stop_reason_for_training_limits,
 )
 from rl_training.runtime.iql_trainer import _build_offline_dataset, _infer_env_spaces
+from rl_training.runtime.off_policy_trainer_utils import maybe_run_evaluation
 from rl_training.runtime.run_utils import create_training_run, resolve_device, save_training_checkpoint
 from rl_training.runtime.sac_trainer import _evaluate_sac_policy
 from rl_training.runtime.schedules import apply_learning_rate_scale, resolve_schedule_value
@@ -32,11 +34,70 @@ from rl_training.runtime.trainer import TrainResult, TrainerState
 from rl_training.runtime.types import MetricDict
 
 
+@dataclass
+class _MOPOTrainingState:
+    global_step: int
+    update_count: int
+    epoch: int
+    model_updates_done: int
+    latest_update_metrics: MetricDict
+    latest_refresh_metrics: MetricDict
+    last_real_batch_size: float
+    last_synthetic_batch_size: float
+    last_learning_rate: float
+    last_lr_scale: float
+
+
+@dataclass(frozen=True)
+class _MOPOLoopConfig:
+    learning_rate_schedule: object
+    effective_total_updates: int
+    warmup_steps: int
+    model_batch_size: int
+    batch_size: int
+    device: torch.device
+    alpha: float
+    penalty_coef: float
+    model_updates: int
+    synthetic_batch_ratio: float
+    max_epochs: int | None
+    max_updates: int | None
+    rollout_batch_size: int
+    rollout_horizon: int
+    rollout_refresh_interval: int
+
+
 def _validate_synthetic_batch_ratio(value: object) -> float:
     resolved = float(value)
     if not 0.0 <= resolved <= 1.0:
         raise ValueError(f"synthetic_batch_ratio must be between 0 and 1, got {resolved}")
     return resolved
+
+
+def _validate_mopo_hyperparameters(
+    *,
+    batch_size: int,
+    model_batch_size: int,
+    model_updates: int,
+    rollout_batch_size: int,
+    rollout_horizon: int,
+    rollout_refresh_interval: int,
+    synthetic_buffer_capacity: int,
+) -> None:
+    if batch_size < 1:
+        raise ValueError(f"batch_size must be >= 1, got {batch_size}")
+    if model_batch_size < 1:
+        raise ValueError(f"model_batch_size must be >= 1, got {model_batch_size}")
+    if model_updates < 0:
+        raise ValueError(f"model_updates must be >= 0, got {model_updates}")
+    if rollout_batch_size < 1:
+        raise ValueError(f"rollout_batch_size must be >= 1, got {rollout_batch_size}")
+    if rollout_horizon < 1:
+        raise ValueError(f"rollout_horizon must be >= 1, got {rollout_horizon}")
+    if rollout_refresh_interval < 1:
+        raise ValueError(f"rollout_refresh_interval must be >= 1, got {rollout_refresh_interval}")
+    if synthetic_buffer_capacity < 1:
+        raise ValueError(f"synthetic_buffer_capacity must be >= 1, got {synthetic_buffer_capacity}")
 
 
 def _concatenate_transition_batches(batches: Sequence[dict[str, torch.Tensor]]) -> dict[str, torch.Tensor]:
@@ -152,6 +213,271 @@ def _refresh_synthetic_buffer(
     }
 
 
+def _restore_mopo_training_state(
+    checkpoint_state: CheckpointState | None,
+    *,
+    batch_size: int,
+    model_updates: int,
+) -> _MOPOTrainingState:
+    if checkpoint_state is None:
+        return _MOPOTrainingState(
+            global_step=0,
+            update_count=0,
+            epoch=0,
+            model_updates_done=0,
+            latest_update_metrics={},
+            latest_refresh_metrics={
+                "synthetic_buffer_size": 0.0,
+                "synthetic_rollout_transitions": 0.0,
+                "synthetic_reward_mean": 0.0,
+                "synthetic_disagreement_mean": 0.0,
+            },
+            last_real_batch_size=float(batch_size),
+            last_synthetic_batch_size=0.0,
+            last_learning_rate=0.0,
+            last_lr_scale=1.0,
+        )
+
+    update_count = int(checkpoint_state.trainer_state.get("update_count", int(checkpoint_state.trainer_state.get("global_step", 0))))
+    return _MOPOTrainingState(
+        global_step=int(checkpoint_state.trainer_state.get("global_step", 0)),
+        update_count=update_count,
+        epoch=int(checkpoint_state.trainer_state.get("epoch", update_count)),
+        model_updates_done=int(checkpoint_state.trainer_state.get("model_updates_done", min(update_count, model_updates))),
+        latest_update_metrics={},
+        latest_refresh_metrics={
+            "synthetic_buffer_size": 0.0,
+            "synthetic_rollout_transitions": 0.0,
+            "synthetic_reward_mean": 0.0,
+            "synthetic_disagreement_mean": 0.0,
+        },
+        last_real_batch_size=float(batch_size),
+        last_synthetic_batch_size=0.0,
+        last_learning_rate=0.0,
+        last_lr_scale=1.0,
+    )
+
+
+def _sync_mopo_trainer_state(trainer_state: TrainerState, state: _MOPOTrainingState) -> None:
+    trainer_state.global_step = state.global_step
+    trainer_state.epoch = state.epoch
+    trainer_state.update_count = state.update_count
+
+
+def _build_mopo_metrics(
+    state: _MOPOTrainingState,
+    *,
+    alpha: float,
+    penalty_coef: float,
+    offline_dataset_size: int,
+    synthetic_buffer_size: int,
+    model_updates: int,
+    synthetic_batch_ratio: float,
+) -> MetricDict:
+    return {
+        **state.latest_update_metrics,
+        **state.latest_refresh_metrics,
+        "alpha": float(alpha),
+        "penalty_coef": float(penalty_coef),
+        "global_step": float(state.global_step),
+        "epoch": float(state.epoch),
+        "update_count": float(state.update_count),
+        "gradient_steps": float(state.update_count),
+        "offline_dataset_size": float(offline_dataset_size),
+        "synthetic_buffer_size": float(synthetic_buffer_size),
+        "buffer_size": float(synthetic_buffer_size),
+        "model_updates": float(model_updates),
+        "model_updates_done": float(state.model_updates_done),
+        "synthetic_batch_ratio": float(synthetic_batch_ratio),
+        "real_batch_size": state.last_real_batch_size,
+        "synthetic_batch_size": state.last_synthetic_batch_size,
+        "lr_scale": float(state.last_lr_scale),
+        "learning_rate": float(state.last_learning_rate),
+    }
+
+
+def _request_stop_for_limits(
+    trainer_state: TrainerState,
+    *,
+    epoch: int,
+    update_count: int,
+    max_epochs: int | None,
+    max_updates: int | None,
+) -> bool:
+    stop_reason = stop_reason_for_training_limits(
+        epoch=epoch,
+        update_count=update_count,
+        max_epochs=max_epochs,
+        max_updates=max_updates,
+    )
+    if stop_reason is None:
+        return False
+    trainer_state.request_stop(stop_reason)
+    return True
+
+
+def _emit_offline_dataset_event(
+    callback_list: CallbackList,
+    trainer_state: TrainerState,
+    *,
+    offline_dataset_size: int,
+    synthetic_buffer_size: int,
+) -> None:
+    callback_list.on_collect_end(
+        trainer_state,
+        CollectResult(
+            num_env_steps=offline_dataset_size,
+            num_episodes=0,
+            metrics={
+                "offline_dataset_size": float(offline_dataset_size),
+                "synthetic_buffer_size": float(synthetic_buffer_size),
+            },
+            last_obs=None,
+        ),
+    )
+
+
+def _emit_refresh_event(
+    callback_list: CallbackList,
+    trainer_state: TrainerState,
+    *,
+    refresh_metrics: MetricDict,
+) -> None:
+    callback_list.on_collect_end(
+        trainer_state,
+        CollectResult(
+            num_env_steps=0,
+            num_episodes=0,
+            metrics=refresh_metrics,
+            last_obs=None,
+        ),
+    )
+
+
+def _run_mopo_model_pretraining(
+    *,
+    algorithm: MOPO,
+    offline_dataset: TransitionDataset,
+    synthetic_buffer: ReplayBuffer,
+    callback_list: CallbackList,
+    trainer_state: TrainerState,
+    loop_config: _MOPOLoopConfig,
+    state: _MOPOTrainingState,
+) -> tuple[_MOPOTrainingState, MetricDict]:
+    metrics = _build_mopo_metrics(
+        state,
+        alpha=loop_config.alpha,
+        penalty_coef=loop_config.penalty_coef,
+        offline_dataset_size=len(offline_dataset),
+        synthetic_buffer_size=len(synthetic_buffer),
+        model_updates=loop_config.model_updates,
+        synthetic_batch_ratio=loop_config.synthetic_batch_ratio,
+    )
+    while state.model_updates_done < loop_config.model_updates and not trainer_state.should_stop:
+        state.last_lr_scale = resolve_schedule_value(
+            loop_config.learning_rate_schedule,
+            step=state.update_count,
+            total_steps=loop_config.effective_total_updates,
+            warmup_steps=loop_config.warmup_steps,
+        )
+        state.last_learning_rate = _apply_mopo_learning_rate_scale(algorithm, scale=state.last_lr_scale)
+        result = algorithm.update_model(
+            offline_dataset.sample(loop_config.model_batch_size, device=loop_config.device),
+            global_step=state.global_step,
+        )
+        state.model_updates_done += result.num_gradient_steps
+        state.update_count += result.num_gradient_steps
+        state.epoch += 1
+        state.latest_update_metrics = result.metrics
+        _sync_mopo_trainer_state(trainer_state, state)
+        callback_list.on_update_end(trainer_state, result)
+
+        metrics = _build_mopo_metrics(
+            state,
+            alpha=loop_config.alpha,
+            penalty_coef=loop_config.penalty_coef,
+            offline_dataset_size=len(offline_dataset),
+            synthetic_buffer_size=len(synthetic_buffer),
+            model_updates=loop_config.model_updates,
+            synthetic_batch_ratio=loop_config.synthetic_batch_ratio,
+        )
+        if _request_stop_for_limits(
+            trainer_state,
+            epoch=state.epoch,
+            update_count=state.update_count,
+            max_epochs=loop_config.max_epochs,
+            max_updates=loop_config.max_updates,
+        ):
+            break
+    return state, metrics
+
+
+def _maybe_refresh_synthetic_rollouts(
+    *,
+    algorithm: MOPO,
+    offline_dataset: TransitionDataset,
+    synthetic_buffer: ReplayBuffer,
+    callback_list: CallbackList,
+    trainer_state: TrainerState,
+    loop_config: _MOPOLoopConfig,
+    state: _MOPOTrainingState,
+) -> _MOPOTrainingState:
+    should_refresh = loop_config.synthetic_batch_ratio > 0.0 and (
+        len(synthetic_buffer) == 0 or state.global_step % loop_config.rollout_refresh_interval == 0
+    )
+    if not should_refresh:
+        return state
+
+    state.latest_refresh_metrics = _refresh_synthetic_buffer(
+        algorithm=algorithm,
+        offline_dataset=offline_dataset,
+        replay_buffer=synthetic_buffer,
+        rollout_batch_size=loop_config.rollout_batch_size,
+        rollout_horizon=loop_config.rollout_horizon,
+        device=loop_config.device,
+    )
+    _emit_refresh_event(
+        callback_list,
+        trainer_state,
+        refresh_metrics=state.latest_refresh_metrics,
+    )
+    return state
+
+
+def _run_mopo_policy_step(
+    *,
+    algorithm: MOPO,
+    offline_dataset: TransitionDataset,
+    synthetic_buffer: ReplayBuffer,
+    callback_list: CallbackList,
+    trainer_state: TrainerState,
+    loop_config: _MOPOLoopConfig,
+    state: _MOPOTrainingState,
+) -> _MOPOTrainingState:
+    state.last_lr_scale = resolve_schedule_value(
+        loop_config.learning_rate_schedule,
+        step=state.update_count,
+        total_steps=loop_config.effective_total_updates,
+        warmup_steps=loop_config.warmup_steps,
+    )
+    state.last_learning_rate = _apply_mopo_learning_rate_scale(algorithm, scale=state.last_lr_scale)
+    batch, real_batch_size, synthetic_batch_size = _sample_mixed_batch(
+        offline_dataset=offline_dataset,
+        replay_buffer=synthetic_buffer,
+        batch_size=loop_config.batch_size,
+        synthetic_batch_ratio=loop_config.synthetic_batch_ratio,
+        device=loop_config.device,
+    )
+    result = algorithm.update(batch, global_step=state.global_step)
+    state.global_step += 1
+    state.update_count += result.num_gradient_steps
+    state.epoch += 1
+    state.latest_update_metrics = result.metrics
+    state.last_real_batch_size = float(real_batch_size)
+    state.last_synthetic_batch_size = float(synthetic_batch_size)
+    _sync_mopo_trainer_state(trainer_state, state)
+    callback_list.on_update_end(trainer_state, result)
+    return state
 def train_mopo(
     config: TrainConfig,
     *,
@@ -190,20 +516,15 @@ def train_mopo(
     learning_rate_schedule = config.algo_kwargs.get("learning_rate_schedule")
     effective_total_updates = _resolve_effective_total_mopo_updates(config, model_updates=model_updates)
 
-    if batch_size < 1:
-        raise ValueError(f"batch_size must be >= 1, got {batch_size}")
-    if model_batch_size < 1:
-        raise ValueError(f"model_batch_size must be >= 1, got {model_batch_size}")
-    if model_updates < 0:
-        raise ValueError(f"model_updates must be >= 0, got {model_updates}")
-    if rollout_batch_size < 1:
-        raise ValueError(f"rollout_batch_size must be >= 1, got {rollout_batch_size}")
-    if rollout_horizon < 1:
-        raise ValueError(f"rollout_horizon must be >= 1, got {rollout_horizon}")
-    if rollout_refresh_interval < 1:
-        raise ValueError(f"rollout_refresh_interval must be >= 1, got {rollout_refresh_interval}")
-    if synthetic_buffer_capacity < 1:
-        raise ValueError(f"synthetic_buffer_capacity must be >= 1, got {synthetic_buffer_capacity}")
+    _validate_mopo_hyperparameters(
+        batch_size=batch_size,
+        model_batch_size=model_batch_size,
+        model_updates=model_updates,
+        rollout_batch_size=rollout_batch_size,
+        rollout_horizon=rollout_horizon,
+        rollout_refresh_interval=rollout_refresh_interval,
+        synthetic_buffer_capacity=synthetic_buffer_capacity,
+    )
 
     torch.manual_seed(config.seed)
     np.random.seed(config.seed)
@@ -248,188 +569,114 @@ def train_mopo(
             if checkpoint_state.buffer_state is not None:
                 synthetic_buffer.load_state_dict(checkpoint_state.buffer_state)
 
-        global_step = int(checkpoint_state.trainer_state.get("global_step", 0)) if checkpoint_state is not None else 0
-        update_count = int(checkpoint_state.trainer_state.get("update_count", global_step)) if checkpoint_state is not None else 0
-        epoch = int(checkpoint_state.trainer_state.get("epoch", update_count)) if checkpoint_state is not None else 0
-        model_updates_done = (
-            int(checkpoint_state.trainer_state.get("model_updates_done", min(update_count, model_updates)))
-            if checkpoint_state is not None
-            else 0
+        state = _restore_mopo_training_state(
+            checkpoint_state,
+            batch_size=batch_size,
+            model_updates=model_updates,
         )
-        latest_update_metrics: MetricDict = {}
-        latest_refresh_metrics: MetricDict = {
-            "synthetic_buffer_size": float(len(synthetic_buffer)),
-            "synthetic_rollout_transitions": float(len(synthetic_buffer)),
-            "synthetic_reward_mean": 0.0,
-            "synthetic_disagreement_mean": 0.0,
-        }
-        last_real_batch_size = float(batch_size)
-        last_synthetic_batch_size = 0.0
-        last_learning_rate = 0.0
-        last_lr_scale = 1.0
-        trainer_state.global_step = global_step
-        trainer_state.epoch = epoch
-        trainer_state.update_count = update_count
-        initial_stop_reason = stop_reason_for_training_limits(
-            epoch=epoch,
-            update_count=update_count,
+        loop_config = _MOPOLoopConfig(
+            learning_rate_schedule=learning_rate_schedule,
+            effective_total_updates=effective_total_updates,
+            warmup_steps=warmup_steps,
+            model_batch_size=model_batch_size,
+            batch_size=batch_size,
+            device=device,
+            alpha=alpha,
+            penalty_coef=penalty_coef,
+            model_updates=model_updates,
+            synthetic_batch_ratio=synthetic_batch_ratio,
+            max_epochs=max_epochs,
+            max_updates=max_updates,
+            rollout_batch_size=rollout_batch_size,
+            rollout_horizon=rollout_horizon,
+            rollout_refresh_interval=rollout_refresh_interval,
+        )
+        state.latest_refresh_metrics["synthetic_buffer_size"] = float(len(synthetic_buffer))
+        state.latest_refresh_metrics["synthetic_rollout_transitions"] = float(len(synthetic_buffer))
+        _sync_mopo_trainer_state(trainer_state, state)
+        _request_stop_for_limits(
+            trainer_state,
+            epoch=state.epoch,
+            update_count=state.update_count,
             max_epochs=max_epochs,
             max_updates=max_updates,
         )
-        if initial_stop_reason is not None:
-            trainer_state.request_stop(initial_stop_reason)
         callback_list.on_train_start(trainer_state)
-        callback_list.on_collect_end(
+        _emit_offline_dataset_event(
+            callback_list,
             trainer_state,
-            CollectResult(
-                num_env_steps=len(offline_dataset),
-                num_episodes=0,
-                metrics={
-                    "offline_dataset_size": float(len(offline_dataset)),
-                    "synthetic_buffer_size": float(len(synthetic_buffer)),
-                },
-                last_obs=None,
-            ),
+            offline_dataset_size=len(offline_dataset),
+            synthetic_buffer_size=len(synthetic_buffer),
         )
 
-        while model_updates_done < model_updates and not trainer_state.should_stop:
-            last_lr_scale = resolve_schedule_value(
-                learning_rate_schedule,
-                step=update_count,
-                total_steps=effective_total_updates,
-                warmup_steps=warmup_steps,
-            )
-            last_learning_rate = _apply_mopo_learning_rate_scale(algorithm, scale=last_lr_scale)
-            result = algorithm.update_model(offline_dataset.sample(model_batch_size, device=device), global_step=global_step)
-            model_updates_done += result.num_gradient_steps
-            update_count += result.num_gradient_steps
-            epoch += 1
-            latest_update_metrics = result.metrics
-            trainer_state.epoch = epoch
-            trainer_state.update_count = update_count
-            callback_list.on_update_end(trainer_state, result)
+        state, metrics = _run_mopo_model_pretraining(
+            algorithm=algorithm,
+            offline_dataset=offline_dataset,
+            synthetic_buffer=synthetic_buffer,
+            callback_list=callback_list,
+            trainer_state=trainer_state,
+            loop_config=loop_config,
+            state=state,
+        )
 
-            metrics = {
-                **latest_update_metrics,
-                **latest_refresh_metrics,
-                "global_step": float(global_step),
-                "epoch": float(epoch),
-                "update_count": float(update_count),
-                "gradient_steps": float(update_count),
-                "offline_dataset_size": float(len(offline_dataset)),
-                "synthetic_buffer_size": float(len(synthetic_buffer)),
-                "buffer_size": float(len(synthetic_buffer)),
-                "model_updates": float(model_updates),
-                "model_updates_done": float(model_updates_done),
-                "synthetic_batch_ratio": float(synthetic_batch_ratio),
-                "real_batch_size": last_real_batch_size,
-                "synthetic_batch_size": last_synthetic_batch_size,
-                "lr_scale": float(last_lr_scale),
-                "learning_rate": float(last_learning_rate),
-            }
-            stop_reason = stop_reason_for_training_limits(
-                epoch=epoch,
-                update_count=update_count,
-                max_epochs=max_epochs,
-                max_updates=max_updates,
-            )
-            if stop_reason is not None:
-                trainer_state.request_stop(stop_reason)
-                break
-
-        while global_step < config.total_timesteps and not trainer_state.should_stop:
-            if synthetic_batch_ratio > 0.0 and (len(synthetic_buffer) == 0 or global_step % rollout_refresh_interval == 0):
-                latest_refresh_metrics = _refresh_synthetic_buffer(
-                    algorithm=algorithm,
-                    offline_dataset=offline_dataset,
-                    replay_buffer=synthetic_buffer,
-                    rollout_batch_size=rollout_batch_size,
-                    rollout_horizon=rollout_horizon,
-                    device=device,
-                )
-                callback_list.on_collect_end(
-                    trainer_state,
-                    CollectResult(
-                        num_env_steps=0,
-                        num_episodes=0,
-                        metrics=latest_refresh_metrics,
-                        last_obs=None,
-                    ),
-                )
-
-            last_lr_scale = resolve_schedule_value(
-                learning_rate_schedule,
-                step=update_count,
-                total_steps=effective_total_updates,
-                warmup_steps=warmup_steps,
-            )
-            last_learning_rate = _apply_mopo_learning_rate_scale(algorithm, scale=last_lr_scale)
-            batch, real_batch_size, synthetic_batch_size = _sample_mixed_batch(
+        while state.global_step < config.total_timesteps and not trainer_state.should_stop:
+            state = _maybe_refresh_synthetic_rollouts(
+                algorithm=algorithm,
                 offline_dataset=offline_dataset,
-                replay_buffer=synthetic_buffer,
-                batch_size=batch_size,
-                synthetic_batch_ratio=synthetic_batch_ratio,
-                device=device,
+                synthetic_buffer=synthetic_buffer,
+                callback_list=callback_list,
+                trainer_state=trainer_state,
+                loop_config=loop_config,
+                state=state,
             )
-            result = algorithm.update(batch, global_step=global_step)
-            global_step += 1
-            update_count += result.num_gradient_steps
-            epoch += 1
-            latest_update_metrics = result.metrics
-            last_real_batch_size = float(real_batch_size)
-            last_synthetic_batch_size = float(synthetic_batch_size)
-            trainer_state.global_step = global_step
-            trainer_state.epoch = epoch
-            trainer_state.update_count = update_count
-            callback_list.on_update_end(trainer_state, result)
+            state = _run_mopo_policy_step(
+                algorithm=algorithm,
+                offline_dataset=offline_dataset,
+                synthetic_buffer=synthetic_buffer,
+                callback_list=callback_list,
+                trainer_state=trainer_state,
+                loop_config=loop_config,
+                state=state,
+            )
 
-            metrics = {
-                **latest_update_metrics,
-                **latest_refresh_metrics,
-                "alpha": float(alpha),
-                "penalty_coef": float(penalty_coef),
-                "global_step": float(global_step),
-                "epoch": float(epoch),
-                "update_count": float(update_count),
-                "gradient_steps": float(update_count),
-                "offline_dataset_size": float(len(offline_dataset)),
-                "synthetic_buffer_size": float(len(synthetic_buffer)),
-                "buffer_size": float(len(synthetic_buffer)),
-                "model_updates": float(model_updates),
-                "model_updates_done": float(model_updates_done),
-                "synthetic_batch_ratio": float(synthetic_batch_ratio),
-                "real_batch_size": last_real_batch_size,
-                "synthetic_batch_size": last_synthetic_batch_size,
-                "lr_scale": float(last_lr_scale),
-                "learning_rate": float(last_learning_rate),
-            }
-            if should_run_evaluation(
-                global_step=global_step,
-                total_timesteps=config.total_timesteps,
-                eval_interval=eval_interval,
-            ):
-                algorithm.set_eval_mode()
-                eval_metrics = _evaluate_sac_policy(
+            metrics = _build_mopo_metrics(
+                state,
+                alpha=alpha,
+                penalty_coef=penalty_coef,
+                offline_dataset_size=len(offline_dataset),
+                synthetic_buffer_size=len(synthetic_buffer),
+                model_updates=model_updates,
+                synthetic_batch_ratio=synthetic_batch_ratio,
+            )
+            metrics, should_stop = maybe_run_evaluation(
+                should_run_eval=should_run_evaluation(
+                    global_step=state.global_step,
+                    total_timesteps=config.total_timesteps,
+                    eval_interval=eval_interval,
+                ),
+                algorithm=algorithm,
+                evaluate=lambda: _evaluate_sac_policy(
                     algorithm.policy_model,
                     config,
                     device=device,
                     num_episodes=config.eval_episodes,
-                )
-                algorithm.set_train_mode()
-                metrics = {**metrics, **eval_metrics}
-                logger.log_metrics(metrics, step=global_step)
-                callback_list.on_eval_end(trainer_state, metrics)
-                if trainer_state.should_stop:
-                    break
+                ),
+                logger=logger,
+                callback_list=callback_list,
+                trainer_state=trainer_state,
+                metrics=metrics,
+                global_step=state.global_step,
+            )
+            if should_stop:
+                break
 
-            stop_reason = stop_reason_for_training_limits(
-                epoch=epoch,
-                update_count=update_count,
+            if _request_stop_for_limits(
+                trainer_state,
+                epoch=state.epoch,
+                update_count=state.update_count,
                 max_epochs=max_epochs,
                 max_updates=max_updates,
-            )
-            if stop_reason is not None:
-                trainer_state.request_stop(stop_reason)
+            ):
                 break
 
         checkpoint_path = save_training_checkpoint(
@@ -438,10 +685,10 @@ def train_mopo(
             algorithm_state=algorithm.state_dict(),
             buffer_state=synthetic_buffer.state_dict(),
             trainer_state={
-                "global_step": global_step,
-                "epoch": epoch,
-                "update_count": update_count,
-                "model_updates_done": model_updates_done,
+                "global_step": state.global_step,
+                "epoch": state.epoch,
+                "update_count": state.update_count,
+                "model_updates_done": state.model_updates_done,
                 "should_stop": trainer_state.should_stop,
                 "stop_reason": trainer_state.stop_reason,
             },

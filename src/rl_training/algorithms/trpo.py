@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from dataclasses import dataclass
 from typing import Any
 
 import torch
@@ -9,19 +10,18 @@ from torch.distributions import Categorical
 from torch.distributions.kl import kl_divergence
 from torch.nn import functional as F
 
+from rl_training.algorithms._advantage_utils import normalize_advantages
 from rl_training.algorithms.base import UpdateResult
 from rl_training.models.mlp_actor_critic import MLPActorCritic
 
 
-def _normalize_advantages(advantages: torch.Tensor) -> torch.Tensor:
-    if advantages.numel() <= 1:
-        return advantages
-
-    mean = advantages.mean()
-    std = advantages.std(correction=0)
-    if std < 1e-8:
-        return advantages - mean
-    return (advantages - mean) / (std + 1e-8)
+@dataclass(frozen=True)
+class _PolicyStepStats:
+    accepted_step: float
+    step_norm: float
+    backtrack_steps: float
+    cg_iteration_count: int
+    accepted_fraction: float
 
 
 def _flatten_tensors(tensors: Sequence[torch.Tensor], params: Sequence[nn.Parameter]) -> torch.Tensor:
@@ -84,7 +84,7 @@ def _conjugate_gradient(
 
 def _trpo_loss_terms(batch: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
     old_logprobs = batch.get("old_logprobs", batch["logprobs"])
-    advantages = _normalize_advantages(batch["advantages"])
+    advantages = normalize_advantages(batch["advantages"])
     log_ratio = batch["new_logprobs"] - old_logprobs
     ratio = log_ratio.exp()
 
@@ -206,7 +206,7 @@ class TRPO:
             obs = obs.unsqueeze(0)
         actions = torch.as_tensor(batch["actions"], dtype=torch.int64, device=device)
         returns = torch.as_tensor(batch["returns"], dtype=torch.float32, device=device)
-        advantages = _normalize_advantages(torch.as_tensor(batch["advantages"], dtype=torch.float32, device=device))
+        advantages = normalize_advantages(torch.as_tensor(batch["advantages"], dtype=torch.float32, device=device))
         old_logprobs = torch.as_tensor(batch.get("old_logprobs", batch["logprobs"]), dtype=torch.float32, device=device)
         return obs, actions, returns, advantages, old_logprobs
 
@@ -330,37 +330,21 @@ class TRPO:
         self,
         *,
         device: torch.device,
-        old_logprobs: torch.Tensor,
-        new_logprobs: torch.Tensor,
-        advantages: torch.Tensor,
-        returns: torch.Tensor,
-        values: torch.Tensor,
-        entropy: torch.Tensor,
-        approx_kl: torch.Tensor,
-        accepted_step: float,
-        step_norm: float,
-        backtrack_steps: float,
-        cg_iteration_count: int,
-        accepted_fraction: float,
+        policy_tensors: dict[str, torch.Tensor],
+        step_stats: _PolicyStepStats,
         final_value_loss: torch.Tensor,
         old_surrogate: torch.Tensor,
     ) -> dict[str, float]:
         metrics = trpo_loss(
             {
-                "logprobs": old_logprobs,
-                "new_logprobs": new_logprobs,
-                "advantages": advantages,
-                "returns": returns,
-                "values": values,
-                "entropy": entropy,
-                "approx_kl": approx_kl,
-                "accepted_step": torch.as_tensor(accepted_step, dtype=torch.float32, device=device),
-                "step_norm": torch.as_tensor(step_norm, dtype=torch.float32, device=device),
-                "backtrack_steps": torch.as_tensor(backtrack_steps, dtype=torch.float32, device=device),
-                "cg_iterations": torch.as_tensor(float(cg_iteration_count), dtype=torch.float32, device=device),
+                **policy_tensors,
+                "accepted_step": torch.as_tensor(step_stats.accepted_step, dtype=torch.float32, device=device),
+                "step_norm": torch.as_tensor(step_stats.step_norm, dtype=torch.float32, device=device),
+                "backtrack_steps": torch.as_tensor(step_stats.backtrack_steps, dtype=torch.float32, device=device),
+                "cg_iterations": torch.as_tensor(float(step_stats.cg_iteration_count), dtype=torch.float32, device=device),
             }
         )
-        metrics["line_search_fraction"] = accepted_fraction
+        metrics["line_search_fraction"] = step_stats.accepted_fraction
         metrics["value_updates"] = float(self.value_updates)
         metrics["final_value_loss"] = float(final_value_loss.detach().cpu().item())
         metrics["surrogate_improvement"] = float(
@@ -395,20 +379,25 @@ class TRPO:
             actions=actions,
             old_dist=old_dist,
         )
-        metrics = self._build_update_metrics(
-            device=device,
-            old_logprobs=old_logprobs,
-            new_logprobs=new_logprobs,
-            advantages=advantages,
-            returns=returns,
-            values=values,
-            entropy=entropy,
-            approx_kl=approx_kl,
+        step_stats = _PolicyStepStats(
             accepted_step=accepted_step,
             step_norm=step_norm,
             backtrack_steps=backtrack_steps,
             cg_iteration_count=cg_iteration_count,
             accepted_fraction=accepted_fraction,
+        )
+        metrics = self._build_update_metrics(
+            device=device,
+            policy_tensors={
+                "logprobs": old_logprobs,
+                "new_logprobs": new_logprobs,
+                "advantages": advantages,
+                "returns": returns,
+                "values": values,
+                "entropy": entropy,
+                "approx_kl": approx_kl,
+            },
+            step_stats=step_stats,
             final_value_loss=final_value_loss,
             old_surrogate=old_surrogate,
         )

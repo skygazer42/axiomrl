@@ -2,6 +2,7 @@ from pathlib import Path
 
 import gymnasium as gym
 import numpy as np
+import pytest
 
 from rl_training.envs import POINT_GOAL_ENV_ID
 from rl_training.experiment.config import TrainConfig
@@ -1118,7 +1119,7 @@ def test_resume_training_preserves_ppg_auxiliary_phase_schedule(tmp_path: Path) 
     )
 
     assert resumed.metrics["global_step"] >= 256
-    assert resumed.metrics["auxiliary_phase_ran"] == 1.0
+    assert resumed.metrics["auxiliary_phase_ran"] == pytest.approx(1.0)
 
 
 def test_resume_training_advances_global_step_for_r2d2(tmp_path: Path) -> None:

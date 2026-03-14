@@ -37,6 +37,35 @@ def test_prioritized_recurrent_replay_buffer_can_add_sample_and_update_prioritie
     buffer.update_priorities(batch["indices"], torch.tensor([2.0], dtype=torch.float32))
 
 
+def test_prioritized_recurrent_replay_buffer_sample_defaults_beta_to_zero() -> None:
+    buffer = PrioritizedRecurrentReplayBuffer(
+        capacity=8,
+        num_envs=1,
+        obs_shape=(4,),
+        sequence_length=4,
+        hidden_size=8,
+        num_layers=1,
+        alpha=0.6,
+        device="cpu",
+    )
+
+    for step in range(4):
+        buffer.add(
+            env_index=0,
+            obs=torch.full((4,), float(step), dtype=torch.float32),
+            actions=step % 2,
+            rewards=float(step),
+            next_obs=torch.full((4,), float(step + 1), dtype=torch.float32),
+            dones=float(step == 3),
+            episode_start=float(step == 0),
+            initial_state=(torch.zeros((1, 1, 8)), torch.zeros((1, 1, 8))),
+        )
+
+    batch = buffer.sample(batch_size=1)
+
+    assert batch["weights"].shape == (1,)
+
+
 def test_prioritized_recurrent_replay_buffer_restores_sampling_hyperparameters_from_state() -> None:
     source = PrioritizedRecurrentReplayBuffer(
         capacity=8,

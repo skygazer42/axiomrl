@@ -1,4 +1,5 @@
 import torch
+import pytest
 
 from rl_training.data import RecurrentReplayBuffer
 
@@ -32,7 +33,7 @@ def test_recurrent_replay_buffer_stores_chunks_with_masks_and_initial_state() ->
     assert batch["mask"].shape == (4, 1)
     assert batch["initial_h"].shape == (1, 1, 8)
     assert batch["initial_c"].shape == (1, 1, 8)
-    assert float(batch["mask"].sum().item()) == 3.0
+    assert float(batch["mask"].sum().item()) == pytest.approx(3.0)
 
 
 def test_recurrent_replay_buffer_clear_active_chunks_reconciles_transition_count() -> None:

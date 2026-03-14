@@ -6,6 +6,8 @@ import torch
 
 from rl_training.data.offline_dataset import TransitionDataset
 
+_FIELD_LENGTH_ERROR = "all fields must have the same length"
+
 
 class TrajectoryWindowDataset:
     def __init__(
@@ -25,13 +27,13 @@ class TrajectoryWindowDataset:
 
         size = int(obs_tensor.shape[0])
         if int(actions_tensor.shape[0]) != size:
-            raise ValueError("all fields must have the same length")
+            raise ValueError(_FIELD_LENGTH_ERROR)
         if int(returns_to_go_tensor.shape[0]) != size:
-            raise ValueError("all fields must have the same length")
+            raise ValueError(_FIELD_LENGTH_ERROR)
         if int(timesteps_tensor.shape[0]) != size:
-            raise ValueError("all fields must have the same length")
+            raise ValueError(_FIELD_LENGTH_ERROR)
         if int(mask_tensor.shape[0]) != size:
-            raise ValueError("all fields must have the same length")
+            raise ValueError(_FIELD_LENGTH_ERROR)
 
         self._size = size
         self.context_length = int(obs_tensor.shape[1])
