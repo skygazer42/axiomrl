@@ -39,7 +39,7 @@ class RunningMeanStd:
             if batch_count == 0:
                 return
             batch_mean = x_tensor.mean(dim=0)
-            batch_var = x_tensor.var(dim=0, correction=0)
+            batch_var = x_tensor.var(dim=0, unbiased=False)
 
         if self._count == 0:
             self._mean = batch_mean.detach().clone()

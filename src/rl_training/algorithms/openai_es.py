@@ -109,7 +109,7 @@ class OpenAIES:
         updated_parameters = parameters + update.to(device=parameters.device, dtype=parameters.dtype)
         self.model.set_flat_parameters(updated_parameters)
 
-        reward_std = torch.std(all_returns, correction=0)
+        reward_std = torch.std(all_returns, dim=0, unbiased=False)
         terms = _openai_es_metric_terms(
             {
                 "positive_returns": positive_returns,

@@ -5,13 +5,13 @@ from typing import Any
 import torch
 from torch.nn import functional as F
 
+from rl_training.algorithms._advantage_utils import normalize_advantages
 from rl_training.algorithms.base import UpdateResult
 from rl_training.models.mlp_iql import MLPIQLModel
 
 
 def _normalize_advantages(advantages: torch.Tensor) -> torch.Tensor:
-    centered = advantages - advantages.mean()
-    return centered / (advantages.std(correction=0) + 1e-8)
+    return normalize_advantages(advantages)
 
 
 def _awr_loss_terms(batch: dict[str, torch.Tensor | float]) -> dict[str, torch.Tensor]:

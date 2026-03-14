@@ -26,6 +26,7 @@ class HERReplayBuffer:
         action_shape: Sequence[int],
         her_ratio: float = 0.8,
         goal_selection_strategy: str = "future",
+        seed: int | None = None,
         device: str | torch.device = "cpu",
         obs_dtype: torch.dtype = torch.float32,
         action_dtype: torch.dtype = torch.float32,
@@ -46,10 +47,11 @@ class HERReplayBuffer:
         self.action_shape = tuple(int(dim) for dim in action_shape)
         self.her_ratio = float(her_ratio)
         self.goal_selection_strategy = goal_selection_strategy
+        self.seed = None if seed is None else int(seed)
         self.device = torch.device(device)
         self.obs_dtype = obs_dtype
         self.action_dtype = action_dtype
-        self._rng = np.random.default_rng()
+        self._rng = np.random.default_rng(self.seed)
 
         self._episodes: list[dict[str, Any]] = []
         self._current_episodes: list[dict[str, list[Any]]] = [self._empty_episode() for _ in range(self.num_envs)]
@@ -284,6 +286,7 @@ class HERReplayBuffer:
             "action_shape": self.action_shape,
             "her_ratio": self.her_ratio,
             "goal_selection_strategy": self.goal_selection_strategy,
+            "seed": self.seed,
             "num_transitions": self._num_transitions,
             "episodes": [
                 {
@@ -296,6 +299,8 @@ class HERReplayBuffer:
         }
 
     def load_state_dict(self, state_dict: dict[str, Any]) -> None:
+        self.seed = state_dict.get("seed", self.seed)
+        self._rng = np.random.default_rng(self.seed)
         self._episodes = []
         for episode in state_dict.get("episodes", ()):
             self._episodes.append(

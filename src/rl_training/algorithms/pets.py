@@ -184,7 +184,7 @@ class PETS:
                 elite_indices = torch.topk(values, k=int(num_topk)).indices
                 elite_sequences = candidate_sequences[elite_indices]
                 mean = elite_sequences.mean(dim=0, keepdim=True)
-                std = torch.maximum(elite_sequences.std(dim=0, correction=0, keepdim=True), min_std)
+                std = torch.maximum(elite_sequences.std(dim=0, unbiased=False, keepdim=True), min_std)
 
         action = mean[0, 0]
         action = torch.max(torch.min(action, high[0, 0]), low[0, 0])

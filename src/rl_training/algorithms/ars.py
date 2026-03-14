@@ -88,7 +88,8 @@ class ARS:
         selected_negative_returns = negative_returns[selected_indices]
         reward_std = torch.std(
             torch.cat([selected_positive_returns, selected_negative_returns], dim=0),
-            correction=0,
+            dim=0,
+            unbiased=False,
         )
         reward_scale = torch.clamp(reward_std, min=1e-8)
         search_direction = ((selected_positive_returns - selected_negative_returns).unsqueeze(-1) * selected_perturbations).mean(dim=0)

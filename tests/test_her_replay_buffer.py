@@ -146,3 +146,56 @@ def test_her_replay_buffer_preserves_time_limit_truncation_when_relabelled() -> 
 
     assert np.allclose(batch["rewards"].cpu().numpy(), -1.0)
     assert np.allclose(batch["dones"].cpu().numpy(), 1.0)
+
+
+def test_her_replay_buffer_sampling_is_reproducible_with_seed() -> None:
+    register_builtin_goal_envs()
+    env = gym.make(POINT_GOAL_ENV_ID)
+    buffer_a = HERReplayBuffer(
+        capacity=32,
+        num_envs=1,
+        obs_shape=(1,),
+        goal_shape=(1,),
+        action_shape=(1,),
+        her_ratio=1.0,
+        seed=7,
+    )
+    buffer_b = HERReplayBuffer(
+        capacity=32,
+        num_envs=1,
+        obs_shape=(1,),
+        goal_shape=(1,),
+        action_shape=(1,),
+        her_ratio=1.0,
+        seed=7,
+    )
+
+    for buffer in (buffer_a, buffer_b):
+        buffer.add(
+            env_index=0,
+            obs=_make_obs(0.0, 1.0),
+            actions=np.asarray([0.5], dtype=np.float32),
+            rewards=-1.0,
+            next_obs=_make_obs(0.5, 1.0),
+            terminated=False,
+            truncated=False,
+        )
+        buffer.add(
+            env_index=0,
+            obs=_make_obs(0.5, 1.0),
+            actions=np.asarray([0.5], dtype=np.float32),
+            rewards=-1.0,
+            next_obs=_make_obs(1.0, 1.0),
+            terminated=True,
+            truncated=False,
+        )
+
+    batch_a = buffer_a.sample(4, env=env)
+    batch_b = buffer_b.sample(4, env=env)
+
+    assert np.allclose(batch_a["obs"].cpu().numpy(), batch_b["obs"].cpu().numpy())
+    assert np.allclose(batch_a["next_obs"].cpu().numpy(), batch_b["next_obs"].cpu().numpy())
+    assert np.allclose(batch_a["rewards"].cpu().numpy(), batch_b["rewards"].cpu().numpy())
+    assert np.allclose(batch_a["dones"].cpu().numpy(), batch_b["dones"].cpu().numpy())
+
+    env.close()

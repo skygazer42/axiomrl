@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
 from collections.abc import Sequence
 
@@ -52,6 +53,14 @@ from rl_training.runtime.controls import build_control_callbacks, resolve_eval_i
 from rl_training.runtime.run_utils import create_training_run, resolve_device, save_training_checkpoint
 from rl_training.runtime.trainer import TrainResult, TrainerState
 from rl_training.runtime.types import MetricDict
+
+
+@dataclass(frozen=True)
+class _PrioritizedReplaySettings:
+    total_timesteps: int
+    beta_start: float
+    beta_end: float
+    beta_fraction: float
 
 
 def _infer_spaces(envs: gym.vector.SyncVectorEnv) -> tuple[tuple[int, ...], int]:
@@ -563,23 +572,41 @@ def _should_run_dqn_update(
     return replay_size >= max(batch_size, learning_starts) and global_step % train_frequency == 0
 
 
+def _emit_collect_event(
+    callback_list: CallbackList,
+    trainer_state: TrainerState,
+    *,
+    global_step: int,
+    num_envs: int,
+    dones: np.ndarray,
+    replay_size: int,
+    obs: np.ndarray,
+) -> None:
+    callback_list.on_collect_end(
+        trainer_state,
+        CollectResult(
+            num_env_steps=num_envs,
+            num_episodes=int(np.sum(dones)),
+            metrics={"global_step": float(global_step), "buffer_size": float(replay_size)},
+            last_obs=obs,
+        ),
+    )
+
+
 def _update_with_prioritized_replay(
     *,
     algorithm: object,
     replay_buffer: PrioritizedReplayBuffer,
     batch_size: int,
     global_step: int,
-    total_timesteps: int,
-    prioritized_beta_start: float,
-    prioritized_beta_end: float,
-    prioritized_beta_fraction: float,
+    settings: _PrioritizedReplaySettings,
 ):
     beta = _beta_at_step(
         global_step,
-        total_timesteps=total_timesteps,
-        beta_start=prioritized_beta_start,
-        beta_end=prioritized_beta_end,
-        beta_fraction=prioritized_beta_fraction,
+        total_timesteps=settings.total_timesteps,
+        beta_start=settings.beta_start,
+        beta_end=settings.beta_end,
+        beta_fraction=settings.beta_fraction,
     )
     batch = replay_buffer.sample(batch_size, beta=beta)
     result = algorithm.update(batch, global_step=global_step)  # type: ignore[attr-defined]
@@ -587,6 +614,45 @@ def _update_with_prioritized_replay(
     if td_errors is not None:
         replay_buffer.update_priorities(batch["indices"], td_errors)
     return result
+
+
+def _maybe_update_dqn(
+    *,
+    algorithm: object,
+    replay_buffer: ReplayBuffer | PrioritizedReplayBuffer,
+    use_prioritized_replay: bool,
+    batch_size: int,
+    learning_starts: int,
+    train_frequency: int,
+    global_step: int,
+    prioritized_replay_settings: _PrioritizedReplaySettings,
+    callback_list: CallbackList,
+    trainer_state: TrainerState,
+    latest_update_metrics: MetricDict,
+    update_count: int,
+) -> tuple[MetricDict, int]:
+    if not _should_run_dqn_update(
+        replay_size=len(replay_buffer),
+        batch_size=batch_size,
+        learning_starts=learning_starts,
+        global_step=global_step,
+        train_frequency=train_frequency,
+    ):
+        return latest_update_metrics, update_count
+
+    if use_prioritized_replay:
+        result = _update_with_prioritized_replay(
+            algorithm=algorithm,
+            replay_buffer=replay_buffer,  # type: ignore[arg-type]
+            batch_size=batch_size,
+            global_step=global_step,
+            settings=prioritized_replay_settings,
+        )
+    else:
+        result = algorithm.update(replay_buffer.sample(batch_size), global_step=global_step)  # type: ignore[attr-defined]
+
+    callback_list.on_update_end(trainer_state, result)
+    return result.metrics, update_count + result.num_gradient_steps
 
 
 def _build_dqn_metrics(
@@ -620,6 +686,43 @@ def _build_dqn_metrics(
             )
         )
     return metrics
+
+
+def _maybe_run_dqn_evaluation(
+    *,
+    should_run_eval: bool,
+    algorithm: object,
+    q_network: CNNQNetwork
+    | MLPQNetwork
+    | MLPDuelingQNetwork
+    | MLPNoisyQNetwork
+    | MLPDuelingNoisyQNetwork
+    | MLPC51QNetwork
+    | MLPQRQNetwork
+    | MLPIQNetwork,
+    config: TrainConfig,
+    device: torch.device,
+    logger: object,
+    callback_list: CallbackList,
+    trainer_state: TrainerState,
+    metrics: MetricDict,
+    global_step: int,
+) -> tuple[MetricDict, bool]:
+    if not should_run_eval:
+        return metrics, False
+
+    algorithm.set_eval_mode()  # type: ignore[attr-defined]
+    eval_metrics = _evaluate_q_policy(
+        q_network,
+        config,
+        device=device,
+        num_episodes=config.eval_episodes,
+    )
+    algorithm.set_train_mode()  # type: ignore[attr-defined]
+    evaluated_metrics = {**metrics, **eval_metrics}
+    logger.log_metrics(evaluated_metrics, step=global_step)
+    callback_list.on_eval_end(trainer_state, evaluated_metrics)
+    return evaluated_metrics, trainer_state.should_stop
 
 
 def _evaluate_q_policy(
@@ -696,6 +799,12 @@ def train_dqn(
     prioritized_beta_fraction = float(config.algo_kwargs.get("prioritized_beta_fraction", 1.0))
     prioritized_eps = float(config.algo_kwargs.get("prioritized_eps", 1e-6))
     eval_interval = resolve_eval_interval(config)
+    prioritized_replay_settings = _PrioritizedReplaySettings(
+        total_timesteps=config.total_timesteps,
+        beta_start=prioritized_beta_start,
+        beta_end=prioritized_beta_end,
+        beta_fraction=prioritized_beta_fraction,
+    )
 
     torch.manual_seed(config.seed)
     np.random.seed(config.seed)
@@ -787,39 +896,30 @@ def train_dqn(
             obs = next_obs
             global_step += config.num_envs
             trainer_state.global_step = global_step
-            callback_list.on_collect_end(
+            _emit_collect_event(
+                callback_list,
                 trainer_state,
-                CollectResult(
-                    num_env_steps=config.num_envs,
-                    num_episodes=int(np.sum(dones)),
-                    metrics={"global_step": float(global_step), "buffer_size": float(len(replay_buffer))},
-                    last_obs=obs,
-                ),
+                global_step=global_step,
+                num_envs=config.num_envs,
+                dones=dones,
+                replay_size=len(replay_buffer),
+                obs=obs,
             )
 
-            if _should_run_dqn_update(
-                replay_size=len(replay_buffer),
+            latest_update_metrics, update_count = _maybe_update_dqn(
+                algorithm=algorithm,
+                replay_buffer=replay_buffer,
+                use_prioritized_replay=use_prioritized_replay,
                 batch_size=batch_size,
                 learning_starts=learning_starts,
-                global_step=global_step,
                 train_frequency=train_frequency,
-            ):
-                if use_prioritized_replay:
-                    result = _update_with_prioritized_replay(
-                        algorithm=algorithm,
-                        replay_buffer=replay_buffer,  # type: ignore[arg-type]
-                        batch_size=batch_size,
-                        global_step=global_step,
-                        total_timesteps=config.total_timesteps,
-                        prioritized_beta_start=prioritized_beta_start,
-                        prioritized_beta_end=prioritized_beta_end,
-                        prioritized_beta_fraction=prioritized_beta_fraction,
-                    )
-                else:
-                    result = algorithm.update(replay_buffer.sample(batch_size), global_step=global_step)  # type: ignore[arg-type]
-                latest_update_metrics = result.metrics
-                update_count += result.num_gradient_steps
-                callback_list.on_update_end(trainer_state, result)
+                global_step=global_step,
+                prioritized_replay_settings=prioritized_replay_settings,
+                callback_list=callback_list,
+                trainer_state=trainer_state,
+                latest_update_metrics=latest_update_metrics,
+                update_count=update_count,
+            )
 
             metrics = _build_dqn_metrics(
                 latest_update_metrics=latest_update_metrics,
@@ -833,24 +933,24 @@ def train_dqn(
                 prioritized_beta_end=prioritized_beta_end,
                 prioritized_beta_fraction=prioritized_beta_fraction,
             )
-            if should_run_evaluation(
+            metrics, should_stop = _maybe_run_dqn_evaluation(
+                should_run_eval=should_run_evaluation(
+                    global_step=global_step,
+                    total_timesteps=config.total_timesteps,
+                    eval_interval=eval_interval,
+                ),
+                algorithm=algorithm,
+                q_network=q_network,
+                config=config,
+                device=device,
+                logger=logger,
+                callback_list=callback_list,
+                trainer_state=trainer_state,
+                metrics=metrics,
                 global_step=global_step,
-                total_timesteps=config.total_timesteps,
-                eval_interval=eval_interval,
-            ):
-                algorithm.set_eval_mode()
-                eval_metrics = _evaluate_q_policy(
-                    q_network,
-                    config,
-                    device=device,
-                    num_episodes=config.eval_episodes,
-                )
-                algorithm.set_train_mode()
-                metrics = {**metrics, **eval_metrics}
-                logger.log_metrics(metrics, step=global_step)
-                callback_list.on_eval_end(trainer_state, metrics)
-                if trainer_state.should_stop:
-                    break
+            )
+            if should_stop:
+                break
 
         checkpoint_path = save_training_checkpoint(
             run_context=run_context,

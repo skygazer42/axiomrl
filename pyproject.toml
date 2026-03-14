@@ -52,3 +52,18 @@ rl_training = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.coverage.run]
+branch = true
+source = ["src/rl_training"]
+omit = [
+  "src/rl_training/assets/*",
+  "src/rl_training/examples/*",
+]
+
+[tool.coverage.report]
+skip_covered = true
+show_missing = true
+
+[tool.coverage.xml]
+output = "coverage.xml"

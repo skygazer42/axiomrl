@@ -84,6 +84,172 @@ def _sample_auxiliary_minibatches(
     return batches
 
 
+def _restore_auxiliary_chunks(
+    checkpoint_state: CheckpointState | None,
+    *,
+    device: torch.device,
+) -> tuple[list[torch.Tensor], list[torch.Tensor]]:
+    if checkpoint_state is None or checkpoint_state.buffer_state is None:
+        return [], []
+
+    aux_obs_chunks = [
+        torch.as_tensor(chunk, dtype=torch.float32, device=device)
+        for chunk in checkpoint_state.buffer_state.get("aux_obs_chunks", [])
+    ]
+    aux_return_chunks = [
+        torch.as_tensor(chunk, dtype=torch.float32, device=device)
+        for chunk in checkpoint_state.buffer_state.get("aux_return_chunks", [])
+    ]
+    return aux_obs_chunks, aux_return_chunks
+
+
+def _collect_rollout(
+    *,
+    envs: gym.vector.SyncVectorEnv,
+    buffer: RolloutBuffer,
+    model: MLPPPGModel,
+    obs: np.ndarray,
+    device: torch.device,
+    num_steps: int,
+    num_envs: int,
+    trainer_state: TrainerState,
+    global_step: int,
+) -> tuple[np.ndarray, int]:
+    current_obs = obs
+    current_step = global_step
+    for _ in range(num_steps):
+        obs_tensor = torch.as_tensor(current_obs, dtype=torch.float32, device=device)
+        with torch.no_grad():
+            rollout = model.act(obs_tensor)
+
+        next_obs, rewards, terminated, truncated, _ = envs.step(rollout.actions.cpu().numpy())
+        dones = np.logical_or(terminated, truncated).astype(np.float32)
+
+        buffer.add(
+            obs=obs_tensor,
+            actions=rollout.actions,
+            rewards=torch.as_tensor(rewards, dtype=torch.float32, device=device),
+            dones=torch.as_tensor(dones, dtype=torch.float32, device=device),
+            values=rollout.values,
+            logprobs=rollout.logprobs,
+        )
+
+        current_obs = next_obs
+        current_step += num_envs
+        trainer_state.global_step = current_step
+
+    return current_obs, current_step
+
+
+def _append_auxiliary_rollout(
+    buffer: RolloutBuffer,
+    aux_obs_chunks: list[torch.Tensor],
+    aux_return_chunks: list[torch.Tensor],
+    *,
+    num_steps: int,
+    num_envs: int,
+    obs_dim: int,
+    aux_buffer_rollouts: int,
+) -> None:
+    aux_obs_chunks.append(buffer.obs.reshape(num_steps * num_envs, obs_dim).detach().clone())
+    aux_return_chunks.append(buffer.returns.reshape(num_steps * num_envs).detach().clone())
+    if len(aux_obs_chunks) > aux_buffer_rollouts:
+        aux_obs_chunks.pop(0)
+        aux_return_chunks.pop(0)
+
+
+def _run_policy_updates(
+    algorithm: PPG,
+    buffer: RolloutBuffer,
+    callback_list: CallbackList,
+    trainer_state: TrainerState,
+    *,
+    update_epochs: int,
+    minibatch_size: int,
+    global_step: int,
+) -> tuple[MetricDict, int]:
+    policy_metrics: MetricDict = {}
+    policy_gradient_steps = 0
+    for _ in range(update_epochs):
+        for minibatch in buffer.iter_minibatches(minibatch_size=minibatch_size, shuffle=True):
+            result = algorithm.update(
+                {
+                    "obs": minibatch["obs"],
+                    "actions": minibatch["actions"],
+                    "logprobs": minibatch["logprobs"],
+                    "advantages": minibatch["advantages"],
+                    "returns": minibatch["returns"],
+                },
+                global_step=global_step,
+            )
+            policy_metrics = result.metrics
+            policy_gradient_steps += result.num_gradient_steps
+            callback_list.on_update_end(trainer_state, result)
+    return policy_metrics, policy_gradient_steps
+
+
+def _maybe_run_auxiliary_phase(
+    algorithm: PPG,
+    callback_list: CallbackList,
+    trainer_state: TrainerState,
+    *,
+    current_update: int,
+    aux_frequency: int,
+    aux_obs_chunks: list[torch.Tensor],
+    aux_return_chunks: list[torch.Tensor],
+    aux_epochs: int,
+    aux_minibatch_size: int,
+    global_step: int,
+) -> tuple[MetricDict, int, float]:
+    if not (aux_frequency > 0 and current_update % aux_frequency == 0 and aux_obs_chunks):
+        return {}, 0, 0.0
+
+    teacher_model = algorithm.snapshot_teacher_model()
+    aux_obs = torch.cat(aux_obs_chunks, dim=0)
+    aux_returns = torch.cat(aux_return_chunks, dim=0)
+    auxiliary_metrics: MetricDict = {}
+    auxiliary_gradient_steps = 0
+    for _ in range(aux_epochs):
+        for aux_batch in _sample_auxiliary_minibatches(
+            obs=aux_obs,
+            returns=aux_returns,
+            minibatch_size=aux_minibatch_size,
+        ):
+            result = algorithm.auxiliary_update(
+                aux_batch,
+                teacher_model=teacher_model,
+                global_step=global_step,
+            )
+            auxiliary_metrics = result.metrics
+            auxiliary_gradient_steps += result.num_gradient_steps
+            callback_list.on_update_end(trainer_state, result)
+    return auxiliary_metrics, auxiliary_gradient_steps, 1.0
+
+
+def _build_ppg_metrics(
+    *,
+    policy_metrics: MetricDict,
+    auxiliary_metrics: MetricDict,
+    eval_metrics: MetricDict,
+    global_step: int,
+    current_update: int,
+    policy_gradient_steps: int,
+    auxiliary_gradient_steps: int,
+    auxiliary_phase_ran: float,
+) -> MetricDict:
+    return {
+        **policy_metrics,
+        **auxiliary_metrics,
+        **eval_metrics,
+        "global_step": float(global_step),
+        "update": float(current_update),
+        "gradient_steps": float(policy_gradient_steps + auxiliary_gradient_steps),
+        "policy_gradient_steps": float(policy_gradient_steps),
+        "auxiliary_gradient_steps": float(auxiliary_gradient_steps),
+        "auxiliary_phase_ran": auxiliary_phase_ran,
+    }
+
+
 def train_ppg(
     config: TrainConfig,
     *,
@@ -141,18 +307,9 @@ def train_ppg(
             max_grad_norm=max_grad_norm,
         )
 
-        aux_obs_chunks: list[torch.Tensor] = []
-        aux_return_chunks: list[torch.Tensor] = []
+        aux_obs_chunks, aux_return_chunks = _restore_auxiliary_chunks(checkpoint_state, device=device)
         if checkpoint_state is not None:
             algorithm.load_state_dict(checkpoint_state.algorithm_state)
-            if checkpoint_state.buffer_state is not None:
-                aux_obs_chunks = [
-                    torch.as_tensor(chunk, dtype=torch.float32, device=device) for chunk in checkpoint_state.buffer_state.get("aux_obs_chunks", [])
-                ]
-                aux_return_chunks = [
-                    torch.as_tensor(chunk, dtype=torch.float32, device=device)
-                    for chunk in checkpoint_state.buffer_state.get("aux_return_chunks", [])
-                ]
 
         obs, _ = envs.reset(seed=config.seed)
         global_step = int(checkpoint_state.trainer_state.get("global_step", 0)) if checkpoint_state is not None else 0
@@ -169,26 +326,17 @@ def train_ppg(
                 device=device,
             )
 
-            for _ in range(num_steps):
-                obs_tensor = torch.as_tensor(obs, dtype=torch.float32, device=device)
-                with torch.no_grad():
-                    rollout = model.act(obs_tensor)
-
-                next_obs, rewards, terminated, truncated, _ = envs.step(rollout.actions.cpu().numpy())
-                dones = np.logical_or(terminated, truncated).astype(np.float32)
-
-                buffer.add(
-                    obs=obs_tensor,
-                    actions=rollout.actions,
-                    rewards=torch.as_tensor(rewards, dtype=torch.float32, device=device),
-                    dones=torch.as_tensor(dones, dtype=torch.float32, device=device),
-                    values=rollout.values,
-                    logprobs=rollout.logprobs,
-                )
-
-                obs = next_obs
-                global_step += config.num_envs
-                trainer_state.global_step = global_step
+            obs, global_step = _collect_rollout(
+                envs=envs,
+                buffer=buffer,
+                model=model,
+                obs=obs,
+                device=device,
+                num_steps=num_steps,
+                num_envs=config.num_envs,
+                trainer_state=trainer_state,
+                global_step=global_step,
+            )
 
             callback_list.on_collect_end(
                 trainer_state,
@@ -209,56 +357,40 @@ def train_ppg(
                 gae_lambda=gae_lambda,
             )
 
-            flattened_obs = buffer.obs.reshape(num_steps * config.num_envs, obs_dim).detach().clone()
-            flattened_returns = buffer.returns.reshape(num_steps * config.num_envs).detach().clone()
-            aux_obs_chunks.append(flattened_obs)
-            aux_return_chunks.append(flattened_returns)
-            if len(aux_obs_chunks) > aux_buffer_rollouts:
-                aux_obs_chunks.pop(0)
-                aux_return_chunks.pop(0)
+            _append_auxiliary_rollout(
+                buffer,
+                aux_obs_chunks,
+                aux_return_chunks,
+                num_steps=num_steps,
+                num_envs=config.num_envs,
+                obs_dim=obs_dim,
+                aux_buffer_rollouts=aux_buffer_rollouts,
+            )
 
-            policy_metrics: MetricDict = {}
-            policy_gradient_steps = 0
-            for _ in range(update_epochs):
-                for minibatch in buffer.iter_minibatches(minibatch_size=minibatch_size, shuffle=True):
-                    result = algorithm.update(
-                        {
-                            "obs": minibatch["obs"],
-                            "actions": minibatch["actions"],
-                            "logprobs": minibatch["logprobs"],
-                            "advantages": minibatch["advantages"],
-                            "returns": minibatch["returns"],
-                        },
-                        global_step=global_step,
-                    )
-                    policy_metrics = result.metrics
-                    policy_gradient_steps += result.num_gradient_steps
-                    callback_list.on_update_end(trainer_state, result)
+            policy_metrics, policy_gradient_steps = _run_policy_updates(
+                algorithm,
+                buffer,
+                callback_list,
+                trainer_state,
+                update_epochs=update_epochs,
+                minibatch_size=minibatch_size,
+                global_step=global_step,
+            )
 
             current_update = update_index + 1
 
-            auxiliary_metrics: MetricDict = {}
-            auxiliary_gradient_steps = 0
-            auxiliary_phase_ran = 0.0
-            if aux_frequency > 0 and current_update % aux_frequency == 0 and aux_obs_chunks:
-                teacher_model = algorithm.snapshot_teacher_model()
-                aux_obs = torch.cat(aux_obs_chunks, dim=0)
-                aux_returns = torch.cat(aux_return_chunks, dim=0)
-                for _ in range(aux_epochs):
-                    for aux_batch in _sample_auxiliary_minibatches(
-                        obs=aux_obs,
-                        returns=aux_returns,
-                        minibatch_size=aux_minibatch_size,
-                    ):
-                        result = algorithm.auxiliary_update(
-                            aux_batch,
-                            teacher_model=teacher_model,
-                            global_step=global_step,
-                        )
-                        auxiliary_metrics = result.metrics
-                        auxiliary_gradient_steps += result.num_gradient_steps
-                        callback_list.on_update_end(trainer_state, result)
-                auxiliary_phase_ran = 1.0
+            auxiliary_metrics, auxiliary_gradient_steps, auxiliary_phase_ran = _maybe_run_auxiliary_phase(
+                algorithm,
+                callback_list,
+                trainer_state,
+                current_update=current_update,
+                aux_frequency=aux_frequency,
+                aux_obs_chunks=aux_obs_chunks,
+                aux_return_chunks=aux_return_chunks,
+                aux_epochs=aux_epochs,
+                aux_minibatch_size=aux_minibatch_size,
+                global_step=global_step,
+            )
 
             eval_metrics = _evaluate_ppg_policy(
                 model,
@@ -266,17 +398,16 @@ def train_ppg(
                 device=device,
                 num_episodes=config.eval_episodes,
             )
-            metrics = {
-                **policy_metrics,
-                **auxiliary_metrics,
-                **eval_metrics,
-                "global_step": float(global_step),
-                "update": float(current_update),
-                "gradient_steps": float(policy_gradient_steps + auxiliary_gradient_steps),
-                "policy_gradient_steps": float(policy_gradient_steps),
-                "auxiliary_gradient_steps": float(auxiliary_gradient_steps),
-                "auxiliary_phase_ran": auxiliary_phase_ran,
-            }
+            metrics = _build_ppg_metrics(
+                policy_metrics=policy_metrics,
+                auxiliary_metrics=auxiliary_metrics,
+                eval_metrics=eval_metrics,
+                global_step=global_step,
+                current_update=current_update,
+                policy_gradient_steps=policy_gradient_steps,
+                auxiliary_gradient_steps=auxiliary_gradient_steps,
+                auxiliary_phase_ran=auxiliary_phase_ran,
+            )
             logger.log_metrics(metrics, step=global_step)
             callback_list.on_eval_end(trainer_state, metrics)
             update_index = current_update

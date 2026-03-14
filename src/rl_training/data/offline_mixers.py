@@ -63,6 +63,49 @@ def _resolve_optional_mixed_field(
     return _cat_and_permute(parts, permutation=permutation)
 
 
+def _validate_dataset_compatibility(datasets: Sequence[TransitionDataset]) -> None:
+    reference = datasets[0]
+    for dataset in datasets[1:]:
+        if tuple(dataset.obs.shape[1:]) != tuple(reference.obs.shape[1:]):
+            raise ValueError("all mixed datasets must share the same observation shape")
+        if tuple(dataset.actions.shape[1:]) != tuple(reference.actions.shape[1:]):
+            raise ValueError("all mixed datasets must share the same action shape")
+        if dataset.actions.dtype != reference.actions.dtype:
+            raise ValueError("all mixed datasets must share the same action dtype")
+
+
+def _resolve_mix_weights(
+    datasets: Sequence[TransitionDataset],
+    *,
+    weights: Sequence[float] | None,
+) -> tuple[float, ...]:
+    if weights is None:
+        return tuple(1.0 / len(datasets) for _ in datasets)
+
+    if len(weights) != len(datasets):
+        raise ValueError("weights must have the same length as datasets")
+
+    raw_weights = tuple(float(weight) for weight in weights)
+    if any(weight < 0.0 for weight in raw_weights):
+        raise ValueError("weights must be >= 0")
+
+    weight_sum = float(sum(raw_weights))
+    if weight_sum <= 0.0:
+        raise ValueError("weights must sum to a positive value")
+    return tuple(weight / weight_sum for weight in raw_weights)
+
+
+def _resolve_mixed_total_size(
+    datasets: Sequence[TransitionDataset],
+    *,
+    total_size: int | None,
+) -> int:
+    resolved_total_size = int(total_size) if total_size is not None else sum(len(dataset) for dataset in datasets)
+    if resolved_total_size < 1:
+        raise ValueError(f"total_size must be >= 1, got {resolved_total_size}")
+    return resolved_total_size
+
+
 def _validate_mix_inputs(
     datasets: Sequence[TransitionDataset],
     *,
@@ -74,31 +117,9 @@ def _validate_mix_inputs(
     if any(len(dataset) == 0 for dataset in datasets):
         raise ValueError("cannot mix empty datasets")
 
-    reference = datasets[0]
-    for dataset in datasets[1:]:
-        if tuple(dataset.obs.shape[1:]) != tuple(reference.obs.shape[1:]):
-            raise ValueError("all mixed datasets must share the same observation shape")
-        if tuple(dataset.actions.shape[1:]) != tuple(reference.actions.shape[1:]):
-            raise ValueError("all mixed datasets must share the same action shape")
-        if dataset.actions.dtype != reference.actions.dtype:
-            raise ValueError("all mixed datasets must share the same action dtype")
-
-    if weights is None:
-        normalized_weights = tuple(1.0 / len(datasets) for _ in datasets)
-    else:
-        if len(weights) != len(datasets):
-            raise ValueError("weights must have the same length as datasets")
-        raw_weights = tuple(float(weight) for weight in weights)
-        if any(weight < 0.0 for weight in raw_weights):
-            raise ValueError("weights must be >= 0")
-        weight_sum = float(sum(raw_weights))
-        if weight_sum <= 0.0:
-            raise ValueError("weights must sum to a positive value")
-        normalized_weights = tuple(weight / weight_sum for weight in raw_weights)
-
-    resolved_total_size = int(total_size) if total_size is not None else sum(len(dataset) for dataset in datasets)
-    if resolved_total_size < 1:
-        raise ValueError(f"total_size must be >= 1, got {resolved_total_size}")
+    _validate_dataset_compatibility(datasets)
+    normalized_weights = _resolve_mix_weights(datasets, weights=weights)
+    resolved_total_size = _resolve_mixed_total_size(datasets, total_size=total_size)
     return normalized_weights, resolved_total_size
 
 

@@ -14,8 +14,14 @@ from rl_training.experiment.checkpointing import CheckpointState
 from rl_training.experiment.config import TrainConfig
 from rl_training.models.cnn.curl import CNNCURLModel
 from rl_training.runtime.callbacks import Callback, CallbackList, merge_callbacks
-from rl_training.runtime.collector import CollectResult
 from rl_training.runtime.controls import build_control_callbacks, resolve_eval_interval, should_run_periodic_eval
+from rl_training.runtime.off_policy_trainer_utils import (
+    build_replay_metrics,
+    emit_collect_event,
+    maybe_run_evaluation,
+    maybe_update_algorithm,
+    store_vector_transitions,
+)
 from rl_training.runtime.run_utils import create_training_run, resolve_device, save_training_checkpoint
 from rl_training.runtime.td3_trainer import _action_bounds, _scale_actions
 from rl_training.runtime.trainer import TrainResult, TrainerState
@@ -177,61 +183,74 @@ def train_curl(
             next_obs, rewards, terminated, truncated, _ = envs.step(env_actions.cpu().numpy())
             dones = np.logical_or(terminated, truncated).astype(np.float32)
 
-            for env_index in range(config.num_envs):
-                replay_buffer.add(
-                    obs=obs[env_index],
-                    actions=normalized_actions[env_index],
-                    rewards=float(rewards[env_index]),
-                    next_obs=next_obs[env_index],
-                    dones=float(dones[env_index]),
-                )
+            store_vector_transitions(
+                replay_buffer,
+                obs=obs,
+                actions=normalized_actions,
+                rewards=rewards,
+                next_obs=next_obs,
+                dones=dones,
+                num_envs=config.num_envs,
+            )
 
             obs = next_obs
             global_step += config.num_envs
             trainer_state.global_step = global_step
-            callback_list.on_collect_end(
+            emit_collect_event(
+                callback_list,
                 trainer_state,
-                CollectResult(
-                    num_env_steps=config.num_envs,
-                    num_episodes=int(np.sum(dones)),
-                    metrics={"global_step": float(global_step), "buffer_size": float(len(replay_buffer))},
-                    last_obs=obs,
-                ),
+                global_step=global_step,
+                num_envs=config.num_envs,
+                dones=dones,
+                replay_buffer=replay_buffer,
+                obs=obs,
             )
 
-            if len(replay_buffer) >= max(batch_size, learning_starts) and global_step % train_frequency == 0:
-                result = algorithm.update(replay_buffer.sample(batch_size), global_step=global_step)
-                latest_update_metrics = result.metrics
-                update_count += result.num_gradient_steps
-                callback_list.on_update_end(trainer_state, result)
-
-            metrics = {
-                **latest_update_metrics,
-                "alpha": alpha,
-                "curl_temperature": curl_temperature,
-                "curl_coef": curl_coef,
-                "global_step": float(global_step),
-                "buffer_size": float(len(replay_buffer)),
-                "gradient_steps": float(update_count),
-            }
-            if should_run_periodic_eval(
+            latest_update_metrics, update_count = maybe_update_algorithm(
+                algorithm=algorithm,
+                replay_buffer=replay_buffer,
+                batch_size=batch_size,
+                learning_starts=learning_starts,
+                train_frequency=train_frequency,
                 global_step=global_step,
-                total_timesteps=config.total_timesteps,
-                eval_interval=eval_interval,
-            ):
-                algorithm.set_eval_mode()
-                eval_metrics = _evaluate_curl_policy(
+                callback_list=callback_list,
+                trainer_state=trainer_state,
+                latest_update_metrics=latest_update_metrics,
+                update_count=update_count,
+            )
+
+            metrics = build_replay_metrics(
+                latest_update_metrics,
+                global_step=global_step,
+                replay_buffer=replay_buffer,
+                update_count=update_count,
+                extra_metrics={
+                    "alpha": alpha,
+                    "curl_temperature": curl_temperature,
+                    "curl_coef": curl_coef,
+                },
+            )
+            metrics, should_stop = maybe_run_evaluation(
+                should_run_eval=should_run_periodic_eval(
+                    global_step=global_step,
+                    total_timesteps=config.total_timesteps,
+                    eval_interval=eval_interval,
+                ),
+                algorithm=algorithm,
+                evaluate=lambda: _evaluate_curl_policy(
                     model,
                     config,
                     device=device,
                     num_episodes=config.eval_episodes,
-                )
-                algorithm.set_train_mode()
-                metrics = {**metrics, **eval_metrics}
-                logger.log_metrics(metrics, step=global_step)
-                callback_list.on_eval_end(trainer_state, metrics)
-                if trainer_state.should_stop:
-                    break
+                ),
+                logger=logger,
+                callback_list=callback_list,
+                trainer_state=trainer_state,
+                metrics=metrics,
+                global_step=global_step,
+            )
+            if should_stop:
+                break
 
         checkpoint_path = save_training_checkpoint(
             run_context=run_context,

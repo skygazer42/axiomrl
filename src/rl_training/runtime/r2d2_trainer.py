@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import deque
+from dataclasses import dataclass
 from pathlib import Path
 from collections.abc import Sequence
 
@@ -21,6 +22,14 @@ from rl_training.runtime.controls import build_control_callbacks, resolve_eval_i
 from rl_training.runtime.run_utils import create_training_run, resolve_device, save_training_checkpoint
 from rl_training.runtime.trainer import TrainResult, TrainerState
 from rl_training.runtime.types import MetricDict
+
+
+@dataclass(frozen=True)
+class _PrioritizedReplaySchedule:
+    total_timesteps: int
+    beta_start: float
+    beta_end: float
+    beta_fraction: float
 
 
 def _infer_spaces(envs: gym.vector.SyncVectorEnv) -> tuple[tuple[int, ...], int]:
@@ -123,6 +132,163 @@ def _evaluate_r2d2_policy(
     }
 
 
+def _append_recurrent_transitions(
+    *,
+    replay_buffer: PrioritizedRecurrentReplayBuffer,
+    n_step_accumulator: NStepAccumulator,
+    metadata_buffers: list[deque[dict[str, object]]],
+    obs: np.ndarray,
+    actions: torch.Tensor,
+    rewards: np.ndarray,
+    next_obs: np.ndarray,
+    dones: np.ndarray,
+    episode_starts: torch.Tensor,
+    state_snapshot: tuple[torch.Tensor, torch.Tensor],
+    num_envs: int,
+) -> None:
+    for env_index in range(num_envs):
+        metadata_buffers[env_index].append(
+            {
+                "episode_start": float(episode_starts[env_index].item()),
+                "initial_state": (
+                    state_snapshot[0][:, env_index : env_index + 1, :].clone(),
+                    state_snapshot[1][:, env_index : env_index + 1, :].clone(),
+                ),
+            }
+        )
+        transitions = n_step_accumulator.add(
+            env_index,
+            obs[env_index],
+            int(actions[env_index].item()),
+            float(rewards[env_index]),
+            next_obs[env_index],
+            bool(dones[env_index]),
+        )
+        for transition in transitions:
+            metadata = metadata_buffers[env_index].popleft()
+            replay_buffer.add(
+                env_index=env_index,
+                obs=transition["obs"],
+                actions=transition["actions"],
+                rewards=transition["rewards"],
+                next_obs=transition["next_obs"],
+                dones=transition["dones"],
+                episode_start=metadata["episode_start"],
+                initial_state=metadata["initial_state"],
+            )
+
+
+def _emit_collect_event(
+    callback_list: CallbackList,
+    trainer_state: TrainerState,
+    *,
+    global_step: int,
+    dones: np.ndarray,
+    replay_buffer: PrioritizedRecurrentReplayBuffer,
+    obs: np.ndarray,
+    num_envs: int,
+) -> None:
+    callback_list.on_collect_end(
+        trainer_state,
+        CollectResult(
+            num_env_steps=num_envs,
+            num_episodes=int(np.sum(dones)),
+            metrics={
+                "global_step": float(global_step),
+                "buffer_size": float(len(replay_buffer)),
+                "buffer_transitions": float(replay_buffer.num_transitions),
+            },
+            last_obs=obs,
+        ),
+    )
+
+
+def _maybe_update_r2d2(
+    *,
+    algorithm: R2D2,
+    replay_buffer: PrioritizedRecurrentReplayBuffer,
+    batch_size: int,
+    learning_starts: int,
+    train_frequency: int,
+    global_step: int,
+    prioritized_replay_schedule: _PrioritizedReplaySchedule,
+    callback_list: CallbackList,
+    trainer_state: TrainerState,
+    latest_update_metrics: MetricDict,
+    update_count: int,
+) -> tuple[MetricDict, int, float]:
+    beta = _beta_at_step(
+        global_step,
+        total_timesteps=prioritized_replay_schedule.total_timesteps,
+        beta_start=prioritized_replay_schedule.beta_start,
+        beta_end=prioritized_replay_schedule.beta_end,
+        beta_fraction=prioritized_replay_schedule.beta_fraction,
+    )
+    if (
+        replay_buffer.num_transitions < learning_starts
+        or len(replay_buffer) < batch_size
+        or global_step % train_frequency != 0
+    ):
+        return latest_update_metrics, update_count, beta
+
+    batch = replay_buffer.sample(batch_size, beta=beta)
+    result = algorithm.update(batch, global_step=global_step)
+    if algorithm.last_sequence_priorities is not None:
+        replay_buffer.update_priorities(batch["indices"], algorithm.last_sequence_priorities)
+    callback_list.on_update_end(trainer_state, result)
+    return result.metrics, update_count + result.num_gradient_steps, beta
+
+
+def _build_r2d2_metrics(
+    latest_update_metrics: MetricDict,
+    *,
+    epsilon: float,
+    beta: float,
+    global_step: int,
+    replay_buffer: PrioritizedRecurrentReplayBuffer,
+    update_count: int,
+) -> MetricDict:
+    return {
+        **latest_update_metrics,
+        "epsilon": epsilon,
+        "beta": beta,
+        "global_step": float(global_step),
+        "buffer_size": float(len(replay_buffer)),
+        "buffer_transitions": float(replay_buffer.num_transitions),
+        "gradient_steps": float(update_count),
+    }
+
+
+def _maybe_run_r2d2_evaluation(
+    *,
+    should_run_eval: bool,
+    algorithm: R2D2,
+    q_network: LSTMQNetwork,
+    config: TrainConfig,
+    device: torch.device,
+    logger: object,
+    callback_list: CallbackList,
+    trainer_state: TrainerState,
+    metrics: MetricDict,
+    global_step: int,
+) -> tuple[MetricDict, bool]:
+    if not should_run_eval:
+        return metrics, False
+
+    algorithm.set_eval_mode()
+    eval_metrics = _evaluate_r2d2_policy(
+        q_network,
+        config,
+        device=device,
+        num_episodes=config.eval_episodes,
+    )
+    algorithm.set_train_mode()
+    evaluated_metrics = {**metrics, **eval_metrics}
+    logger.log_metrics(evaluated_metrics, step=global_step)
+    callback_list.on_eval_end(trainer_state, evaluated_metrics)
+    return evaluated_metrics, trainer_state.should_stop
+
+
 def train_r2d2(
     config: TrainConfig,
     *,
@@ -157,6 +323,12 @@ def train_r2d2(
     priority_eta = float(config.algo_kwargs.get("priority_eta", 0.9))
     n_step = int(config.algo_kwargs.get("n_step", 3))
     eval_interval = resolve_eval_interval(config)
+    prioritized_replay_schedule = _PrioritizedReplaySchedule(
+        total_timesteps=config.total_timesteps,
+        beta_start=prioritized_beta_start,
+        beta_end=prioritized_beta_end,
+        beta_fraction=prioritized_beta_fraction,
+    )
 
     torch.manual_seed(config.seed)
     np.random.seed(config.seed)
@@ -225,111 +397,75 @@ def train_r2d2(
             next_obs, rewards, terminated, truncated, _ = envs.step(rollout.actions.cpu().numpy())
             dones = np.logical_or(terminated, truncated).astype(np.float32)
 
-            for env_index in range(config.num_envs):
-                metadata_buffers[env_index].append(
-                    {
-                        "episode_start": float(episode_starts[env_index].item()),
-                        "initial_state": (
-                            state_snapshot[0][:, env_index : env_index + 1, :].clone(),
-                            state_snapshot[1][:, env_index : env_index + 1, :].clone(),
-                        ),
-                    }
-                )
-                transitions = n_step_accumulator.add(
-                    env_index,
-                    obs[env_index],
-                    int(rollout.actions[env_index].item()),
-                    float(rewards[env_index]),
-                    next_obs[env_index],
-                    bool(dones[env_index]),
-                )
-                for transition in transitions:
-                    metadata = metadata_buffers[env_index].popleft()
-                    replay_buffer.add(
-                        env_index=env_index,
-                        obs=transition["obs"],
-                        actions=transition["actions"],
-                        rewards=transition["rewards"],
-                        next_obs=transition["next_obs"],
-                        dones=transition["dones"],
-                        episode_start=metadata["episode_start"],
-                        initial_state=metadata["initial_state"],
-                    )
+            _append_recurrent_transitions(
+                replay_buffer=replay_buffer,
+                n_step_accumulator=n_step_accumulator,
+                metadata_buffers=metadata_buffers,
+                obs=obs,
+                actions=rollout.actions,
+                rewards=rewards,
+                next_obs=next_obs,
+                dones=dones,
+                episode_starts=episode_starts,
+                state_snapshot=state_snapshot,
+                num_envs=config.num_envs,
+            )
 
             obs = next_obs
             recurrent_state = rollout.state
             episode_starts = torch.as_tensor(dones, dtype=torch.bool, device=device)
             global_step += config.num_envs
             trainer_state.global_step = global_step
-            callback_list.on_collect_end(
+            _emit_collect_event(
+                callback_list,
                 trainer_state,
-                CollectResult(
-                    num_env_steps=config.num_envs,
-                    num_episodes=int(np.sum(dones)),
-                    metrics={
-                        "global_step": float(global_step),
-                        "buffer_size": float(len(replay_buffer)),
-                        "buffer_transitions": float(replay_buffer.num_transitions),
-                    },
-                    last_obs=obs,
-                ),
+                global_step=global_step,
+                dones=dones,
+                replay_buffer=replay_buffer,
+                obs=obs,
+                num_envs=config.num_envs,
             )
 
-            if (
-                replay_buffer.num_transitions >= learning_starts
-                and len(replay_buffer) >= batch_size
-                and global_step % train_frequency == 0
-            ):
-                beta = _beta_at_step(
-                    global_step,
-                    total_timesteps=config.total_timesteps,
-                    beta_start=prioritized_beta_start,
-                    beta_end=prioritized_beta_end,
-                    beta_fraction=prioritized_beta_fraction,
-                )
-                batch = replay_buffer.sample(batch_size, beta=beta)
-                result = algorithm.update(batch, global_step=global_step)
-                if algorithm.last_sequence_priorities is not None:
-                    replay_buffer.update_priorities(batch["indices"], algorithm.last_sequence_priorities)
-                latest_update_metrics = result.metrics
-                update_count += result.num_gradient_steps
-                callback_list.on_update_end(trainer_state, result)
-            else:
-                beta = _beta_at_step(
-                    global_step,
-                    total_timesteps=config.total_timesteps,
-                    beta_start=prioritized_beta_start,
-                    beta_end=prioritized_beta_end,
-                    beta_fraction=prioritized_beta_fraction,
-                )
-
-            metrics = {
-                **latest_update_metrics,
-                "epsilon": epsilon,
-                "beta": beta,
-                "global_step": float(global_step),
-                "buffer_size": float(len(replay_buffer)),
-                "buffer_transitions": float(replay_buffer.num_transitions),
-                "gradient_steps": float(update_count),
-            }
-            if should_run_evaluation(
+            latest_update_metrics, update_count, beta = _maybe_update_r2d2(
+                algorithm=algorithm,
+                replay_buffer=replay_buffer,
+                batch_size=batch_size,
+                learning_starts=learning_starts,
+                train_frequency=train_frequency,
                 global_step=global_step,
-                total_timesteps=config.total_timesteps,
-                eval_interval=eval_interval,
-            ):
-                algorithm.set_eval_mode()
-                eval_metrics = _evaluate_r2d2_policy(
-                    q_network,
-                    config,
-                    device=device,
-                    num_episodes=config.eval_episodes,
-                )
-                algorithm.set_train_mode()
-                metrics = {**metrics, **eval_metrics}
-                logger.log_metrics(metrics, step=global_step)
-                callback_list.on_eval_end(trainer_state, metrics)
-                if trainer_state.should_stop:
-                    break
+                prioritized_replay_schedule=prioritized_replay_schedule,
+                callback_list=callback_list,
+                trainer_state=trainer_state,
+                latest_update_metrics=latest_update_metrics,
+                update_count=update_count,
+            )
+
+            metrics = _build_r2d2_metrics(
+                latest_update_metrics,
+                epsilon=epsilon,
+                beta=beta,
+                global_step=global_step,
+                replay_buffer=replay_buffer,
+                update_count=update_count,
+            )
+            metrics, should_stop = _maybe_run_r2d2_evaluation(
+                should_run_eval=should_run_evaluation(
+                    global_step=global_step,
+                    total_timesteps=config.total_timesteps,
+                    eval_interval=eval_interval,
+                ),
+                algorithm=algorithm,
+                q_network=q_network,
+                config=config,
+                device=device,
+                logger=logger,
+                callback_list=callback_list,
+                trainer_state=trainer_state,
+                metrics=metrics,
+                global_step=global_step,
+            )
+            if should_stop:
+                break
 
         checkpoint_path = save_training_checkpoint(
             run_context=run_context,

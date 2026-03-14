@@ -6,19 +6,9 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
+from rl_training.algorithms._advantage_utils import normalize_advantages
 from rl_training.algorithms.base import UpdateResult
 from rl_training.models.mlp_actor_critic import MLPActorCritic
-
-
-def _normalize_advantages(advantages: torch.Tensor) -> torch.Tensor:
-    if advantages.numel() <= 1:
-        return advantages
-
-    mean = advantages.mean()
-    std = advantages.std(correction=0)
-    if std < 1e-8:
-        return advantages - mean
-    return (advantages - mean) / (std + 1e-8)
 
 
 def _ppo_loss_terms(
@@ -29,7 +19,7 @@ def _ppo_loss_terms(
     vf_coef: float,
 ) -> dict[str, torch.Tensor]:
     old_logprobs = minibatch.get("old_logprobs", minibatch["logprobs"])
-    advantages = _normalize_advantages(minibatch["advantages"])
+    advantages = normalize_advantages(minibatch["advantages"])
     log_ratio = minibatch["new_logprobs"] - old_logprobs
     ratio = log_ratio.exp()
 
