@@ -1,0 +1,50 @@
+algo: agent57
+env_id: ALE/Breakout-v5
+seed: 23
+total_timesteps: 1000000
+output_dir: runs
+device: auto
+num_envs: 8
+eval_episodes: 5
+tags:
+  - atari
+algo_kwargs:
+  buffer_capacity: 5000
+  batch_size: 32
+  learning_starts: 1000
+  train_frequency: 1
+  target_update_interval: 2500
+  learning_rate: 0.00025
+  rnd_learning_rate: 0.00025
+  gamma: 0.99
+  features_dim: 256
+  hidden_sizes: [128]
+  head_hidden_sizes: [128]
+  recurrent_hidden_size: 256
+  recurrent_num_layers: 1
+  sequence_length: 16
+  epsilon_start: 1.0
+  epsilon_end: 0.01
+  exploration_fraction: 0.3
+  prioritized_alpha: 0.6
+  prioritized_beta_start: 0.4
+  prioritized_beta_end: 1.0
+  prioritized_beta_fraction: 1.0
+  priority_eta: 0.9
+  n_step: 5
+  intrinsic_reward_coef: 0.1
+  rnd_hidden_sizes: [256]
+  rnd_embedding_dim: 128
+env_kwargs:
+  frameskip: 1
+  repeat_action_probability: 0.0
+  full_action_space: false
+  wrappers:
+    atari:
+      screen_size: 84
+      frame_skip: 4
+      noop_max: 30
+      grayscale_obs: true
+      frame_stack: 4
+      clip_reward: true
+      channel_first: true

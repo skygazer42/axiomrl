@@ -1,0 +1,37 @@
+algo: dueling_dqn
+env_id: ALE/Breakout-v5
+seed: 17
+total_timesteps: 200000
+output_dir: runs
+device: auto
+num_envs: 1
+eval_episodes: 5
+tags:
+  - atari
+algo_kwargs:
+  buffer_capacity: 100000
+  batch_size: 32
+  learning_starts: 20000
+  train_frequency: 4
+  target_update_interval: 1000
+  learning_rate: 0.0001
+  gamma: 0.99
+  epsilon_start: 1.0
+  epsilon_end: 0.01
+  exploration_fraction: 0.1
+  head_hidden_sizes: [512]
+  features_dim: 512
+env_kwargs:
+  frameskip: 1
+  repeat_action_probability: 0.0
+  full_action_space: false
+  wrappers:
+    atari:
+      screen_size: 84
+      frame_skip: 4
+      noop_max: 30
+      grayscale_obs: true
+      frame_stack: 4
+      clip_reward: true
+      channel_first: true
+

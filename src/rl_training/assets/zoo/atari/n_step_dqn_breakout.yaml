@@ -1,0 +1,5 @@
+name: n_step_dqn_breakout
+config: configs/n_step_dqn/breakout_atari.yaml
+algorithm: n_step_dqn
+env_id: ALE/Breakout-v5
+

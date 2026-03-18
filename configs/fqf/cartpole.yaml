@@ -1,0 +1,25 @@
+algo: fqf
+env_id: CartPole-v1
+seed: 71
+total_timesteps: 1024
+output_dir: runs
+device: auto
+num_envs: 1
+eval_episodes: 5
+algo_kwargs:
+  buffer_capacity: 10000
+  batch_size: 64
+  learning_starts: 1000
+  train_frequency: 1
+  target_update_interval: 250
+  hidden_sizes: [64, 64]
+  learning_rate: 0.001
+  fraction_learning_rate: 0.0005
+  gamma: 0.99
+  epsilon_start: 1.0
+  epsilon_end: 0.05
+  exploration_fraction: 0.3
+  num_quantiles: 32
+  embedding_dim: 64
+  kappa: 1.0
+  entropy_coef: 0.001

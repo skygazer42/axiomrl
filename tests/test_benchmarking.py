@@ -1,0 +1,103 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+import pytest
+
+from rl_training.experiment.benchmarking import resolve_score_normalization_config
+from rl_training.experiment.config import TrainConfig
+from rl_training.experiment.logging import RunLogger
+from rl_training.runtime.run_utils import create_training_run, save_training_checkpoint
+
+
+def test_score_normalization_source_resolves_named_reference() -> None:
+    config = resolve_score_normalization_config(
+        {
+            "score_normalization": {
+                "type": "human_random",
+                "source": "atari_breakout_reference",
+            }
+        }
+    )
+
+    assert config is not None
+    assert config.strategy == "human_random"
+    assert config.random_score == pytest.approx(1.7)
+    assert config.human_score == pytest.approx(30.5)
+
+
+def test_save_training_checkpoint_tracks_best_checkpoint_and_normalized_score(tmp_path: Path) -> None:
+    config = TrainConfig(
+        algo="dqn",
+        env_id="CartPole-v1",
+        seed=7,
+        total_timesteps=32,
+        output_dir=tmp_path,
+        benchmark={
+            "best_metric": "eval_return_mean",
+            "best_metric_mode": "max",
+            "score_normalization": {
+                "type": "human_random",
+                "random_score": 0.0,
+                "human_score": 200.0,
+            },
+        },
+    )
+
+    artifacts = create_training_run(config, run_suffix="benchmark")
+    try:
+        first_metrics = {"eval_return_mean": 50.0}
+        first_checkpoint = save_training_checkpoint(
+            run_context=artifacts.run_context,
+            config=config,
+            algorithm_state={"weights": [1.0]},
+            buffer_state=None,
+            trainer_state={"global_step": 10},
+            metrics=first_metrics,
+        )
+
+        second_metrics = {"eval_return_mean": 80.0}
+        second_checkpoint = save_training_checkpoint(
+            run_context=artifacts.run_context,
+            config=config,
+            algorithm_state={"weights": [2.0]},
+            buffer_state=None,
+            trainer_state={"global_step": 20},
+            metrics=second_metrics,
+        )
+    finally:
+        artifacts.close()
+
+    best_checkpoint_path = artifacts.run_context.checkpoints_dir / "best.pt"
+    metadata = json.loads(artifacts.run_context.metadata_path.read_text(encoding="utf-8"))
+
+    assert first_checkpoint.exists()
+    assert second_checkpoint.exists()
+    assert best_checkpoint_path.exists()
+    assert first_metrics["eval_human_normalized_score"] == pytest.approx(25.0)
+    assert second_metrics["eval_human_normalized_score"] == pytest.approx(40.0)
+    assert second_metrics["best_eval_return_mean"] == pytest.approx(80.0)
+    assert Path(second_metrics["best_checkpoint_path"]) == best_checkpoint_path
+    assert metadata["best_checkpoint"]["metric_name"] == "eval_return_mean"
+    assert metadata["best_checkpoint"]["metric_value"] == pytest.approx(80.0)
+    assert Path(metadata["best_checkpoint"]["source_checkpoint_path"]) == second_checkpoint
+    assert Path(metadata["best_checkpoint"]["path"]) == best_checkpoint_path
+
+
+def test_run_logger_accepts_benchmark_augmented_metrics(tmp_path: Path) -> None:
+    logger = RunLogger(tmp_path)
+    try:
+        logger.log_metrics(
+            {
+                "eval_return_mean": 50.0,
+                "eval_human_normalized_score": 25.0,
+                "best_eval_return_mean": 50.0,
+            },
+            step=10,
+        )
+    finally:
+        logger.close()
+
+    metrics_path = tmp_path / "metrics.jsonl"
+    assert metrics_path.exists()

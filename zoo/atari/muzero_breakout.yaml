@@ -1,0 +1,5 @@
+name: muzero_breakout
+config: configs/muzero/breakout_atari.yaml
+algorithm: muzero
+env_id: ALE/Breakout-v5
+

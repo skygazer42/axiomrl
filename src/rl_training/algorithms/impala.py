@@ -8,6 +8,7 @@ from torch.nn import functional as F
 
 from rl_training.algorithms._advantage_utils import normalize_advantages
 from rl_training.algorithms.base import UpdateResult
+from rl_training.models.cnn import CNNActorCritic
 from rl_training.models.mlp_actor_critic import MLPActorCritic
 
 
@@ -109,7 +110,7 @@ class IMPALA:
     def __init__(
         self,
         *,
-        policy: MLPActorCritic,
+        policy: MLPActorCritic | CNNActorCritic,
         learning_rate: float,
         ent_coef: float,
         vf_coef: float,
@@ -153,13 +154,16 @@ class IMPALA:
         behavior_logprobs = torch.as_tensor(batch["behavior_logprobs"], dtype=torch.float32, device=obs.device)
         bootstrap_value = torch.as_tensor(batch["bootstrap_value"], dtype=torch.float32, device=obs.device)
 
-        if obs.ndim != 3:
-            raise ValueError(f"expected obs to have shape [T, B, obs_dim], got {tuple(obs.shape)!r}")
+        if obs.ndim not in (3, 5):
+            raise ValueError(
+                "expected obs to have shape [T, B, obs_dim] or [T, B, C, H, W], "
+                f"got {tuple(obs.shape)!r}"
+            )
         if actions.ndim != 2:
             raise ValueError(f"expected actions to have shape [T, B], got {tuple(actions.shape)!r}")
 
         time_steps, batch_size = actions.shape
-        flat_obs = obs.reshape(time_steps * batch_size, obs.shape[-1])
+        flat_obs = obs.reshape(time_steps * batch_size, *obs.shape[2:])
         flat_actions = actions.reshape(time_steps * batch_size)
         evaluated = self.policy.evaluate_actions(flat_obs, flat_actions)
         target_logprobs = evaluated["logprobs"].reshape(time_steps, batch_size)

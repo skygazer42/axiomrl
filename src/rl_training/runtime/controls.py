@@ -7,6 +7,7 @@ from rl_training.algorithms.base import UpdateResult
 from rl_training.experiment.config import TrainConfig
 from rl_training.runtime.callbacks import Callback
 from rl_training.runtime.collector import CollectResult
+from rl_training.runtime.schedules import resolve_schedule_value
 from rl_training.runtime.trainer import TrainResult, TrainerState
 from rl_training.runtime.types import MetricDict
 
@@ -117,6 +118,172 @@ def resolve_eval_interval(config: TrainConfig) -> int:
     if eval_interval < 1:
         raise ValueError(f"eval_interval must be >= 1, got {eval_interval}")
     return eval_interval
+
+
+def resolve_exploration_epsilon(config: TrainConfig, *, step: int) -> float:
+    schedule_payload = config.algo_kwargs.get("epsilon_schedule")
+    if schedule_payload not in (None, False):
+        warmup_steps = int(config.algo_kwargs.get("epsilon_warmup_steps", 0))
+        epsilon = float(
+            resolve_schedule_value(
+                schedule_payload,
+                step=step,
+                total_steps=config.total_timesteps,
+                warmup_steps=warmup_steps,
+            )
+        )
+    else:
+        epsilon_start = float(config.algo_kwargs.get("epsilon_start", 1.0))
+        epsilon_end = float(config.algo_kwargs.get("epsilon_end", 0.05))
+        exploration_fraction = float(config.algo_kwargs.get("exploration_fraction", 0.3))
+        decay_steps = max(1, int(config.total_timesteps * exploration_fraction))
+        progress = min(float(step) / float(decay_steps), 1.0)
+        epsilon = float(epsilon_start + progress * (epsilon_end - epsilon_start))
+
+    if not 0.0 <= epsilon <= 1.0:
+        raise ValueError(f"resolved epsilon must be in [0, 1], got {epsilon}")
+    return epsilon
+
+
+def _coefficient_aliases(coefficient_key: str) -> tuple[str, ...]:
+    if coefficient_key == "ent_coef":
+        return ("ent_coef", "entropy_coef")
+    if coefficient_key == "entropy_coef":
+        return ("entropy_coef", "ent_coef")
+    return (coefficient_key,)
+
+
+def _is_enabled_config_value(value: object) -> bool:
+    return value is not None and value is not False
+
+
+def _resolve_scheduled_scalar(
+    config: TrainConfig,
+    *,
+    aliases: tuple[str, ...],
+    step: int,
+    default: float,
+    minimum: float,
+    name: str,
+) -> float:
+    scalar = float(default)
+    for key in aliases:
+        value = config.algo_kwargs.get(key)
+        if _is_enabled_config_value(value):
+            scalar = float(value)
+            break
+
+    schedule_payload = None
+    for key in (f"{alias}_schedule" for alias in aliases):
+        value = config.algo_kwargs.get(key)
+        if _is_enabled_config_value(value):
+            schedule_payload = value
+            break
+
+    if _is_enabled_config_value(schedule_payload):
+        warmup_steps = 0
+        for key in (f"{alias}_warmup_steps" for alias in aliases):
+            value = config.algo_kwargs.get(key)
+            if _is_enabled_config_value(value):
+                warmup_steps = int(value)
+                break
+        scalar = float(
+            resolve_schedule_value(
+                schedule_payload,
+                step=step,
+                total_steps=config.total_timesteps,
+                warmup_steps=warmup_steps,
+            )
+        )
+
+    if scalar < float(minimum):
+        raise ValueError(f"resolved {name} must be >= {minimum}, got {scalar}")
+    return scalar
+
+
+def resolve_entropy_coefficient(
+    config: TrainConfig,
+    *,
+    step: int,
+    coefficient_key: str,
+    default: float,
+) -> float:
+    return _resolve_scheduled_scalar(
+        config,
+        aliases=_coefficient_aliases(coefficient_key),
+        step=step,
+        default=default,
+        minimum=0.0,
+        name="entropy coefficient",
+    )
+
+
+def resolve_clip_coefficient(
+    config: TrainConfig,
+    *,
+    step: int,
+    default: float,
+) -> float:
+    return _resolve_scheduled_scalar(
+        config,
+        aliases=("clip_coef", "clip_range"),
+        step=step,
+        default=default,
+        minimum=0.0,
+        name="clip coefficient",
+    )
+
+
+def resolve_temperature(
+    config: TrainConfig,
+    *,
+    step: int,
+    default: float,
+) -> float:
+    return _resolve_scheduled_scalar(
+        config,
+        aliases=("temperature",),
+        step=step,
+        default=default,
+        minimum=0.0,
+        name="temperature",
+    )
+
+
+def resolve_root_exploration_fraction(
+    config: TrainConfig,
+    *,
+    step: int,
+    default: float,
+) -> float:
+    fraction = _resolve_scheduled_scalar(
+        config,
+        aliases=("root_exploration_fraction",),
+        step=step,
+        default=default,
+        minimum=0.0,
+        name="root exploration fraction",
+    )
+    if fraction > 1.0:
+        raise ValueError(f"resolved root exploration fraction must be in [0, 1], got {fraction}")
+    return fraction
+
+
+def resolve_num_simulations(
+    config: TrainConfig,
+    *,
+    step: int,
+    default: int,
+) -> int:
+    value = _resolve_scheduled_scalar(
+        config,
+        aliases=("num_simulations",),
+        step=step,
+        default=float(default),
+        minimum=0.0,
+        name="num simulations",
+    )
+    return max(1, int(round(value)))
 
 
 def resolve_max_updates(config: TrainConfig) -> int | None:

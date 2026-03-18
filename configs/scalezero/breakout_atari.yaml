@@ -1,0 +1,40 @@
+algo: scalezero
+env_id: ALE/Breakout-v5
+seed: 23
+total_timesteps: 300000
+output_dir: runs
+device: auto
+num_envs: 1
+eval_episodes: 5
+tags:
+  - atari
+algo_kwargs:
+  buffer_capacity: 50000
+  batch_size: 32
+  learning_starts: 1000
+  train_frequency: 1
+  unroll_steps: 5
+  learning_rate: 0.001
+  gamma: 0.997
+  temperature: 1.0
+  num_simulations: 25
+  latent_dim: 256
+  action_embed_dim: 64
+  dynamics_hidden_sizes: [256]
+  prediction_hidden_sizes: [256]
+  num_experts: 4
+  gating_hidden_size: 128
+  eval_interval: 20000
+env_kwargs:
+  frameskip: 1
+  repeat_action_probability: 0.0
+  full_action_space: false
+  wrappers:
+    atari:
+      screen_size: 84
+      frame_skip: 4
+      noop_max: 30
+      grayscale_obs: true
+      frame_stack: 4
+      clip_reward: true
+      channel_first: true

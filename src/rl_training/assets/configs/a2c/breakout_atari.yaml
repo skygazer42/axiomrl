@@ -1,0 +1,32 @@
+algo: a2c
+env_id: ALE/Breakout-v5
+seed: 11
+total_timesteps: 1000000
+output_dir: runs
+device: auto
+num_envs: 16
+eval_episodes: 5
+tags:
+  - atari
+algo_kwargs:
+  num_steps: 128
+  learning_rate: 0.0007
+  ent_coef: 0.01
+  vf_coef: 0.5
+  gamma: 0.99
+  gae_lambda: 0.95
+  features_dim: 512
+  head_hidden_sizes: [512]
+env_kwargs:
+  frameskip: 1
+  repeat_action_probability: 0.0
+  full_action_space: false
+  wrappers:
+    atari:
+      screen_size: 84
+      frame_skip: 4
+      noop_max: 30
+      grayscale_obs: true
+      frame_stack: 4
+      clip_reward: true
+      channel_first: true

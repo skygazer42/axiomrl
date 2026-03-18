@@ -1,0 +1,4 @@
+name: po_dreamer_breakout
+config: configs/po_dreamer/breakout_atari.yaml
+algorithm: po_dreamer
+env_id: ALE/Breakout-v5

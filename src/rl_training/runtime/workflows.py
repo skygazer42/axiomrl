@@ -8,6 +8,7 @@ from typing import Any
 import numpy as np
 
 from rl_training.experiment.checkpointing import CheckpointState, load_checkpoint
+from rl_training.experiment.benchmarking import augment_metrics_with_benchmark
 from rl_training.experiment.config import TrainConfig
 from rl_training.experiment.registry import get_algorithm_spec
 from rl_training.runtime.callbacks import Callback
@@ -31,6 +32,7 @@ def _config_from_payload(payload: dict[str, Any]) -> TrainConfig:
         log_interval=int(payload.get("log_interval", 1)),
         checkpoint_interval=int(payload.get("checkpoint_interval", 1)),
         tags=tuple(payload.get("tags", ())),
+        benchmark=dict(payload.get("benchmark", {})),
         algo_kwargs=dict(payload.get("algo_kwargs", {})),
         env_kwargs=dict(payload.get("env_kwargs", {})),
     )
@@ -52,7 +54,8 @@ def evaluate_checkpoint(
 
     resolved_device = resolve_device(device if device != "auto" else config.device)
     spec = get_algorithm_spec(config.algo)
-    return spec.evaluate_fn(config, checkpoint_state, resolved_device, config.eval_episodes)
+    metrics = spec.evaluate_fn(config, checkpoint_state, resolved_device, config.eval_episodes)
+    return augment_metrics_with_benchmark(metrics, config.benchmark)
 
 
 def predict_checkpoint(

@@ -1,0 +1,5 @@
+name: prioritized_dqn_breakout
+config: configs/prioritized_dqn/breakout_atari.yaml
+algorithm: prioritized_dqn
+env_id: ALE/Breakout-v5
+

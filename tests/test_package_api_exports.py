@@ -29,6 +29,9 @@ from rl_training import DoubleDQN as RootDoubleDQN
 from rl_training import DuelingDQN as RootDuelingDQN
 from rl_training import IQL as RootIQL
 from rl_training import IQN as RootIQN
+from rl_training import HorizonImagination as RootHorizonImagination
+from rl_training import PODreamer as RootPODreamer
+from rl_training import Twisted as RootTwisted
 from rl_training import IMPALA as RootIMPALA
 from rl_training import APPO as RootAPPO
 from rl_training import MOPO as RootMOPO
@@ -190,6 +193,9 @@ def test_package_exports_high_level_algorithms_and_config() -> None:
     assert RootDQN is DQN
     assert RootDoubleDQN is DoubleDQN
     assert RootDuelingDQN is DuelingDQN
+    assert RootHorizonImagination.__name__ == "HorizonImagination"
+    assert RootPODreamer.__name__ == "PODreamer"
+    assert RootTwisted.__name__ == "Twisted"
     assert RootHER is HER
     assert RootIQL is IQL
     assert RootIQN is IQN

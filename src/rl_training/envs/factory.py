@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 
 import gymnasium as gym
 
@@ -8,15 +8,42 @@ from rl_training.envs.atari import apply_atari_wrappers, resolve_atari_wrapper_c
 from rl_training.envs.goals import register_builtin_goal_envs
 from rl_training.envs.pixels import apply_pixel_wrappers, resolve_pixel_wrapper_config
 from rl_training.envs.rewards import apply_reward_wrappers, resolve_reward_wrapper_config
+from rl_training.envs.video import apply_video_wrapper, resolve_video_wrapper_config
 from rl_training.experiment.config import TrainConfig
 
 
 EnvFactory = Callable[[], gym.Env]
 
 
+def _merge_env_kwargs(base: Mapping[str, object], override: Mapping[str, object]) -> dict[str, object]:
+    merged: dict[str, object] = dict(base)
+    for key, value in override.items():
+        existing = merged.get(key)
+        if isinstance(existing, Mapping) and isinstance(value, Mapping):
+            merged[key] = _merge_env_kwargs(existing, value)
+        else:
+            merged[key] = value
+    return merged
+
+
+def resolve_mode_env_kwargs(env_kwargs: Mapping[str, object], *, evaluation: bool) -> dict[str, object]:
+    base_kwargs = dict(env_kwargs)
+    training_overrides = base_kwargs.pop("training", None)
+    evaluation_overrides = base_kwargs.pop("evaluation", None)
+
+    selected_overrides = evaluation_overrides if evaluation else training_overrides
+    if selected_overrides is None:
+        return base_kwargs
+    if not isinstance(selected_overrides, Mapping):
+        mode = "evaluation" if evaluation else "training"
+        raise TypeError(f"expected env_kwargs['{mode}'] to be a mapping, got {type(selected_overrides)!r}")
+    return _merge_env_kwargs(base_kwargs, selected_overrides)
+
+
 def build_env(config: TrainConfig, env_index: int, *, evaluation: bool = False) -> gym.Env:
     register_builtin_goal_envs()
-    env_kwargs, wrapper_kwargs = split_env_kwargs(config.env_kwargs)
+    env_kwargs, wrapper_kwargs = split_env_kwargs(resolve_mode_env_kwargs(config.env_kwargs, evaluation=evaluation))
+    reward_config = resolve_reward_wrapper_config(wrapper_kwargs)
     env = gym.make(config.env_id, **env_kwargs)
     env = apply_atari_wrappers(
         env,
@@ -25,10 +52,18 @@ def build_env(config: TrainConfig, env_index: int, *, evaluation: bool = False) 
             tags=config.tags,
             wrapper_kwargs=wrapper_kwargs,
             evaluation=evaluation,
+            reward_wrapper_active=reward_config is not None,
         ),
     )
     env = apply_pixel_wrappers(env, resolve_pixel_wrapper_config(wrapper_kwargs))
-    env = apply_reward_wrappers(env, resolve_reward_wrapper_config(wrapper_kwargs))
+    env = apply_reward_wrappers(env, reward_config)
+    env = apply_video_wrapper(
+        env,
+        resolve_video_wrapper_config(wrapper_kwargs),
+        output_dir=config.output_dir,
+        env_index=env_index,
+        evaluation=evaluation,
+    )
     env = gym.wrappers.RecordEpisodeStatistics(env)
     env.action_space.seed(config.seed + env_index)
     if getattr(env, "observation_space", None) is not None:

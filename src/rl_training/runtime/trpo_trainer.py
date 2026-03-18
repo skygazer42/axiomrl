@@ -14,7 +14,7 @@ from rl_training.experiment.config import TrainConfig
 from rl_training.models.mlp_actor_critic import MLPActorCritic
 from rl_training.runtime.callbacks import Callback, CallbackList, merge_callbacks
 from rl_training.runtime.collector import CollectResult
-from rl_training.runtime.controls import build_control_callbacks
+from rl_training.runtime.controls import build_control_callbacks, resolve_entropy_coefficient
 from rl_training.runtime.ppo_trainer import _evaluate_policy
 from rl_training.runtime.run_utils import create_training_run, resolve_device, save_training_checkpoint
 from rl_training.runtime.trainer import TrainResult, TrainerState
@@ -58,7 +58,7 @@ def train_trpo(
     cg_damping = float(config.algo_kwargs.get("cg_damping", 0.1))
     line_search_steps = int(config.algo_kwargs.get("line_search_steps", 10))
     line_search_shrink = float(config.algo_kwargs.get("line_search_shrink", 0.8))
-    ent_coef = float(config.algo_kwargs.get("ent_coef", 0.0))
+    ent_coef = resolve_entropy_coefficient(config, step=0, coefficient_key="ent_coef", default=0.0)
     gamma = float(config.algo_kwargs.get("gamma", 0.99))
     gae_lambda = float(config.algo_kwargs.get("gae_lambda", 0.95))
 
@@ -146,6 +146,13 @@ def train_trpo(
                 gae_lambda=gae_lambda,
             )
 
+            current_ent_coef = resolve_entropy_coefficient(
+                config,
+                step=global_step,
+                coefficient_key="ent_coef",
+                default=0.0,
+            )
+            algorithm.ent_coef = current_ent_coef
             result = algorithm.update(
                 {
                     "obs": buffer.obs.reshape(num_steps * config.num_envs, obs_dim),
@@ -170,6 +177,7 @@ def train_trpo(
                 "global_step": float(global_step),
                 "update": float(update_index + 1),
                 "gradient_steps": float(result.num_gradient_steps),
+                "ent_coef": float(current_ent_coef),
             }
             logger.log_metrics(metrics, step=global_step)
             callback_list.on_eval_end(trainer_state, metrics)

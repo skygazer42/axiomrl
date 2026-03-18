@@ -1,0 +1,4 @@
+name: scalezero_breakout
+config: configs/scalezero/breakout_atari.yaml
+algorithm: scalezero
+env_id: ALE/Breakout-v5

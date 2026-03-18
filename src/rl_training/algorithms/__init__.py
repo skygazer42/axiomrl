@@ -58,6 +58,8 @@ from rl_training.algorithms.drqv2 import DrQv2 as DrQv2Algorithm
 from rl_training.algorithms.drqv2 import drqv2_loss
 from rl_training.algorithms.discrete_sac import DiscreteSAC as DiscreteSACAlgorithm
 from rl_training.algorithms.discrete_sac import discrete_sac_loss
+from rl_training.algorithms.efficientzero import EfficientZero as EfficientZeroAlgorithm
+from rl_training.algorithms.gumbel_muzero import GumbelMuZero as GumbelMuZeroAlgorithm
 from rl_training.algorithms.ppg import PPG as PPGAlgorithm
 from rl_training.algorithms.ppg import ppg_auxiliary_loss
 from rl_training.algorithms.ppg import ppg_loss
@@ -97,6 +99,7 @@ from rl_training.algorithms.ppo import PPO as PPOAlgorithm
 from rl_training.algorithms.ppo import ppo_loss
 from rl_training.algorithms.qr_dqn import QRDQN as QRDQNAlgorithm
 from rl_training.algorithms.qr_dqn import qr_loss
+from rl_training.algorithms.spr import SPR as SPRAlgorithm
 from rl_training.algorithms.redq import REDQ as REDQAlgorithm
 from rl_training.algorithms.redq import redq_loss
 from rl_training.algorithms.rlpd import RLPD as RLPDAlgorithm
@@ -173,6 +176,10 @@ __all__ = [
     "DrQv2Algorithm",
     "DiscreteSAC",
     "DiscreteSACAlgorithm",
+    "EfficientZero",
+    "EfficientZeroAlgorithm",
+    "GumbelMuZero",
+    "GumbelMuZeroAlgorithm",
     "PPG",
     "PPGAlgorithm",
     "DQN",
@@ -226,6 +233,8 @@ __all__ = [
     "PrioritizedDQNAlgorithm",
     "QRDQN",
     "QRDQNAlgorithm",
+    "SPR",
+    "SPRAlgorithm",
     "RainbowDQN",
     "RainbowDQNAlgorithm",
     "REDQ",
@@ -330,6 +339,8 @@ def __getattr__(name: str):
         "DrQ",
         "DrQv2",
         "DiscreteSAC",
+        "EfficientZero",
+        "GumbelMuZero",
         "PPG",
         "PPO",
         "DQN",
@@ -358,6 +369,7 @@ def __getattr__(name: str):
         "NStepDQN",
         "PrioritizedDQN",
         "QRDQN",
+        "SPR",
         "RainbowDQN",
         "REDQ",
         "RLPD",
@@ -398,6 +410,8 @@ def __getattr__(name: str):
             DrQ,
             DrQv2,
             DiscreteSAC,
+            EfficientZero,
+            GumbelMuZero,
             PPG,
             DQN,
             AdvantageLearningDQN,
@@ -426,6 +440,7 @@ def __getattr__(name: str):
             PPO,
             PrioritizedDQN,
             QRDQN,
+            SPR,
             RainbowDQN,
             REDQ,
             RLPD,
@@ -467,6 +482,8 @@ def __getattr__(name: str):
             "DrQ": DrQ,
             "DrQv2": DrQv2,
             "DiscreteSAC": DiscreteSAC,
+            "EfficientZero": EfficientZero,
+            "GumbelMuZero": GumbelMuZero,
             "PPG": PPG,
             "PPO": PPO,
             "DQN": DQN,
@@ -495,6 +512,7 @@ def __getattr__(name: str):
             "NStepDQN": NStepDQN,
             "PrioritizedDQN": PrioritizedDQN,
             "QRDQN": QRDQN,
+            "SPR": SPR,
             "RainbowDQN": RainbowDQN,
             "REDQ": REDQ,
             "RLPD": RLPD,

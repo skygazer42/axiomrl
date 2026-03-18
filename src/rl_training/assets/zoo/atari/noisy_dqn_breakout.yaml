@@ -1,0 +1,5 @@
+name: noisy_dqn_breakout
+config: configs/noisy_dqn/breakout_atari.yaml
+algorithm: noisy_dqn
+env_id: ALE/Breakout-v5
+

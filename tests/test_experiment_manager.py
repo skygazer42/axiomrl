@@ -30,6 +30,19 @@ def test_builtin_algorithm_specs_are_registered() -> None:
     xql = get_algorithm_spec("xql")
     drq = get_algorithm_spec("drq")
     drqv2 = get_algorithm_spec("drqv2")
+    agent57 = get_algorithm_spec("agent57")
+    diamond = get_algorithm_spec("diamond")
+    horizon_imagination = get_algorithm_spec("horizon_imagination")
+    po_dreamer = get_algorithm_spec("po_dreamer")
+    twisted = get_algorithm_spec("twisted")
+    eadream = get_algorithm_spec("eadream")
+    dreamerv3 = get_algorithm_spec("dreamerv3")
+    mow = get_algorithm_spec("mow")
+    jowa = get_algorithm_spec("jowa")
+    efficientzero = get_algorithm_spec("efficientzero")
+    scalezero = get_algorithm_spec("scalezero")
+    gumbel_muzero = get_algorithm_spec("gumbel_muzero")
+    spr = get_algorithm_spec("spr")
     ppg = get_algorithm_spec("ppg")
     her = get_algorithm_spec("her")
     ppo = get_algorithm_spec("ppo")
@@ -69,6 +82,19 @@ def test_builtin_algorithm_specs_are_registered() -> None:
     assert xql.name == "xql"
     assert drq.name == "drq"
     assert drqv2.name == "drqv2"
+    assert agent57.name == "agent57"
+    assert diamond.name == "diamond"
+    assert horizon_imagination.name == "horizon_imagination"
+    assert po_dreamer.name == "po_dreamer"
+    assert twisted.name == "twisted"
+    assert eadream.name == "eadream"
+    assert dreamerv3.name == "dreamerv3"
+    assert mow.name == "mow"
+    assert jowa.name == "jowa"
+    assert efficientzero.name == "efficientzero"
+    assert scalezero.name == "scalezero"
+    assert gumbel_muzero.name == "gumbel_muzero"
+    assert spr.name == "spr"
     assert ppg.name == "ppg"
     assert her.name == "her"
     assert ppo.name == "ppo"
@@ -155,6 +181,45 @@ def test_builtin_algorithm_specs_are_registered() -> None:
     assert callable(drqv2.train_fn)
     assert callable(drqv2.evaluate_fn)
     assert callable(drqv2.predict_fn)
+    assert callable(agent57.train_fn)
+    assert callable(agent57.evaluate_fn)
+    assert callable(agent57.predict_fn)
+    assert callable(diamond.train_fn)
+    assert callable(diamond.evaluate_fn)
+    assert callable(diamond.predict_fn)
+    assert callable(horizon_imagination.train_fn)
+    assert callable(horizon_imagination.evaluate_fn)
+    assert callable(horizon_imagination.predict_fn)
+    assert callable(po_dreamer.train_fn)
+    assert callable(po_dreamer.evaluate_fn)
+    assert callable(po_dreamer.predict_fn)
+    assert callable(twisted.train_fn)
+    assert callable(twisted.evaluate_fn)
+    assert callable(twisted.predict_fn)
+    assert callable(eadream.train_fn)
+    assert callable(eadream.evaluate_fn)
+    assert callable(eadream.predict_fn)
+    assert callable(dreamerv3.train_fn)
+    assert callable(dreamerv3.evaluate_fn)
+    assert callable(dreamerv3.predict_fn)
+    assert callable(mow.train_fn)
+    assert callable(mow.evaluate_fn)
+    assert callable(mow.predict_fn)
+    assert callable(jowa.train_fn)
+    assert callable(jowa.evaluate_fn)
+    assert callable(jowa.predict_fn)
+    assert callable(efficientzero.train_fn)
+    assert callable(efficientzero.evaluate_fn)
+    assert callable(efficientzero.predict_fn)
+    assert callable(scalezero.train_fn)
+    assert callable(scalezero.evaluate_fn)
+    assert callable(scalezero.predict_fn)
+    assert callable(gumbel_muzero.train_fn)
+    assert callable(gumbel_muzero.evaluate_fn)
+    assert callable(gumbel_muzero.predict_fn)
+    assert callable(spr.train_fn)
+    assert callable(spr.evaluate_fn)
+    assert callable(spr.predict_fn)
     assert callable(ppg.train_fn)
     assert callable(ppg.evaluate_fn)
     assert callable(ppg.predict_fn)

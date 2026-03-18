@@ -1,0 +1,5 @@
+name: rainbow_dqn_breakout
+config: configs/rainbow_dqn/breakout_atari.yaml
+algorithm: rainbow_dqn
+env_id: ALE/Breakout-v5
+

@@ -17,6 +17,7 @@ from rl_training.envs.goals import (
 from rl_training.envs.pixels import PixelObservationConfig, apply_pixel_wrappers, resolve_pixel_wrapper_config
 from rl_training.envs.rewards import (
     RewardClipWrapper,
+    RewardOutcomeWrapper,
     RewardSignWrapper,
     RewardScaleWrapper,
     RewardShiftWrapper,
@@ -25,14 +26,17 @@ from rl_training.envs.rewards import (
     resolve_reward_preset,
     resolve_reward_wrapper_config,
 )
+from rl_training.envs.video import VideoWrapperConfig, apply_video_wrapper, resolve_video_wrapper_config
 
 __all__ = [
     "RewardClipWrapper",
+    "RewardOutcomeWrapper",
     "RewardSignWrapper",
     "RewardScaleWrapper",
     "RewardShiftWrapper",
     "RewardTransformConfig",
     "PixelObservationConfig",
+    "VideoWrapperConfig",
     "ACHIEVED_GOAL_KEY",
     "DESIRED_GOAL_KEY",
     "GOAL_OBSERVATION_KEY",
@@ -41,6 +45,7 @@ __all__ = [
     "PointGoal1DEnv",
     "apply_pixel_wrappers",
     "apply_reward_wrappers",
+    "apply_video_wrapper",
     "build_env",
     "flatten_goal_observation",
     "goal_env_compute_done",
@@ -51,6 +56,7 @@ __all__ = [
     "make_vector_env",
     "register_builtin_goal_envs",
     "resolve_reward_preset",
+    "resolve_video_wrapper_config",
     "resolve_pixel_wrapper_config",
     "resolve_reward_wrapper_config",
     "split_goal_observation",

@@ -18,5 +18,6 @@ class TrainConfig:
     log_interval: int = 1
     checkpoint_interval: int = 1
     tags: tuple[str, ...] = ()
+    benchmark: dict[str, Any] = field(default_factory=dict)
     algo_kwargs: dict[str, Any] = field(default_factory=dict)
     env_kwargs: dict[str, Any] = field(default_factory=dict)

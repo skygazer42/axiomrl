@@ -1,0 +1,44 @@
+algo: rainbow_dqn
+env_id: ALE/Breakout-v5
+seed: 29
+total_timesteps: 200000
+output_dir: runs
+device: auto
+num_envs: 1
+eval_episodes: 5
+tags:
+  - atari
+algo_kwargs:
+  buffer_capacity: 100000
+  batch_size: 32
+  learning_starts: 20000
+  train_frequency: 4
+  target_update_interval: 1000
+  learning_rate: 0.0001
+  gamma: 0.99
+  n_step: 3
+  epsilon_start: 0.0
+  epsilon_end: 0.0
+  exploration_fraction: 0.0
+  sigma_init: 0.5
+  prioritized_alpha: 0.6
+  prioritized_beta_start: 0.4
+  prioritized_beta_end: 1.0
+  prioritized_beta_fraction: 1.0
+  prioritized_eps: 1.0e-6
+  head_hidden_sizes: [512]
+  features_dim: 512
+env_kwargs:
+  frameskip: 1
+  repeat_action_probability: 0.0
+  full_action_space: false
+  wrappers:
+    atari:
+      screen_size: 84
+      frame_skip: 4
+      noop_max: 30
+      grayscale_obs: true
+      frame_stack: 4
+      clip_reward: true
+      channel_first: true
+

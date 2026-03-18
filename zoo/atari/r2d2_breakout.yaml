@@ -1,0 +1,4 @@
+name: r2d2_breakout
+config: configs/r2d2/breakout_atari.yaml
+algorithm: r2d2
+env_id: ALE/Breakout-v5

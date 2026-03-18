@@ -1,0 +1,33 @@
+algo: dreamer
+env_id: CartPole-v1
+seed: 101
+total_timesteps: 10000
+output_dir: runs
+device: auto
+num_envs: 1
+eval_episodes: 5
+algo_kwargs:
+  buffer_capacity: 100000
+  batch_size: 32
+  learning_starts: 1000
+  train_frequency: 1
+  world_model_updates: 1
+  actor_critic_updates: 1
+  imagination_batch_size: 32
+  imagination_horizon: 5
+  features_dim: 128
+  action_embed_dim: 32
+  world_model_learning_rate: 0.001
+  actor_learning_rate: 0.0003
+  critic_learning_rate: 0.0003
+  gamma: 0.99
+  entropy_coef: 0.001
+  eval_interval: 2000
+env_kwargs:
+  render_mode: rgb_array
+  wrappers:
+    pixels:
+      resize_shape: [84, 84]
+      frame_stack: 3
+      channel_first: true
+

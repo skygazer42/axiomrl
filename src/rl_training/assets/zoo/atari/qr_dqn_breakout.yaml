@@ -1,0 +1,5 @@
+name: qr_dqn_breakout
+config: configs/qr_dqn/breakout_atari.yaml
+algorithm: qr_dqn
+env_id: ALE/Breakout-v5
+

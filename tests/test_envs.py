@@ -3,7 +3,8 @@ from pathlib import Path
 import gymnasium as gym
 import numpy as np
 
-from rl_training.envs.factory import make_vector_env
+from rl_training.envs.factory import build_env, make_vector_env, resolve_mode_env_kwargs
+from rl_training.envs.video import resolve_video_wrapper_config
 from rl_training.experiment.config import TrainConfig
 
 
@@ -67,6 +68,33 @@ class TinyRenderContinuousEnv(gym.Env):
         return canvas
 
 
+class DummyRecordVideo(gym.Wrapper):
+    last_init: dict[str, object] | None = None
+
+    def __init__(
+        self,
+        env: gym.Env,
+        *,
+        video_folder: str,
+        episode_trigger=None,
+        step_trigger=None,
+        video_length: int = 0,
+        name_prefix: str = "rl-video",
+        fps: int | None = None,
+        disable_logger: bool = True,
+    ) -> None:
+        super().__init__(env)
+        DummyRecordVideo.last_init = {
+            "video_folder": video_folder,
+            "episode_trigger": episode_trigger,
+            "step_trigger": step_trigger,
+            "video_length": video_length,
+            "name_prefix": name_prefix,
+            "fps": fps,
+            "disable_logger": disable_logger,
+        }
+
+
 def _register_tiny_image_env() -> str:
     env_id = "RLTrainingTest/ImageEnv-v0"
     try:
@@ -102,6 +130,159 @@ def test_make_vector_env_returns_sync_vector_env(tmp_path: Path) -> None:
     assert obs.shape[0] == 4
 
     envs.close()
+
+
+def test_resolve_mode_env_kwargs_merges_evaluation_overrides_recursively() -> None:
+    resolved = resolve_mode_env_kwargs(
+        {
+            "frameskip": 1,
+            "repeat_action_probability": 0.0,
+            "wrappers": {
+                "atari": {
+                    "frame_stack": 4,
+                    "clip_reward": True,
+                }
+            },
+            "evaluation": {
+                "repeat_action_probability": 0.25,
+                "wrappers": {
+                    "atari": {
+                        "clip_reward": False,
+                    }
+                },
+            },
+        },
+        evaluation=True,
+    )
+
+    assert resolved["frameskip"] == 1
+    assert resolved["repeat_action_probability"] == 0.25
+    assert resolved["wrappers"]["atari"]["frame_stack"] == 4
+    assert resolved["wrappers"]["atari"]["clip_reward"] is False
+    assert "evaluation" not in resolved
+
+
+def test_resolve_mode_env_kwargs_merges_training_overrides_recursively() -> None:
+    resolved = resolve_mode_env_kwargs(
+        {
+            "frameskip": 1,
+            "repeat_action_probability": 0.25,
+            "wrappers": {
+                "atari": {
+                    "frame_stack": 4,
+                }
+            },
+            "training": {
+                "repeat_action_probability": 0.0,
+                "wrappers": {
+                    "atari": {
+                        "terminal_on_life_loss": True,
+                    }
+                },
+            },
+        },
+        evaluation=False,
+    )
+
+    assert resolved["frameskip"] == 1
+    assert resolved["repeat_action_probability"] == 0.0
+    assert resolved["wrappers"]["atari"]["frame_stack"] == 4
+    assert resolved["wrappers"]["atari"]["terminal_on_life_loss"] is True
+    assert "training" not in resolved
+
+
+def test_resolve_video_wrapper_config_supports_episode_trigger_settings() -> None:
+    config = resolve_video_wrapper_config(
+        {
+            "video": {
+                "episode_trigger_every": 2,
+                "video_length": 128,
+                "name_prefix": "eval-rollout",
+            }
+        }
+    )
+
+    assert config is not None
+    assert config.episode_trigger_every == 2
+    assert config.video_length == 128
+    assert config.name_prefix == "eval-rollout"
+
+
+def test_build_env_applies_evaluation_video_wrapper(monkeypatch, tmp_path: Path) -> None:
+    DummyRecordVideo.last_init = None
+    monkeypatch.setattr(gym.wrappers, "RecordVideo", DummyRecordVideo)
+
+    config = TrainConfig(
+        algo="drqv2",
+        env_id=_register_tiny_render_env(),
+        seed=23,
+        total_timesteps=64,
+        output_dir=tmp_path,
+        num_envs=1,
+        env_kwargs={
+            "evaluation": {
+                "render_mode": "rgb_array",
+                "wrappers": {
+                    "video": {
+                        "episode_trigger_every": 2,
+                        "video_length": 32,
+                        "name_prefix": "eval-rollout",
+                    }
+                },
+            }
+        },
+    )
+
+    env = build_env(config, env_index=0, evaluation=True)
+    obs, _ = env.reset(seed=config.seed)
+
+    assert obs.shape == (3,)
+    assert DummyRecordVideo.last_init is not None
+    assert Path(str(DummyRecordVideo.last_init["video_folder"])) == tmp_path / "videos" / "evaluation"
+    assert DummyRecordVideo.last_init["video_length"] == 32
+    assert DummyRecordVideo.last_init["name_prefix"] == "eval-rollout"
+    assert DummyRecordVideo.last_init["episode_trigger"] is not None
+    assert DummyRecordVideo.last_init["step_trigger"] is None
+    assert DummyRecordVideo.last_init["episode_trigger"](0) is True
+    assert DummyRecordVideo.last_init["episode_trigger"](1) is False
+    assert DummyRecordVideo.last_init["episode_trigger"](2) is True
+
+    env.close()
+
+
+def test_build_env_does_not_apply_video_wrapper_during_training_when_only_evaluation_config_exists(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    DummyRecordVideo.last_init = None
+    monkeypatch.setattr(gym.wrappers, "RecordVideo", DummyRecordVideo)
+
+    config = TrainConfig(
+        algo="drqv2",
+        env_id=_register_tiny_render_env(),
+        seed=29,
+        total_timesteps=64,
+        output_dir=tmp_path,
+        num_envs=1,
+        env_kwargs={
+            "evaluation": {
+                "render_mode": "rgb_array",
+                "wrappers": {
+                    "video": {
+                        "episode_trigger_every": 1,
+                    }
+                },
+            }
+        },
+    )
+
+    env = build_env(config, env_index=0, evaluation=False)
+    obs, _ = env.reset(seed=config.seed)
+
+    assert obs.shape == (3,)
+    assert DummyRecordVideo.last_init is None
+
+    env.close()
 
 
 def test_make_vector_env_preserves_image_observation_shape(tmp_path: Path) -> None:

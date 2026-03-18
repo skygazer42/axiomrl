@@ -1,0 +1,4 @@
+name: ppg_breakout
+config: configs/ppg/breakout_atari.yaml
+algorithm: ppg
+env_id: ALE/Breakout-v5

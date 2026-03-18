@@ -15,7 +15,7 @@ from rl_training.experiment.config import TrainConfig
 from rl_training.models.mlp_actor_critic import MLPActorCritic
 from rl_training.runtime.callbacks import Callback, CallbackList, merge_callbacks
 from rl_training.runtime.collector import CollectResult
-from rl_training.runtime.controls import build_control_callbacks
+from rl_training.runtime.controls import build_control_callbacks, resolve_clip_coefficient, resolve_entropy_coefficient
 from rl_training.runtime.run_utils import create_training_run, resolve_device, save_training_checkpoint
 from rl_training.runtime.trainer import TrainResult, TrainerState
 from rl_training.runtime.types import MetricDict
@@ -87,8 +87,8 @@ def train_appo(
     num_steps = int(config.algo_kwargs.get("num_steps", 128))
     hidden_sizes = tuple(config.algo_kwargs.get("hidden_sizes", (64, 64)))
     learning_rate = float(config.algo_kwargs.get("learning_rate", 3e-4))
-    clip_coef = float(config.algo_kwargs.get("clip_coef", 0.2))
-    ent_coef = float(config.algo_kwargs.get("ent_coef", 0.01))
+    clip_coef = resolve_clip_coefficient(config, step=0, default=0.2)
+    ent_coef = resolve_entropy_coefficient(config, step=0, coefficient_key="ent_coef", default=0.01)
     vf_coef = float(config.algo_kwargs.get("vf_coef", 0.5))
     gamma = float(config.algo_kwargs.get("gamma", 0.99))
     rho_clip = float(config.algo_kwargs.get("rho_clip", 1.0))
@@ -171,6 +171,15 @@ def train_appo(
             with torch.no_grad():
                 bootstrap_value = policy.act(torch.as_tensor(obs, dtype=torch.float32, device=device)).values
 
+            current_ent_coef = resolve_entropy_coefficient(
+                config,
+                step=global_step,
+                coefficient_key="ent_coef",
+                default=0.01,
+            )
+            current_clip_coef = resolve_clip_coefficient(config, step=global_step, default=0.2)
+            algorithm.ent_coef = current_ent_coef
+            algorithm.clip_coef = current_clip_coef
             result = algorithm.update(
                 {
                     "obs": buffer.obs,
@@ -198,6 +207,8 @@ def train_appo(
                 "global_step": float(global_step),
                 "update": float(update_index),
                 "gradient_steps": float(update_index),
+                "ent_coef": float(current_ent_coef),
+                "clip_coef": float(current_clip_coef),
             }
             logger.log_metrics(metrics, step=global_step)
             callback_list.on_eval_end(trainer_state, metrics)

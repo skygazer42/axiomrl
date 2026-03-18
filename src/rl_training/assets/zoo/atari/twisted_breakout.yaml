@@ -1,0 +1,4 @@
+name: twisted_breakout
+config: configs/twisted/breakout_atari.yaml
+algorithm: twisted
+env_id: ALE/Breakout-v5

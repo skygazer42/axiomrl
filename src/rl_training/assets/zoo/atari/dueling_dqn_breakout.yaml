@@ -1,0 +1,5 @@
+name: dueling_dqn_breakout
+config: configs/dueling_dqn/breakout_atari.yaml
+algorithm: dueling_dqn
+env_id: ALE/Breakout-v5
+

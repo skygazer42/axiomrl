@@ -9,6 +9,7 @@ from torch.nn import functional as F
 
 from rl_training.algorithms._advantage_utils import normalize_advantages
 from rl_training.algorithms.base import UpdateResult
+from rl_training.models.cnn import CNNPPGModel
 from rl_training.models.mlp_ppg import MLPPPGModel
 
 
@@ -106,7 +107,7 @@ class PPG:
     def __init__(
         self,
         *,
-        model: MLPPPGModel,
+        model: MLPPPGModel | CNNPPGModel,
         learning_rate: float,
         aux_learning_rate: float,
         clip_coef: float,
@@ -165,7 +166,7 @@ class PPG:
         metrics["policy_updates"] = float(self.policy_update_count)
         return UpdateResult(metrics=metrics, num_gradient_steps=1)
 
-    def snapshot_teacher_model(self) -> MLPPPGModel:
+    def snapshot_teacher_model(self) -> MLPPPGModel | CNNPPGModel:
         teacher_model = copy.deepcopy(self.model)
         teacher_model.eval()
         return teacher_model
@@ -174,7 +175,7 @@ class PPG:
         self,
         batch: dict[str, Any],
         *,
-        teacher_model: MLPPPGModel,
+        teacher_model: MLPPPGModel | CNNPPGModel,
         global_step: int,
     ) -> UpdateResult:
         del global_step

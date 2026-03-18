@@ -1,0 +1,5 @@
+name: fqf_breakout
+config: configs/fqf/breakout_atari.yaml
+algorithm: fqf
+env_id: ALE/Breakout-v5
+

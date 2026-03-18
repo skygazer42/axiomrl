@@ -1,0 +1,4 @@
+name: spr_breakout
+config: configs/spr/breakout_atari.yaml
+algorithm: spr
+env_id: ALE/Breakout-v5

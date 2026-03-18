@@ -1,0 +1,46 @@
+algo: muzero
+env_id: ALE/Breakout-v5
+seed: 202
+total_timesteps: 200000
+output_dir: runs
+device: auto
+num_envs: 1
+eval_episodes: 5
+tags:
+  - atari
+algo_kwargs:
+  buffer_capacity: 50000
+  batch_size: 32
+  learning_starts: 1000
+  train_frequency: 1
+  unroll_steps: 5
+  learning_rate: 0.001
+  gamma: 0.99
+  temperature: 1.0
+  num_simulations: 25
+  pb_c_base: 19652.0
+  pb_c_init: 1.25
+  root_dirichlet_alpha: 0.3
+  root_exploration_fraction: 0.25
+  latent_dim: 256
+  action_embed_dim: 64
+  dynamics_hidden_sizes: [256]
+  prediction_hidden_sizes: [256]
+  value_loss_weight: 1.0
+  reward_loss_weight: 1.0
+  policy_loss_weight: 1.0
+  max_grad_norm: 10.0
+env_kwargs:
+  frameskip: 1
+  repeat_action_probability: 0.0
+  full_action_space: false
+  wrappers:
+    atari:
+      screen_size: 84
+      frame_skip: 4
+      noop_max: 30
+      grayscale_obs: true
+      frame_stack: 4
+      clip_reward: true
+      channel_first: true
+

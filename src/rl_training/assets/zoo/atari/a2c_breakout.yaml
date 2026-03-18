@@ -1,0 +1,4 @@
+name: a2c_breakout
+config: configs/a2c/breakout_atari.yaml
+algorithm: a2c
+env_id: ALE/Breakout-v5

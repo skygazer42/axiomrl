@@ -79,6 +79,7 @@ def resolve_atari_wrapper_config(
     tags: Sequence[str],
     wrapper_kwargs: Mapping[str, object],
     evaluation: bool,
+    reward_wrapper_active: bool = False,
 ) -> AtariWrapperConfig | None:
     requested = wrapper_kwargs.get("atari")
     use_defaults = "atari" in tags or looks_like_atari_env(env_id)
@@ -94,7 +95,8 @@ def resolve_atari_wrapper_config(
             raise TypeError(f"expected wrappers['atari'] to be a mapping or bool, got {type(requested)!r}")
         requested_payload = requested
 
-    clip_reward = bool(requested_payload.get("clip_reward", not evaluation))
+    default_clip_reward = not evaluation and not reward_wrapper_active
+    clip_reward = bool(requested_payload.get("clip_reward", default_clip_reward))
 
     return AtariWrapperConfig(
         screen_size=int(requested_payload.get("screen_size", 84)),

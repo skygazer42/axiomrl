@@ -1,589 +1,375 @@
-# RL Training
+<p align="center">
+  <img src="docs/assets/banner.svg" alt="AxiomRL Banner" width="100%">
+</p>
 
-RL Training is being built as a real reinforcement learning training package,
-not a single-algorithm demo or a lightweight toy scaffold. The target is a
-Python-first library that can grow toward the capability level of mature RL
-packages while staying modular, readable, and practical to extend.
+<p align="center">
+  <a href="#installation"><img src="https://img.shields.io/badge/python-3.10+-blue?logo=python&logoColor=white" alt="Python 3.10+"></a>
+  <a href="#installation"><img src="https://img.shields.io/badge/PyTorch-2.0+-ee4c2c?logo=pytorch&logoColor=white" alt="PyTorch"></a>
+  <a href="#installation"><img src="https://img.shields.io/badge/Gymnasium-compatible-4c1?logo=openaigym&logoColor=white" alt="Gymnasium"></a>
+  <img src="https://img.shields.io/badge/algorithms-80+-8b5cf6" alt="80+ Algorithms">
+  <img src="https://img.shields.io/badge/license-MIT-green" alt="License">
+  <img src="https://img.shields.io/badge/status-alpha-orange" alt="Status: Alpha">
+</p>
 
-The package is intended to provide a stable core API for multiple algorithm
-families, including on-policy and off-policy methods. The long-term direction
-includes support for algorithms such as PPO, DQN, Double DQN, Dueling DQN,
-Expected SARSA, Mellowmax DQN, Soft DQN, Advantage Learning DQN, Munchausen DQN, CQL-DQN, TRPO, PPG, Noisy DQN, Prioritized DQN, Rainbow DQN, C51-DQN, N-Step DQN, QR-DQN,
-DDPG, NAF, DRQN, R2D2, D4PG, ARS, OpenAI ES, SAC, Discrete SAC, CrossQ, DrQ, CURL, DrQ-v2, TD3, BC, AWR, AWAC, MARWIL, BCQ,
-BEAR, CRR, IQL, CQL, Cal-QL, EDAC, RLPD, XQL, ReBRAC, and related training patterns,
-together with reusable abstractions for policies, rollout buffers, replay buffers, collectors,
-trainers, evaluators, and experiment management.
+<p align="center">
+  <b>A modular reinforcement learning library built for research and production.</b><br>
+  80+ algorithms · Unified API · CLI-first workflow · Core / Contrib / Zoo architecture
+</p>
 
-From the product side, RL Training is meant to cover the full workflow needed
-for serious experimentation and training operations:
+---
 
-- vectorized environment support
-- on-policy and off-policy data handling
-- checkpointing, resume, and run directory management
-- evaluation, logging, and TensorBoard integration
-- structured configuration and CLI-oriented experiment control
-- clean extension points for future async, distributed, and offline RL modes
+## Highlights
 
-The repository has already moved past a single PPO vertical slice. The current
-state includes multiple discrete and continuous-control algorithms, Atari image
-pipelines, a `contrib` layer for recurrent PPO, a `zoo/` layer for packaged
-presets, and the first offline / goal-conditioned expansion wave through
-`BC`, `AWR`, `AWAC`, `MARWIL`, `BCQ`, `BEAR`, `CRR`, `Cal-QL`, `EDAC`,
-`RLPD`, `XQL`, `ReBRAC`, and `HER`, plus the narrow offline sequence-model lane through `Decision Transformer`, the next on-policy expansion through `TRPO` and narrow `PPG`, and the first pixel-based
-continuous-control expansion through narrow `DrQ`, `CURL`, and `DrQ-v2` lanes, together with the historical
-continuous-control gap closures `NAF`, a narrow recurrent discrete-control `DRQN`
-baseline, a narrow non-distributed `R2D2` value-based recurrent replay follow-on,
-a narrow non-distributed `D4PG` baseline, narrow synchronous `ARS` and `OpenAI ES` search baselines, a narrow `MOPO` model-based offline RL lane,
-the first narrow online ensemble-model MPC planning lane through `PETS`, and a narrow synchronous `IMPALA` discrete actor-critic lane.
+AxiomRL is a PyTorch-based reinforcement learning library that provides a **unified interface** across 80+ algorithms — from classic DQN to offline RL, world models, and model-based planning. Designed to grow from research prototype to production-grade toolkit.
 
-The next milestone is no longer “make it look like a package”. It is to make
-the package behave like a credible mainstream RL toolkit under broader training
-regimes by widening the offline wave that now includes `BCQ`, `BEAR`, `CRR`,
-`AWR`, `MARWIL`, `Cal-QL`, `EDAC`, `RLPD`, `XQL`, plus the newer `ReBRAC` follow-on,
-alongside stronger offline data-mixing and reward-preset flows, and clearer training budget /
-early-stopping controls.
+The project is organized as **core + contrib + zoo** so stable training code, experimental extensions, and benchmark presets stay cleanly separated.
 
-The design draws from Stable-Baselines3, RL Baselines3 Zoo, CleanRL, and
-Tianshou: a stable algorithm core, modular runtime boundaries, a dedicated
-experiment layer, and readable reference implementations. The goal is to become
-a serious RL package with a credible growth path, rather than stopping at a
-minimal training example.
+| Feature | Description |
+|---|---|
+| **80+ algorithms** | On-policy, off-policy, offline, model-based, world models, goal-conditioned |
+| **Unified API** | Every algorithm shares `TrainConfig → train / eval / resume` |
+| **CLI-first** | `axiomrl train`, `axiomrl eval`, `axiomrl resume`, `axiomrl zoo` |
+| **Modular layers** | Core (stable) → Contrib (experimental) → Zoo (presets & benchmarks) |
+| **Full pipeline** | VecEnv, checkpointing, TensorBoard, early stopping, LR scheduling |
+| **Offline RL stack** | NPZ, PT, Minari datasets with mixing, reward transforms, and `next_actions` |
+| **Pixel observations** | Atari wrappers, generic pixel wrappers for continuous control |
+| **Goal-conditioned** | HER with built-in sparse-reward environments |
+| **YAML config** | Declarative experiment configuration with packaged presets |
 
-## Current Direction
+## Quick Start
 
-The repository already includes multiple classic-control and continuous-control
-algorithms behind a shared `train / eval / resume` workflow. The current
-expansion path is aimed at a more mainstream package shape:
+```python
+from rl_training import PPO, TrainConfig
 
-- a stable `core + contrib + zoo` package layout
-- Atari-ready environment wrappers and image observations
-- vector-observation `TRPO` and `PPG` alongside CNN-backed `PPO` and `DQN` training paths
-- a narrow synchronous `IMPALA` lane for vector-observation discrete control
-- a discrete actor-critic lane through `Discrete SAC`
-- a lower-tuning continuous-control lane through `CrossQ`
-- historical baselines through `NAF`, a narrow `DRQN`, a narrow `R2D2`, a non-distributed `D4PG`, and synchronous `ARS` / `OpenAI ES`
-- a narrow online model-predictive control lane through `PETS`
-- pixel-observation continuous-control lanes through `DrQ`, `CURL`, and `DrQ-v2`
-- a `contrib` layer for algorithms such as recurrent PPO
-- a `zoo/` layer for presets, benchmark manifests, and run recipes
-- offline dataset loading and reward transforms that work across trainers
-- goal-conditioned replay relabeling through `HER`
-- canonical offline RL baselines including `AWR`, `MARWIL`, `BCQ`, `BEAR`, `CRR`,
-  `Cal-QL`, `EDAC`, `RLPD`, `XQL`, `ReBRAC`, and a narrow `MOPO`
+algo = PPO(TrainConfig(
+    algo="ppo",
+    env_id="CartPole-v1",
+    seed=42,
+    total_timesteps=100_000,
+    output_dir="runs/ppo-cartpole",
+))
+result = algo.learn()
+```
 
-## Install
+Or use the CLI:
 
-Core package:
+```bash
+axiomrl train --config configs/ppo/cartpole.yaml
+axiomrl eval  --checkpoint runs/<run-id>/checkpoints/step_<n>.pt
+```
+
+<details>
+<summary><b>More CLI examples</b></summary>
+
+```bash
+# Classic control
+axiomrl train --config configs/dqn/cartpole.yaml
+axiomrl train --config configs/a2c/cartpole.yaml
+axiomrl train --config configs/trpo/cartpole.yaml
+
+# Continuous control
+axiomrl train --config configs/sac/pendulum.yaml
+axiomrl train --config configs/td3/pendulum.yaml
+axiomrl train --config configs/crossq/pendulum.yaml
+
+# Offline RL
+axiomrl train --config configs/iql/pendulum.yaml
+axiomrl train --config configs/cql/pendulum.yaml
+axiomrl train --config configs/bc/pendulum.yaml
+
+# Atari
+axiomrl train --config configs/dqn/breakout_atari.yaml
+axiomrl train --config configs/ppo/breakout_atari.yaml
+
+# Pixel-based continuous control
+axiomrl train --config configs/drq/pendulum_pixels.yaml
+axiomrl train --config configs/curl/pendulum_pixels.yaml
+axiomrl train --config configs/drqv2/pendulum_pixels.yaml
+
+# Goal-conditioned
+axiomrl train --config configs/her/point_goal.yaml
+
+# Model-based
+axiomrl train --config configs/pets/pendulum.yaml
+axiomrl train --config configs/mopo/pendulum.yaml
+
+# Zoo presets
+axiomrl zoo --format commands
+axiomrl zoo --format report --runs-dir runs
+axiomrl zoo --format report --runs-dir runs --report-output json --algo dqn
+axiomrl zoo --format report --runs-dir runs --report-output json --output reports/benchmark_report.json
+axiomrl zoo --format report --runs-dir runs --group-by preset --sort-by best_eval_return_mean --descending --top-k 5
+axiomrl zoo --format leaderboard --runs-dir runs --group-by preset --top-k 10
+axiomrl zoo --format leaderboard --runs-dir runs --group-by preset --min-seeds 3
+axiomrl zoo --format leaderboard --runs-dir runs --group-by preset --leaderboard-metric latest-normalized
+axiomrl zoo --format leaderboard --runs-dir runs --group-by preset --compare-to latest
+axiomrl zoo --format leaderboard --runs-dir runs --group-by preset --compare-to latest --score-view return
+axiomrl zoo --format leaderboard --runs-dir runs --group-by preset --leaderboard-metric stability-normalized
+axiomrl zoo --format leaderboard --runs-dir runs --group-by preset --leaderboard-metric confidence-normalized
+axiomrl zoo --format leaderboard --runs-dir runs --group-by preset --leaderboard-metric median-normalized
+axiomrl zoo --format leaderboard --runs-dir runs --group-by preset --leaderboard-metric iqr-normalized
+axiomrl zoo --format leaderboard --runs-dir runs --group-by preset --baseline-preset dqn_breakout --leaderboard-metric delta-vs-baseline-normalized
+axiomrl zoo --format leaderboard --runs-dir runs --group-by preset --report-output json --fail-on-manifest-drift
+axiomrl zoo --format leaderboard --runs-dir runs --group-by preset --report-output json --fail-on-manifest-drift-severity error
+axiomrl zoo --format leaderboard --runs-dir runs --group-by preset --report-output json --fail-on-manifest-drift-type unknown-preset
+axiomrl train --config zoo/atari/dqn_breakout.yaml
+
+# Resume training
+axiomrl resume --checkpoint runs/<run-id>/checkpoints/step_<n>.pt
+
+# Module form
+python -m rl_training train --config configs/dqn/cartpole.yaml
+```
+</details>
+
+<details>
+<summary><b>Additional packaged presets and references</b></summary>
+
+```bash
+axiomrl train --config configs/ars/pendulum.yaml
+axiomrl train --config configs/openai_es/pendulum.yaml
+axiomrl train --config configs/crr/pendulum.yaml
+axiomrl train --config configs/awr/pendulum.yaml
+axiomrl train --config configs/marwil/pendulum.yaml
+axiomrl train --config configs/cal_ql/pendulum.yaml
+axiomrl train --config configs/edac/pendulum.yaml
+axiomrl train --config configs/rlpd/pendulum.yaml
+axiomrl train --config configs/xql/pendulum.yaml
+axiomrl train --config configs/rebrac/pendulum.yaml
+python -m rl_training.examples.dqn_breakout_atari_reference
+```
+
+Packaged config paths also include `configs/awac/pendulum.yaml`, `configs/bear/pendulum.yaml`,
+`configs/bcq/pendulum.yaml`, `configs/cal_ql/pendulum.yaml`, `configs/crr/pendulum.yaml`,
+`configs/awr/pendulum.yaml`, `configs/marwil/pendulum.yaml`, `configs/edac/pendulum.yaml`,
+`configs/rlpd/pendulum.yaml`, `configs/xql/pendulum.yaml`, `configs/rebrac/pendulum.yaml`,
+`configs/decision_transformer/pendulum.yaml`, `configs/impala/cartpole.yaml`,
+`configs/appo/cartpole.yaml`, `configs/ppg/cartpole.yaml`, and
+`configs/discrete_sac/cartpole.yaml`.
+</details>
+
+## Installation
+
+**Core package:**
 
 ```bash
 pip install -e .
 ```
 
-Atari extras:
+**With Atari support:**
 
 ```bash
 pip install -e ".[atari]"
 ```
 
-Offline dataset extras:
+**With offline dataset support (Minari):**
 
 ```bash
 pip install -e ".[offline]"
 ```
 
-The packaged CLI bundles the repository's documented `configs/` and `zoo/`
-YAML assets, so preset paths continue to resolve after installation.
+> **Requirements:** Python 3.10+ · PyTorch · Gymnasium · NumPy · PyYAML · TensorBoard
 
-## Start Here
+## Architecture
 
-For stable classic-control and continuous-control training, stay on the core
-surface:
+AxiomRL uses a deliberate three-layer architecture that lets the project scale without becoming a collection of disconnected scripts:
 
-```bash
-rl-training train --config configs/ppo/cartpole.yaml
-rl-training train --config configs/expected_sarsa/cartpole.yaml
-rl-training train --config configs/expected_double_dqn/cartpole.yaml
-rl-training train --config configs/boltzmann_dqn/cartpole.yaml
-rl-training train --config configs/boltzmann_double_dqn/cartpole.yaml
-rl-training train --config configs/mellowmax_dqn/cartpole.yaml
-rl-training train --config configs/soft_dqn/cartpole.yaml
-rl-training train --config configs/soft_double_dqn/cartpole.yaml
-rl-training train --config configs/advantage_learning_dqn/cartpole.yaml
-rl-training train --config configs/persistent_advantage_learning_dqn/cartpole.yaml
-rl-training train --config configs/munchausen_dqn/cartpole.yaml
-rl-training train --config configs/munchausen_double_dqn/cartpole.yaml
-rl-training train --config configs/cql_dqn/cartpole.yaml
-rl-training train --config configs/cql_double_dqn/cartpole.yaml
-rl-training train --config configs/clipped_double_dqn/cartpole.yaml
-rl-training train --config configs/hysteretic_dqn/cartpole.yaml
-rl-training train --config configs/ars/pendulum.yaml
-rl-training train --config configs/openai_es/pendulum.yaml
-rl-training train --config configs/pets/pendulum.yaml
-rl-training train --config configs/naf/pendulum.yaml
-rl-training train --config configs/d4pg/pendulum.yaml
-rl-training train --config configs/crossq/pendulum.yaml
-rl-training train --config configs/crr/pendulum.yaml
-rl-training train --config configs/awr/pendulum.yaml
-rl-training train --config configs/marwil/pendulum.yaml
-rl-training train --config configs/cal_ql/pendulum.yaml
-rl-training train --config configs/edac/pendulum.yaml
-rl-training train --config configs/rlpd/pendulum.yaml
-rl-training train --config configs/xql/pendulum.yaml
-rl-training train --config configs/rebrac/pendulum.yaml
-rl-training train --config configs/decision_transformer/pendulum.yaml
-rl-training train --config configs/mopo/pendulum.yaml
-rl-training train --config configs/impala/cartpole.yaml
-rl-training train --config configs/appo/cartpole.yaml
-rl-training train --config configs/ppg/cartpole.yaml
-rl-training train --config configs/drq/pendulum_pixels.yaml
-rl-training train --config configs/curl/pendulum_pixels.yaml
-rl-training train --config configs/drqv2/pendulum_pixels.yaml
-rl-training train --config configs/discrete_sac/cartpole.yaml
-rl-training train --config configs/trpo/cartpole.yaml
-rl-training eval --checkpoint runs/<run-id>/checkpoints/step_<n>.pt
-rl-training resume --checkpoint runs/<run-id>/checkpoints/step_<n>.pt
-```
+<p align="center">
+  <img src="docs/assets/architecture.svg" alt="AxiomRL Architecture" width="100%">
+</p>
 
-For recurrent or higher-complexity extensions, stay explicit and go through
-`rl_training.contrib`:
-
-```bash
-rl-training train --config configs/recurrent_ppo/breakout_atari.yaml
-rl-training eval --checkpoint runs/<run-id>/checkpoints/step_<n>.pt
-rl-training resume --checkpoint runs/<run-id>/checkpoints/step_<n>.pt
-```
-
-For curated benchmark recipes and reproducible launch commands, go through the
-zoo layer:
-
-```bash
-rl-training zoo --format commands
-rl-training train --config zoo/atari/dqn_breakout.yaml
-```
-
-## CLI
-
-After installing the package, the CLI entrypoint is:
-
-```bash
-rl-training train --config configs/ppo/cartpole.yaml
-rl-training train --config configs/expected_sarsa/cartpole.yaml
-rl-training train --config configs/expected_double_dqn/cartpole.yaml
-rl-training train --config configs/boltzmann_dqn/cartpole.yaml
-rl-training train --config configs/boltzmann_double_dqn/cartpole.yaml
-rl-training train --config configs/mellowmax_dqn/cartpole.yaml
-rl-training train --config configs/soft_dqn/cartpole.yaml
-rl-training train --config configs/soft_double_dqn/cartpole.yaml
-rl-training train --config configs/advantage_learning_dqn/cartpole.yaml
-rl-training train --config configs/persistent_advantage_learning_dqn/cartpole.yaml
-rl-training train --config configs/munchausen_dqn/cartpole.yaml
-rl-training train --config configs/munchausen_double_dqn/cartpole.yaml
-rl-training train --config configs/cql_dqn/cartpole.yaml
-rl-training train --config configs/cql_double_dqn/cartpole.yaml
-rl-training train --config configs/clipped_double_dqn/cartpole.yaml
-rl-training train --config configs/hysteretic_dqn/cartpole.yaml
-rl-training train --config configs/ars/pendulum.yaml
-rl-training train --config configs/openai_es/pendulum.yaml
-rl-training train --config configs/naf/pendulum.yaml
-rl-training train --config configs/d4pg/pendulum.yaml
-rl-training train --config configs/crossq/pendulum.yaml
-rl-training train --config configs/crr/pendulum.yaml
-rl-training train --config configs/awr/pendulum.yaml
-rl-training train --config configs/marwil/pendulum.yaml
-rl-training train --config configs/cal_ql/pendulum.yaml
-rl-training train --config configs/edac/pendulum.yaml
-rl-training train --config configs/rlpd/pendulum.yaml
-rl-training train --config configs/xql/pendulum.yaml
-rl-training train --config configs/rebrac/pendulum.yaml
-rl-training train --config configs/decision_transformer/pendulum.yaml
-rl-training train --config configs/mopo/pendulum.yaml
-rl-training train --config configs/impala/cartpole.yaml
-rl-training train --config configs/appo/cartpole.yaml
-rl-training train --config configs/ppg/cartpole.yaml
-rl-training train --config configs/drq/pendulum_pixels.yaml
-rl-training train --config configs/curl/pendulum_pixels.yaml
-rl-training train --config configs/drqv2/pendulum_pixels.yaml
-rl-training train --config configs/discrete_sac/cartpole.yaml
-rl-training train --config configs/trpo/cartpole.yaml
-rl-training eval --checkpoint runs/<run-id>/checkpoints/step_<n>.pt
-rl-training resume --checkpoint runs/<run-id>/checkpoints/step_<n>.pt
-rl-training zoo --format commands
-```
-
-The module form works as well:
-
-```bash
-python -m rl_training train --config configs/dqn/cartpole.yaml
-```
-
-Training and resume commands print the resolved `run_dir`, `checkpoint_path`,
-and final metrics so the CLI can be used directly in shell workflows.
-
-## Atari Presets
-
-Atari configs use `env_kwargs.wrappers.atari` to keep wrapper settings outside
-the raw `gym.make(...)` constructor kwargs.
-
-Examples:
-
-```bash
-rl-training train --config configs/dqn/breakout_atari.yaml
-rl-training train --config configs/ppo/breakout_atari.yaml
-rl-training train --config configs/recurrent_ppo/breakout_atari.yaml
-```
-
-Reference scripts:
-
-- `examples/dqn_breakout_atari_reference.py`
-- `examples/ppo_breakout_atari_reference.py`
-- `examples/recurrent_ppo_breakout_atari_reference.py`
-
-Installed package module form:
-
-```bash
-python -m rl_training.examples.dqn_breakout_atari_reference --total-timesteps 1024
-python -m rl_training.examples.ppo_breakout_atari_reference --total-timesteps 1024
-python -m rl_training.examples.recurrent_ppo_breakout_atari_reference --total-timesteps 1024
-```
-
-The first benchmark manifest lives at `zoo/atari/benchmark.yaml`.
-
-Zoo preset files can also be passed directly to the CLI:
-
-```bash
-rl-training train --config zoo/atari/dqn_breakout.yaml
-```
-
-To enumerate the current zoo commands:
-
-```bash
-rl-training zoo --format commands
-rl-training-zoo --format commands
-python -m rl_training zoo --format commands
-```
-
-## Pixel Control
-
-`DrQ`, `CURL`, and `DrQ-v2` use generic pixel wrappers rather than an algorithm-specific
-environment fork. For classic Gymnasium control tasks, keep render settings in
-`env_kwargs` and pixel preprocessing in `env_kwargs.wrappers.pixels`.
-
-Example starter config:
-
-```yaml
-algo: drq
-env_id: Pendulum-v1
-seed: 7
-total_timesteps: 5000
-output_dir: runs
-eval_episodes: 5
-algo_kwargs:
-  buffer_capacity: 50000
-  batch_size: 128
-  learning_starts: 256
-  features_dim: 256
-  actor_hidden_sizes: [256, 256]
-  critic_hidden_sizes: [256, 256]
-  learning_rate: 0.0001
-  gamma: 0.99
-  alpha: 0.1
-  tau: 0.01
-  augmentation_pad: 4
-env_kwargs:
-  render_mode: rgb_array
-  wrappers:
-    pixels:
-      resize_shape: [84, 84]
-      frame_stack: 3
-      channel_first: true
-```
-
-`DrQ` is the current stochastic SAC-style pixel-control baseline in this
-package; `CURL` is the narrow representation-learning follow-on that adds an
-auxiliary contrastive loss on top of the same pixel-control lane; `DrQ-v2`
-remains the deterministic TD3-style follow-on already on the surface. The
-package also includes a narrow offline sequence-model lane through
-`Decision Transformer`. The packaged starter presets for these paths are
-`configs/decision_transformer/pendulum.yaml`, `configs/drq/pendulum_pixels.yaml`,
-`configs/curl/pendulum_pixels.yaml`, and `configs/drqv2/pendulum_pixels.yaml`.
-
-For discrete actor-critic control with off-policy corrections, the package now
-ships both `IMPALA` and a deliberately narrow synchronous `APPO v1`. The
-starter presets for that lane are `configs/impala/cartpole.yaml` and
-`configs/appo/cartpole.yaml`.
-
-For online model-based control, `PETS` now provides a deliberately narrow
-ensemble-dynamics plus CEM planning lane for flat continuous-control tasks. The
-starter preset for that path is `configs/pets/pendulum.yaml`.
-
-## Offline Data
-
-Offline trainers can now pull transitions from more than the built-in random
-dataset generator. The package-level direction is:
-
-- `algo: bc` for the first supervised imitation baseline on top of this data path
-- `algo: awr` for return-weighted offline actor regression on the same dataset path
-- `algo: awac` for advantage-weighted offline actor-critic on the same data path
-- `algo: marwil` for RLlib-style weighted offline imitation on the same actor/value data path
-- `algo: bcq` for constrained offline policy improvement on the same data path
-- `algo: bear` for support-matching offline actor-critic on the same data path
-- `algo: crr` for critic-regularized offline policy regression on the same data path
-- `algo: cal_ql` for calibrated conservative Q-learning on the same data path
-- `algo: edac` for ensemble-diversified offline actor-critic on the same REDQ-style data path
-- `algo: rlpd` for prior-data offline-to-online actor-critic on top of the same `SAC` lane
-- `algo: xql` for extreme value regression on the same offline actor-critic path
-- `algo: rebrac` for behavior-regularized TD3-style offline actor-critic on the same data path
-- `algo: her` for goal-conditioned replay relabeling on sparse-reward tasks
-- `dataset_kind: random` for synthetic smoke data
-- `dataset_kind: npz` for NumPy transition dumps
-- `dataset_kind: pt` for PyTorch dictionary payloads
-- `dataset_kind: minari` for Farama Minari datasets when the optional extra is installed
-- `dataset_mix` for blending multiple offline sources into one training dataset
-- optional `next_actions` payloads for behavior-regularized offline learners
-- optional `returns_to_go` payloads for calibrated conservative learners
-
-Minimal `AWR` example:
-
-```yaml
-algo: awr
-env_id: Pendulum-v1
-seed: 7
-total_timesteps: 20000
-output_dir: runs/awr-pendulum
-eval_episodes: 5
-algo_kwargs:
-  dataset_kind: npz
-  dataset_path: data/pendulum_medium.npz
-  batch_size: 256
-  hidden_sizes: [256, 256]
-  learning_rate: 0.0003
-  gamma: 0.99
-  beta: 1.0
-  max_weight: 20.0
-```
-
-Minimal `MARWIL` example:
-
-```yaml
-algo: marwil
-env_id: Pendulum-v1
-seed: 7
-total_timesteps: 20000
-output_dir: runs/marwil-pendulum
-eval_episodes: 5
-algo_kwargs:
-  dataset_kind: npz
-  dataset_path: data/pendulum_medium.npz
-  batch_size: 256
-  hidden_sizes: [256, 256]
-  learning_rate: 0.0003
-  gamma: 0.99
-  beta: 1.0
-  vf_coeff: 1.0
-  moving_average_sqd_adv_norm_start: 100.0
-  moving_average_sqd_adv_norm_update_rate: 0.01
-```
-
-Example:
-
-```yaml
-algo: iql
-env_id: Pendulum-v1
-seed: 7
-total_timesteps: 20000
-output_dir: runs/iql-pendulum
-eval_episodes: 5
-algo_kwargs:
-  dataset_kind: npz
-  dataset_path: data/pendulum_medium.npz
-  normalize_dataset_actions: true
-  reward_scale: 0.1
-  reward_shift: 0.0
-  reward_clip_min: -10.0
-  reward_clip_max: 10.0
-  batch_size: 256
-  hidden_sizes: [256, 256]
-```
-
-For Minari datasets:
-
-```yaml
-algo_kwargs:
-  dataset_kind: minari
-  dataset_id: hopper-medium-v0
-  dataset_download: true
-```
-
-For mixed offline datasets:
-
-```yaml
-algo_kwargs:
-  dataset_mix:
-    - kind: npz
-      dataset_path: data/pendulum_medium.npz
-      weight: 0.7
-    - kind: pt
-      dataset_path: data/pendulum_expert.pt
-      weight: 0.3
-  dataset_mix_size: 200000
-  dataset_mix_seed: 17
-```
-
-Packaged starter configs now include `configs/expected_sarsa/cartpole.yaml`,
-`configs/expected_double_dqn/cartpole.yaml`,
-`configs/boltzmann_dqn/cartpole.yaml`, `configs/boltzmann_double_dqn/cartpole.yaml`,
-`configs/mellowmax_dqn/cartpole.yaml`, `configs/soft_dqn/cartpole.yaml`,
-`configs/soft_double_dqn/cartpole.yaml`,
-`configs/advantage_learning_dqn/cartpole.yaml`,
-`configs/persistent_advantage_learning_dqn/cartpole.yaml`,
-`configs/munchausen_dqn/cartpole.yaml`, `configs/munchausen_double_dqn/cartpole.yaml`,
-`configs/cql_dqn/cartpole.yaml`, `configs/cql_double_dqn/cartpole.yaml`,
-`configs/clipped_double_dqn/cartpole.yaml`,
-`configs/hysteretic_dqn/cartpole.yaml`, `configs/ars/pendulum.yaml`, `configs/openai_es/pendulum.yaml`, `configs/ppg/cartpole.yaml`, `configs/bc/pendulum.yaml`,
-`configs/awr/pendulum.yaml`, `configs/awac/pendulum.yaml`,
-`configs/marwil/pendulum.yaml`,
-`configs/bcq/pendulum.yaml`,
-`configs/bear/pendulum.yaml`, `configs/cal_ql/pendulum.yaml`,
-`configs/crr/pendulum.yaml`, `configs/edac/pendulum.yaml`, `configs/rlpd/pendulum.yaml`,
-`configs/xql/pendulum.yaml`,
-`configs/rebrac/pendulum.yaml`, `configs/decision_transformer/pendulum.yaml`,
-`configs/impala/cartpole.yaml`, `configs/appo/cartpole.yaml`,
-`configs/her/point_goal.yaml`, and `configs/drq/pendulum_pixels.yaml`,
-`configs/curl/pendulum_pixels.yaml`, `configs/drqv2/pendulum_pixels.yaml`.
-
-The first packaged `CRR` path is intentionally narrow: vector observations,
-continuous `Box` actions, and offline datasets only. Pixel observations,
-sequence models, and distributed runtime variants stay out of the v1 scope.
-
-The first packaged `AWR` path is also intentionally narrow: vector
-observations, continuous `Box` actions, and offline datasets only, with value
-regression against discounted returns-to-go and exponentiated
-advantage-weighted behavior cloning in the actor update.
-
-The first packaged `MARWIL` path is likewise intentionally narrow: vector
-observations, continuous `Box` actions, and offline datasets only, with value
-regression against discounted returns-to-go and RLlib-style advantage-weighted
-behavior cloning normalized by a running squared-advantage scale.
-
-The first packaged `ReBRAC` path is also intentionally narrow: vector
-observations, continuous `Box` actions, and offline datasets only, implemented
-as a behavior-regularized follow-on to the existing `TD3+BC` lane.
-
-When an offline dataset carries `next_actions`, the package now preserves that
-field through loading, mixing, and batch sampling so behavior-regularized
-algorithms can regularize next-state policy targets without a separate data
-pipeline.
-
-The first packaged `Cal-QL` path is likewise intentionally narrow: vector
-observations, continuous `Box` actions, and offline datasets only, implemented
-as a calibrated follow-on to the existing `CQL` lane.
-
-When an offline dataset carries `returns_to_go`, the package now preserves
-that field through loading, mixing, and batch sampling. `Cal-QL` also derives
-discounted returns-to-go automatically from the processed reward stream when a
-dataset does not provide them explicitly.
-
-The first packaged `EDAC` path is likewise intentionally narrow: vector
-observations, continuous `Box` actions, and offline datasets only, implemented
-as an ensemble-diversified follow-on to the existing `REDQ` lane with a fixed
-entropy coefficient in v1.
-
-The first packaged `RLPD` path is likewise intentionally narrow: vector
-observations, continuous `Box` actions, single-process online collection, and
-prior data loaded from the existing offline dataset stack, implemented as an
-offline-to-online follow-on to the existing `SAC` lane through offline
-pretraining plus mixed offline/online update batches.
-
-The first packaged `XQL` path is likewise intentionally narrow: vector
-observations, continuous `Box` actions, and offline datasets only, implemented
-as an extreme value follow-on to the existing `IQL` lane.
-
-For the current `AWR` wave, package-facing tests have been added but are still
-intentionally not executed until test execution is explicitly requested.
-
-For the current `MARWIL` wave, package-facing tests have also been added but are
-still intentionally not executed until test execution is explicitly requested.
-
-For the current `EDAC` wave, package-facing tests have been added but are still
-intentionally not executed until test execution is explicitly requested.
-
-For the current `RLPD` wave, package-facing tests have also been added but are
-still intentionally not executed until test execution is explicitly requested.
-
-## Goal-Conditioned Training
-
-The first packaged `HER` path targets goal-conditioned continuous control
-through a DDPG backend plus future-goal replay relabeling.
-
-The repository also ships a built-in sparse-reward point-goal environment so
-the package has a stable goal-conditioned reference task without external
-robotics dependencies:
-
-```yaml
-algo: her
-env_id: RL-PointGoal1D-v0
-seed: 7
-total_timesteps: 20000
-output_dir: runs/her-point-goal
-eval_episodes: 5
-algo_kwargs:
-  buffer_capacity: 50000
-  batch_size: 256
-  learning_starts: 256
-  her_ratio: 0.8
-  goal_selection_strategy: future
-  eval_interval: 1000
-```
-
-Programmatic usage goes through the same package API surface:
+| Layer | Purpose | Examples |
+|-------|---------|----------|
+| **Core** | Stable train / eval / resume for mainstream algorithms | PPO, DQN, SAC, TD3, IQL, CQL, BC... |
+| **Contrib** | Experimental extensions with additional complexity | RecurrentPPO (LSTM), GAIL |
+| **Zoo** | Named presets, benchmark manifests, launch recipes | Atari DQN/PPO presets, benchmark YAML |
 
 ```python
-from rl_training import HER, TrainConfig
+# Core: stable algorithms
+from rl_training import PPO, DQN, SAC, IQL, HER, TrainConfig
 
-algo = HER(
-    TrainConfig(
-        algo="her",
-        env_id="RL-PointGoal1D-v0",
-        seed=7,
-        total_timesteps=20000,
-        output_dir="runs/her-point-goal",
-    )
-)
-result = algo.learn()
+# Contrib: experimental extensions
+from rl_training.contrib import RecurrentPPO
 ```
 
-## Reward Wrappers
+## Algorithms
 
-Generic reward transforms are configured under `env_kwargs.wrappers.reward`,
-separate from Atari preprocessing:
+AxiomRL implements **80+ algorithms** across six major categories:
+
+<p align="center">
+  <img src="docs/assets/algorithms.svg" alt="Algorithm Taxonomy" width="100%">
+</p>
+
+### Full Algorithm Table
+
+<details>
+<summary><b>On-Policy</b></summary>
+
+| Algorithm | Type | Action Space |
+|-----------|------|--------------|
+| PPO | Policy gradient | Box, Discrete |
+| A2C | Policy gradient | Box, Discrete |
+| TRPO | Policy gradient | Box, Discrete |
+| PPG | Policy gradient | Discrete |
+| GAIL | Imitation + PG | Box, Discrete |
+| IMPALA | Distributed AC | Discrete |
+| APPO | Distributed AC | Discrete |
+| RecurrentPPO | Recurrent PG (contrib) | Box, Discrete |
+| ARS | Evolutionary | Box |
+| OpenAI ES | Evolutionary | Box |
+
+</details>
+
+<details>
+<summary><b>Off-Policy (Continuous)</b></summary>
+
+| Algorithm | Type | Action Space |
+|-----------|------|--------------|
+| SAC | Actor-Critic | Box |
+| TD3 | Actor-Critic | Box |
+| DDPG | Actor-Critic | Box |
+| CrossQ | Low-tuning AC | Box |
+| REDQ | Ensemble AC | Box |
+| TQC | Quantile AC | Box |
+| D4PG | Distributed AC | Box |
+| NAF | Q-learning | Box |
+| Discrete SAC | Actor-Critic | Discrete |
+| DrQ | Pixel-based (SAC) | Box |
+| CURL | Pixel-based (contrastive) | Box |
+| DrQ-v2 | Pixel-based (TD3) | Box |
+
+</details>
+
+<details>
+<summary><b>Value-Based (Discrete)</b></summary>
+
+| Algorithm | Type | Notes |
+|-----------|------|-------|
+| DQN | Value-based | Classic |
+| Double DQN | Value-based | Reduced overestimation |
+| Dueling DQN | Value-based | Advantage decomposition |
+| Noisy DQN | Exploration | Noisy networks |
+| Prioritized DQN | Sampling | Prioritized replay |
+| N-Step DQN | Multi-step | N-step returns |
+| C51 (Categorical DQN) | Distributional | Categorical distribution |
+| QR-DQN | Distributional | Quantile regression |
+| IQN | Distributional | Implicit quantiles |
+| FQF | Distributional | Fully quantile function |
+| Rainbow DQN | Combined | Multi-enhancement combo |
+| Expected SARSA | On-policy value | Expected value |
+| Boltzmann DQN/Double | Exploration | Softmax policy |
+| Mellowmax DQN | Exploration | Mellowmax operator |
+| Soft DQN/Double | Exploration | Soft Q-learning |
+| Munchausen DQN/Double | Regularization | Self-regularized |
+| CQL-DQN/Double | Conservative | Conservative penalty |
+| Hysteretic DQN | Multi-agent | Asymmetric learning rates |
+| Clipped Double DQN | Regularization | Min of two Q-networks |
+| Advantage Learning DQN | Advantage | AL operator |
+| Persistent AL DQN | Advantage | Persistent AL |
+| DRQN | Recurrent | LSTM Q-network |
+| R2D2 | Recurrent | Replay with recurrence |
+| Agent57 | Recurrent | Adaptive exploration |
+| SPR | Self-predictive | Representation learning |
+
+</details>
+
+<details>
+<summary><b>Offline RL</b></summary>
+
+| Algorithm | Type | Notes |
+|-----------|------|-------|
+| BC | Imitation | Behavioral cloning |
+| AWR | Weighted | Advantage-weighted regression |
+| AWAC | Weighted AC | Advantage-weighted AC |
+| MARWIL | Weighted | RLlib-style weighted imitation |
+| BCQ | Constrained | Batch-constrained Q-learning |
+| BEAR | Constrained | Support-matching AC |
+| CRR | Constrained | Critic-regularized regression |
+| TD3+BC | Constrained | TD3 with BC penalty |
+| ReBRAC | Constrained | Behavior-regularized AC |
+| IQL | Value-based | In-sample Q-learning |
+| CQL | Conservative | Conservative Q-learning |
+| Cal-QL | Conservative | Calibrated CQL |
+| XQL | Value-based | Extreme value regression |
+| EDAC | Ensemble | Ensemble-diversified AC |
+| RLPD | Online-to-offline | Prior data with SAC |
+
+</details>
+
+<details>
+<summary><b>Model-Based & World Models</b></summary>
+
+| Algorithm | Type | Notes |
+|-----------|------|-------|
+| PETS | MPC | Ensemble dynamics + CEM |
+| MOPO | Model-based offline | Pessimistic reward |
+| MBPO | Model-based online | Dyna-style rollouts |
+| Decision Transformer | Sequence model | Offline sequence decision |
+| Dreamer | World model | Latent imagination |
+| DreamerV3 | World model | Symlog + discrete latent |
+| Diamond | World model | Diffusion world model |
+| MuZero | Planning | Learned model tree search |
+| Gumbel MuZero | Planning | Policy improvement with Gumbel |
+| EfficientZero | Planning | Sample-efficient MuZero |
+| ScaleZero | Planning | Scalable MuZero |
+
+</details>
+
+<details>
+<summary><b>Goal-Conditioned & Special</b></summary>
+
+| Algorithm | Type | Notes |
+|-----------|------|-------|
+| HER | Goal-conditioned | Hindsight experience replay |
+| PODreamer | World model | Partially observable Dreamer |
+| EADream | World model | Energy-aware Dreamer |
+| MoW | World model | Mixture of World models |
+| JOWA | World model | Joint World-Action model |
+| HorizonImagination | World model | Horizon-aware imagination |
+
+</details>
+
+## Training Workflow
+
+```mermaid
+graph LR
+    A[YAML Config] --> B[TrainConfig]
+    B --> C[Algorithm]
+    C --> D{Training Loop}
+    D --> E[Collector]
+    D --> F[Buffer]
+    D --> G[Evaluator]
+    D --> H[TensorBoard]
+    G -->|Early Stop?| I{Continue?}
+    I -->|Yes| D
+    I -->|No| J[Checkpoint]
+    J --> K[axiomrl eval]
+    J --> L[axiomrl resume]
+```
+
+## Configuration
+
+AxiomRL uses YAML files for experiment configuration. Every training parameter is declarative and reproducible:
 
 ```yaml
-env_kwargs:
-  wrappers:
-    reward:
-      scale: 0.1
-      shift: 0.0
-      clip: [-1.0, 1.0]
+algo: ppo
+env_id: CartPole-v1
+seed: 42
+total_timesteps: 100000
+output_dir: runs/ppo-cartpole
+eval_episodes: 10
+algo_kwargs:
+  learning_rate: 0.0003
+  n_steps: 2048
+  batch_size: 64
+  n_epochs: 10
+  gamma: 0.99
+  gae_lambda: 0.95
+  clip_range: 0.2
+  ent_coef: 0.01
 ```
 
-That wrapper path is intended for reusable reward shaping such as scaling,
-shifting, and clipping without changing trainer code.
-
-Named presets are also supported for common RL transforms:
-
-```yaml
-env_kwargs:
-  wrappers:
-    reward:
-      preset: sign_clip
-```
-
-Current presets include `sign_clip`, `clip_1`, and `sparse_goal_zero_one`.
-
-## Training Controls
-
-Trainers now support evaluation cadence and early-stopping rules through
-`algo_kwargs`:
+### Early Stopping & LR Scheduling
 
 ```yaml
 algo_kwargs:
@@ -594,59 +380,474 @@ algo_kwargs:
     patience: 5
     min_delta: 1.0
     min_steps: 5000
-```
-
-The current first-class early-stopping path is wired into `A2C`, `PPO`,
-`PPG`,
-`TRPO`, `Discrete SAC`, `CrossQ`, `DrQ`, `DrQ-v2`,
-`RecurrentPPO`, `DQN`, `DDPG`, `NAF`, `DRQN`, `R2D2`, `D4PG`, `SAC`, `TD3`, `REDQ`, `TQC`, `BC`, `AWR`, `AWAC`, `MARWIL`,
-`BCQ`, `BEAR`, `CRR`, `Cal-QL`, `EDAC`, `RLPD`, `XQL`, `ReBRAC`, `HER`, `IQL`, `CQL`, and `TD3+BC`.
-
-Offline trainers also support simple update-budget and learning-rate schedule
-controls:
-
-```yaml
-algo_kwargs:
-  max_epochs: 100
-  max_updates: 1000
-  warmup_steps: 100
   learning_rate_schedule:
-    type: cosine
+    type: cosine    # constant | linear | cosine
     start: 1.0
     end: 0.1
 ```
 
-The current schedule kinds are `constant`, `linear`, and `cosine`. Metrics now
-track `epoch`, `update_count`, `lr_scale`, and the resolved `learning_rate`
-for the trainer loop.
+### Discrete Exploration Scheduling
 
-## Contrib
+```yaml
+algo_kwargs:
+  epsilon_schedule:
+    type: cosine    # constant | linear | cosine
+    start: 1.0
+    end: 0.01
+  epsilon_warmup_steps: 10000
+```
 
-Higher-complexity algorithms can live under `rl_training.contrib` without
-changing the stable core API surface.
+`epsilon_schedule` is supported by epsilon-greedy discrete trainers such as `dqn`,
+`double_dqn`, `dueling_dqn`, `rainbow_dqn`, `fqf`, `iqn`, `spr`, `jowa`,
+`drqn`, `r2d2`, and `agent57`. If omitted, the legacy
+`epsilon_start / epsilon_end / exploration_fraction` path still works.
 
-The root package keeps that split explicit: stable algorithms stay under
-`rl_training`, while recurrent and experimental extensions are accessed through
-`rl_training.contrib`.
+### Entropy Coefficient Scheduling
+
+```yaml
+# PPO-style trainers
+algo_kwargs:
+  ent_coef_schedule:
+    type: linear    # constant | linear | cosine
+    start: 0.02
+    end: 0.001
+  ent_coef_warmup_steps: 5000
+
+# Dreamer-style trainers
+algo_kwargs:
+  entropy_coef_schedule:
+    type: cosine
+    start: 0.003
+    end: 0.0001
+  entropy_coef_warmup_steps: 10000
+```
+
+Entropy scheduling is supported by PPO-style policy-gradient trainers such as
+`ppo`, `a2c`, `impala`, `ppg`, `appo`, `recurrent_ppo`, `trpo`, and `gail`, plus
+Dreamer-family trainers such as `dreamer`, `dreamerv3`, `diamond`,
+`horizon_imagination`, `po_dreamer`, `twisted`, `eadream`, and `mow`.
+If omitted, the legacy fixed `ent_coef` / `entropy_coef` values still work.
+
+### Policy Clip Scheduling
+
+```yaml
+algo_kwargs:
+  clip_coef_schedule:
+    type: linear    # constant | linear | cosine
+    start: 0.3
+    end: 0.05
+  clip_coef_warmup_steps: 5000
+```
+
+`clip_coef_schedule` is supported by clipped-policy trainers such as `ppo`,
+`appo`, `ppg`, `recurrent_ppo`, and `gail`. Fixed `clip_coef` still works, and
+`clip_range` is accepted as a compatibility alias for the fixed value, schedule,
+and warmup keys.
+
+### Search Temperature Scheduling
+
+```yaml
+algo_kwargs:
+  temperature_schedule:
+    type: linear    # constant | linear | cosine
+    start: 1.5
+    end: 0.1
+  temperature_warmup_steps: 10000
+```
+
+`temperature_schedule` is supported by MuZero-family trainers such as
+`muzero`, `gumbel_muzero`, `efficientzero`, and `scalezero`. Fixed
+`temperature` still works if no schedule is configured.
+
+### Root Noise Scheduling
+
+```yaml
+algo_kwargs:
+  root_exploration_fraction_schedule:
+    type: linear    # constant | linear | cosine
+    start: 0.5
+    end: 0.05
+  root_exploration_fraction_warmup_steps: 10000
+```
+
+`root_exploration_fraction_schedule` is supported by MuZero-family trainers such
+as `muzero`, `gumbel_muzero`, `efficientzero`, and `scalezero`. Fixed
+`root_exploration_fraction` still works if no schedule is configured.
+
+### Search Simulation Scheduling
+
+```yaml
+algo_kwargs:
+  num_simulations_schedule:
+    type: linear    # constant | linear | cosine
+    start: 25
+    end: 5
+  num_simulations_warmup_steps: 10000
+```
+
+`num_simulations_schedule` is supported by MuZero-family trainers such as
+`muzero`, `gumbel_muzero`, `efficientzero`, and `scalezero`. Fixed
+`num_simulations` still works if no schedule is configured.
+
+### Offline Dataset Configuration
+
+```yaml
+# Single dataset
+algo_kwargs:
+  dataset_kind: npz          # random | npz | pt | minari
+  dataset_path: data/pendulum_medium.npz
+
+# Mixed datasets
+algo_kwargs:
+  dataset_mix:
+    - kind: npz
+      dataset_path: data/pendulum_medium.npz
+      weight: 0.7
+    - kind: pt
+      dataset_path: data/pendulum_expert.pt
+      weight: 0.3
+  dataset_mix_size: 200000
+
+# Minari datasets
+algo_kwargs:
+  dataset_kind: minari
+  dataset_id: hopper-medium-v0
+  dataset_download: true
+```
+
+### Reward Wrappers
+
+```yaml
+# Manual transforms
+env_kwargs:
+  wrappers:
+    reward:
+      scale: 0.1
+      shift: 0.0
+      clip: [-1.0, 1.0]
+
+# `strategy` is an alias for `preset`
+# Named presets:
+#   sign_clip | atari_clip | clip_1 | sparse_goal_zero_one
+#   survival_penalty | goal_success_bonus
+env_kwargs:
+  wrappers:
+    reward:
+      strategy: sign_clip
+
+# Outcome shaping for sparse/goal tasks
+env_kwargs:
+  wrappers:
+    reward:
+      step_penalty: -0.01
+      success_bonus: 1.0
+      failure_penalty: -1.0
+      success_keys: [is_success, success, goal_achieved]
+
+# Atari / ALE recipe
+# If `wrappers.reward` is active, Atari default `clip_reward`
+# is disabled unless you explicitly set `wrappers.atari.clip_reward: true`.
+env_kwargs:
+  wrappers:
+    reward:
+      strategy: atari_clip
+
+# Survival / time-cost recipe
+env_kwargs:
+  wrappers:
+    reward:
+      strategy: survival_penalty
+```
+
+`reward` wrappers now support both scalar transforms and episode-outcome shaping. Use `step_penalty` for per-step costs, `terminal_bonus` for end-of-episode adjustments, and `success_bonus` / `failure_penalty` when the environment exposes a success flag in `info` such as `is_success` or `success`. For Atari-style training, set `reward.strategy: atari_clip`; the env factory disables default Atari reward clipping when a non-identity generic reward strategy is configured, unless `wrappers.atari.clip_reward` is explicitly set.
+
+### Mode-Specific Env Overrides
+
+```yaml
+env_kwargs:
+  frameskip: 1
+  repeat_action_probability: 0.0
+  full_action_space: false
+  wrappers:
+    atari:
+      screen_size: 84
+      frame_skip: 4
+      noop_max: 30
+      grayscale_obs: true
+      frame_stack: 4
+      clip_reward: true
+      channel_first: true
+
+  # Applied only when build_env(..., evaluation=False)
+  training:
+    repeat_action_probability: 0.0
+
+  # Applied only when build_env(..., evaluation=True)
+  evaluation:
+    repeat_action_probability: 0.25
+    wrappers:
+      atari:
+        clip_reward: false
+```
+
+Use `env_kwargs.training` and `env_kwargs.evaluation` to keep one scenario definition while changing train-time versus eval-time protocol. Nested mappings are merged recursively, so evaluation overrides can change only `wrappers.atari.clip_reward` without repeating the full Atari wrapper block.
+
+### Evaluation Video Capture
+
+```yaml
+env_kwargs:
+  evaluation:
+    render_mode: rgb_array
+    wrappers:
+      video:
+        episode_trigger_every: 1
+        video_length: 1000
+        name_prefix: breakout-eval
+```
+
+`wrappers.video` applies `gym.wrappers.RecordVideo`. If `video_folder` is omitted, videos are written to `output_dir/videos/evaluation` for evaluation envs and `output_dir/videos/training` for training envs. Put the config under `env_kwargs.evaluation` when you want evaluation-only capture.
+
+### Benchmark Metadata
+
+```yaml
+benchmark:
+  best_metric: eval_return_mean
+  best_metric_mode: max
+  score_normalization:
+    type: human_random
+    source: atari_breakout_reference
+```
+
+`benchmark.score_normalization` accepts explicit `random_score` / `human_score` values or a named `source` such as `atari_breakout_reference`. When configured, evaluation metrics include `eval_human_normalized_score`. Training runs also maintain `checkpoints/best.pt` using `benchmark.best_metric` / `benchmark.best_metric_mode`, and `metadata.json` is updated with the best checkpoint source step and metric value. Zoo report and leaderboard JSON exports also carry compact `manifest_metadata` identity info, `manifest_source` path-resolution info, `manifest_alignment_summary` drift counts plus severity and named drifted presets, gate-aware `manifest_alignment_fail_reasons`, manifest-derived `protocol_metadata`, resolved `score_normalization_metadata`, and per-row `preset_metadata` so downstream analysis can keep protocol context attached to each preset aggregate.
+
+Zoo presets can inherit these defaults automatically from their suite manifest. For example, `axiomrl train --config zoo/atari/dqn_breakout.yaml` now picks up:
+
+- benchmark metadata such as `suite`, `preset_name`, `protocol_name`, and score-normalization defaults
+- protocol-specific env overrides under `env_kwargs.training` / `env_kwargs.evaluation`
+- sticky-action evaluation defaults from the Atari benchmark manifest
+
+### Pixel Observations
+
+```yaml
+algo: drq
+env_id: Pendulum-v1
+env_kwargs:
+  render_mode: rgb_array
+  wrappers:
+    pixels:
+      resize_shape: [84, 84]
+      frame_stack: 3
+      channel_first: true
+algo_kwargs:
+  features_dim: 256
+  augmentation_pad: 4
+```
+
+## Programmatic Usage
+
+### Basic Training
 
 ```python
-from rl_training.contrib import RecurrentPPO
-from rl_training.experiment.config import TrainConfig
+from rl_training import PPO, TrainConfig
 
-algo = RecurrentPPO(TrainConfig(...))
+algo = PPO(TrainConfig(
+    algo="ppo",
+    env_id="CartPole-v1",
+    seed=42,
+    total_timesteps=100_000,
+))
 result = algo.learn()
 ```
 
-## Package Layout
+### Offline RL
 
-Use the package layers deliberately:
+```python
+from rl_training import IQL, TrainConfig
 
-- `core`: stable train / eval / resume workflows for mainstream algorithms and
-  environments that fit the main runtime.
-- `contrib`: algorithms such as `RecurrentPPO` that add state semantics or
-  experimental complexity without forcing those concerns into every core path.
-- `zoo`: named presets, manifests, and benchmark launch recipes that sit on top
-  of the runtime instead of reimplementing it.
+algo = IQL(TrainConfig(
+    algo="iql",
+    env_id="Pendulum-v1",
+    seed=7,
+    total_timesteps=20_000,
+    algo_kwargs={
+        "dataset_kind": "npz",
+        "dataset_path": "data/pendulum_medium.npz",
+        "batch_size": 256,
+        "hidden_sizes": [256, 256],
+    },
+))
+result = algo.learn()
+```
 
-That split is what lets the repository grow toward more algorithms without
-turning into a pile of disconnected scripts.
+### Goal-Conditioned
+
+```python
+from rl_training import HER, TrainConfig
+
+algo = HER(TrainConfig(
+    algo="her",
+    env_id="RL-PointGoal1D-v0",
+    seed=7,
+    total_timesteps=20_000,
+    algo_kwargs={
+        "buffer_capacity": 50_000,
+        "her_ratio": 0.8,
+        "goal_selection_strategy": "future",
+    },
+))
+result = algo.learn()
+```
+
+### Contrib (Experimental)
+
+```python
+from rl_training.contrib import RecurrentPPO
+from rl_training import TrainConfig
+
+algo = RecurrentPPO(TrainConfig(
+    algo="recurrent_ppo",
+    env_id="BreakoutNoFrameskip-v4",
+    seed=42,
+    total_timesteps=1_000_000,
+))
+result = algo.learn()
+```
+
+## Project Structure
+
+```
+axiomrl/
+├── configs/                    # Algorithm config YAML files
+│   ├── ppo/                    #   PPO presets (cartpole, atari, ...)
+│   ├── dqn/                    #   DQN presets
+│   ├── sac/                    #   SAC presets
+│   └── ...                     #   80+ algorithm directories
+├── docs/
+│   ├── assets/                 # SVG diagrams and images
+│   ├── plans/                  # Design documents
+│   └── research/               # Research notes
+├── examples/                   # Reference training scripts
+├── scripts/                    # Utility scripts
+│   ├── train.py
+│   └── benchmark_zoo.py
+├── src/rl_training/            # Main package
+│   ├── algorithms/             #   Algorithm implementations (70+ files)
+│   ├── api/                    #   Public API wrappers
+│   ├── contrib/                #   Experimental extensions
+│   ├── data/                   #   Buffers, datasets, samplers
+│   ├── envs/                   #   Env factory, wrappers
+│   ├── experiment/             #   Config, checkpointing, logging
+│   ├── models/                 #   MLP, CNN, LSTM networks
+│   ├── policies/               #   Policy abstractions
+│   └── runtime/                #   Trainer, evaluator, collector
+├── tests/                      # Test suite (100+ tests)
+├── zoo/                        # Benchmark presets
+│   └── atari/
+└── pyproject.toml
+```
+
+## Zoo: Presets & Benchmarks
+
+The Zoo layer provides curated presets and benchmark recipes on top of the core runtime:
+
+```bash
+# List all available zoo commands
+axiomrl zoo --format commands
+axiomrl zoo --format report --runs-dir runs
+axiomrl zoo --format report --runs-dir runs --report-output json --algo dqn
+axiomrl zoo --format report --runs-dir runs --report-output csv --env-id ALE/Breakout-v5 --sort-by best_eval_return_mean --descending
+axiomrl zoo --format report --runs-dir runs --report-output json --output reports/benchmark_report.json
+axiomrl zoo --format report --runs-dir runs --report-output csv --output reports/benchmark_report.csv
+axiomrl zoo --format report --runs-dir runs --group-by preset --sort-by best_eval_return_mean --descending --top-k 5
+axiomrl zoo --format leaderboard --runs-dir runs --group-by preset --top-k 10
+axiomrl zoo --format leaderboard --runs-dir runs --group-by preset --min-seeds 3
+axiomrl zoo --format leaderboard --runs-dir runs --group-by preset --leaderboard-metric latest-normalized
+axiomrl zoo --format leaderboard --runs-dir runs --group-by preset --leaderboard-metric gap-return
+axiomrl zoo --format leaderboard --runs-dir runs --group-by preset --compare-to latest
+axiomrl zoo --format leaderboard --runs-dir runs --group-by preset --compare-to latest --score-view return
+axiomrl zoo --format leaderboard --runs-dir runs --group-by preset --leaderboard-metric stability-normalized
+axiomrl zoo --format leaderboard --runs-dir runs --group-by preset --leaderboard-metric confidence-normalized
+axiomrl zoo --format leaderboard --runs-dir runs --group-by preset --leaderboard-metric median-normalized
+axiomrl zoo --format leaderboard --runs-dir runs --group-by preset --leaderboard-metric iqr-normalized
+axiomrl zoo --format leaderboard --runs-dir runs --group-by preset --baseline-preset dqn_breakout --leaderboard-metric delta-vs-baseline-normalized
+axiomrl zoo --format leaderboard --runs-dir runs --group-by preset --report-output json --fail-on-manifest-drift
+axiomrl zoo --format leaderboard --runs-dir runs --group-by preset --report-output json --fail-on-manifest-drift-severity error
+axiomrl zoo --format leaderboard --runs-dir runs --group-by preset --report-output json --fail-on-manifest-drift-type unknown-preset
+
+# Run a zoo preset
+axiomrl train --config zoo/atari/dqn_breakout.yaml
+axiomrl train --config zoo/atari/ppo_breakout.yaml
+```
+
+`axiomrl zoo --format report` prints both per-run lines and aggregate summaries grouped by `(algo, env_id)` by default. Run rows now include `best_minus_latest_*` delta fields. Aggregate rows add explicit `seed_count`, latest-vs-best gap metrics, `best_over_latest_*` ratios, rank columns for best/latest return and normalized score, cross-seed stability summaries such as latest `min/max/std`, confidence summaries such as `stderr` plus `ci95` half-width, robustness summaries such as `median` plus `iqr`, optional manifest-derived `preset_metadata`, per-run manifest drift flags (`manifest_preset_known`, `manifest_protocol_matches_manifest`, `manifest_alignment_status`, `manifest_alignment_severity`), per-aggregate drift counters plus severity, and optional baseline-relative delta/ratio fields so plateau detection, consistency checks, uncertainty-aware ranking, outlier-resistant comparisons, benchmark-protocol traceability, and baseline uplift tracking stay visible in the exported data. When `--baseline-preset` is active, machine-readable outputs also include a `baseline_summary` section with top movers and regressions by return and normalized-score delta, computed from the full filtered preset aggregate set even if `--top-k` truncates visible leaderboard entries. `--group-by preset` switches aggregates to benchmark preset level, `--min-seeds` drops under-seeded aggregate groups while keeping raw run rows in report output, `--top-k` truncates sorted outputs, and `--format leaderboard` renders only ranked aggregate entries. On benchmarks with score normalization configured, leaderboard default sorting now prefers `best_eval_human_normalized_score`; otherwise it falls back to `best_eval_return_mean`. Use `--compare-to latest|best` as the higher-level “final vs peak” switch, `--score-view return|normalized` as the return-vs-normalized axis switch, `--baseline-preset <preset>` when you want delta/ratio comparisons against a named preset while using `--group-by preset`, or `--leaderboard-metric` when you want a more specific alias instead of raw `--sort-by` fields; supported metric modes include `best-return`, `latest-return`, `gap-return`, `stability-return`, `confidence-return`, `median-return`, `iqr-return`, `delta-vs-baseline-return`, `ratio-vs-baseline-return`, `best-normalized`, `latest-normalized`, `gap-normalized`, `stability-normalized`, `confidence-normalized`, `median-normalized`, `iqr-normalized`, `delta-vs-baseline-normalized`, and `ratio-vs-baseline-normalized`. Stability modes rank lower cross-seed standard deviation higher, confidence modes rank lower 95% CI half-width higher, median modes rank higher robust central tendency higher, IQR modes rank lower cross-seed spread higher, and baseline modes rank larger uplift over the named baseline higher. `--baseline-preset` requires `--group-by preset`. `--score-view normalized` requires score normalization in the benchmark manifest. `--report-output json` and `--report-output csv` expose the same data for downstream analysis, including top-level `manifest_source` (`requested_path`, `resolved_path`, `source_kind`), top-level `manifest_metadata` (`fingerprint`, preset inventory), top-level `manifest_alignment_summary` (`total_runs`, `aligned_runs`, `drifted_runs`, mismatch counters, severity, named drifted presets), top-level `manifest_alignment_fail_reasons` (derived from the active fail-gate flags), top-level `protocol_metadata`, resolved `score_normalization_metadata`, and per-row `preset_metadata`/`preset_config`/`preset_description`; `--output` writes the rendered artifact to disk, `--fail-on-manifest-drift` fails on any `warning` or `error` drift, `--fail-on-manifest-drift-severity error` only fails on `error` drift, `--fail-on-manifest-drift-type unknown-preset|protocol-mismatch` fails on selected drift categories and may be repeated, and `--algo`, `--env-id`, `--sort-by`, and `--descending` let you narrow and rank benchmark slices directly in the CLI.
+
+## Design Influences
+
+AxiomRL's architecture draws from the best ideas in the RL ecosystem:
+
+| Library | Influence |
+|---------|-----------|
+| [Stable-Baselines3](https://github.com/DLR-RM/stable-baselines3) | Stable algorithm core, common API, SB3-Contrib split |
+| [RL Baselines3 Zoo](https://github.com/DLR-RM/rl-baselines3-zoo) | Zoo layer, training framework, preset-based experiments |
+| [CleanRL](https://github.com/vwxyzjn/cleanrl) | Readable single-file references, reproducibility focus |
+| [Tianshou](https://github.com/thu-ml/tianshou) | Modular runtime boundaries, collector/trainer/buffer design |
+
+## Roadmap
+
+```mermaid
+graph TD
+    subgraph "Done"
+        A["Core algorithms (PPO, DQN, SAC, TD3, ...)"]
+        B["Offline RL stack (IQL, CQL, BC, BCQ, ...)"]
+        C["Value-based expansion (Rainbow, C51, IQN, ...)"]
+        D["Pixel-based control (DrQ, CURL, DrQ-v2)"]
+        E["Goal-conditioned (HER)"]
+        F["Model-based (PETS, MOPO, MBPO)"]
+        G["World Models (Dreamer, MuZero families)"]
+    end
+
+    subgraph "In Progress"
+        H["Wider offline data mixing"]
+        I["Training budget controls"]
+        J["Benchmark validation"]
+    end
+
+    subgraph "Next"
+        K["Distributed training"]
+        L["Multi-agent RL"]
+        M["Documentation site"]
+        N["Pre-trained model hub"]
+    end
+
+    A --> H
+    B --> H
+    H --> K
+    I --> J
+    J --> M
+```
+
+## Contributing
+
+Contributions are welcome! The codebase follows a layered approach:
+
+1. **Core changes** go into `src/rl_training/algorithms/` and must not break existing `train / eval / resume` workflows
+2. **Experimental algorithms** belong in `src/rl_training/contrib/`
+3. **Presets and recipes** go into `zoo/` or `configs/`
+
+```bash
+# Run tests
+python -m pytest tests/ -v
+
+# Run a specific test
+python -m pytest tests/test_ppo.py -v
+```
+
+## License
+
+MIT
+
+---
+
+<p align="center">
+  <sub>Built with PyTorch · Gymnasium · TensorBoard</sub>
+</p>

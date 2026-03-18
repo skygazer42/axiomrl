@@ -8,6 +8,7 @@ from torch.nn import functional as F
 
 from rl_training.algorithms._advantage_utils import normalize_advantages
 from rl_training.algorithms.base import UpdateResult
+from rl_training.models.cnn import CNNActorCritic
 from rl_training.models.mlp_actor_critic import MLPActorCritic
 
 
@@ -45,7 +46,7 @@ class A2C:
     def __init__(
         self,
         *,
-        policy: MLPActorCritic,
+        policy: MLPActorCritic | CNNActorCritic,
         learning_rate: float,
         ent_coef: float,
         vf_coef: float,

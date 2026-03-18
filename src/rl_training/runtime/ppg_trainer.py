@@ -12,16 +12,17 @@ from rl_training.data.rollout_buffer import RolloutBuffer
 from rl_training.envs.factory import build_env, make_vector_env
 from rl_training.experiment.checkpointing import CheckpointState
 from rl_training.experiment.config import TrainConfig
+from rl_training.models.cnn import CNNPPGModel
 from rl_training.models.mlp_ppg import MLPPPGModel
 from rl_training.runtime.callbacks import Callback, CallbackList, merge_callbacks
 from rl_training.runtime.collector import CollectResult
-from rl_training.runtime.controls import build_control_callbacks
+from rl_training.runtime.controls import build_control_callbacks, resolve_clip_coefficient, resolve_entropy_coefficient
 from rl_training.runtime.run_utils import create_training_run, resolve_device, save_training_checkpoint
 from rl_training.runtime.trainer import TrainResult, TrainerState
 from rl_training.runtime.types import MetricDict
 
 
-def _infer_spaces(envs: gym.vector.SyncVectorEnv) -> tuple[int, int]:
+def _infer_spaces(envs: gym.vector.SyncVectorEnv) -> tuple[tuple[int, ...], int]:
     obs_space = envs.single_observation_space
     action_space = envs.single_action_space
 
@@ -29,14 +30,30 @@ def _infer_spaces(envs: gym.vector.SyncVectorEnv) -> tuple[int, int]:
         raise TypeError(f"unsupported observation space for PPG trainer: {type(obs_space)!r}")
     if not isinstance(action_space, gym.spaces.Discrete):
         raise TypeError(f"unsupported action space for PPG trainer: {type(action_space)!r}")
-    if obs_space.shape is None or len(obs_space.shape) != 1:
-        raise ValueError(f"expected flat 1D observations, got shape={obs_space.shape!r}")
+    if obs_space.shape is None or len(obs_space.shape) not in (1, 3):
+        raise ValueError(f"expected flat 1D or channel-first image observations, got shape={obs_space.shape!r}")
 
-    return int(obs_space.shape[0]), int(action_space.n)
+    return tuple(int(dim) for dim in obs_space.shape), int(action_space.n)
+
+
+def _build_model(config: TrainConfig, *, obs_shape: tuple[int, ...], action_dim: int) -> MLPPPGModel | CNNPPGModel:
+    if len(obs_shape) == 1:
+        return MLPPPGModel(
+            obs_dim=obs_shape[0],
+            action_dim=action_dim,
+            hidden_sizes=tuple(config.algo_kwargs.get("hidden_sizes", (64, 64))),
+        )
+
+    return CNNPPGModel(
+        obs_shape=obs_shape,
+        action_dim=action_dim,
+        hidden_sizes=tuple(config.algo_kwargs.get("head_hidden_sizes", config.algo_kwargs.get("hidden_sizes", (512,)))),
+        features_dim=int(config.algo_kwargs.get("features_dim", 512)),
+    )
 
 
 def _evaluate_ppg_policy(
-    model: MLPPPGModel,
+    model: MLPPPGModel | CNNPPGModel,
     config: TrainConfig,
     *,
     device: torch.device,
@@ -92,10 +109,7 @@ def _restore_auxiliary_chunks(
     if checkpoint_state is None or checkpoint_state.buffer_state is None:
         return [], []
 
-    aux_obs_chunks = [
-        torch.as_tensor(chunk, dtype=torch.float32, device=device)
-        for chunk in checkpoint_state.buffer_state.get("aux_obs_chunks", [])
-    ]
+    aux_obs_chunks = [torch.as_tensor(chunk, device=device) for chunk in checkpoint_state.buffer_state.get("aux_obs_chunks", [])]
     aux_return_chunks = [
         torch.as_tensor(chunk, dtype=torch.float32, device=device)
         for chunk in checkpoint_state.buffer_state.get("aux_return_chunks", [])
@@ -107,11 +121,12 @@ def _collect_rollout(
     *,
     envs: gym.vector.SyncVectorEnv,
     buffer: RolloutBuffer,
-    model: MLPPPGModel,
+    model: MLPPPGModel | CNNPPGModel,
     obs: np.ndarray,
     device: torch.device,
     num_steps: int,
     num_envs: int,
+    buffer_obs_dtype: torch.dtype,
     trainer_state: TrainerState,
     global_step: int,
 ) -> tuple[np.ndarray, int]:
@@ -126,7 +141,7 @@ def _collect_rollout(
         dones = np.logical_or(terminated, truncated).astype(np.float32)
 
         buffer.add(
-            obs=obs_tensor,
+            obs=current_obs if buffer_obs_dtype == torch.uint8 else obs_tensor,
             actions=rollout.actions,
             rewards=torch.as_tensor(rewards, dtype=torch.float32, device=device),
             dones=torch.as_tensor(dones, dtype=torch.float32, device=device),
@@ -148,10 +163,10 @@ def _append_auxiliary_rollout(
     *,
     num_steps: int,
     num_envs: int,
-    obs_dim: int,
+    obs_shape: tuple[int, ...],
     aux_buffer_rollouts: int,
 ) -> None:
-    aux_obs_chunks.append(buffer.obs.reshape(num_steps * num_envs, obs_dim).detach().clone())
+    aux_obs_chunks.append(buffer.obs.reshape(num_steps * num_envs, *obs_shape).detach().clone())
     aux_return_chunks.append(buffer.returns.reshape(num_steps * num_envs).detach().clone())
     if len(aux_obs_chunks) > aux_buffer_rollouts:
         aux_obs_chunks.pop(0)
@@ -269,8 +284,8 @@ def train_ppg(
     minibatch_size = int(config.algo_kwargs.get("minibatch_size", max(1, config.num_envs * num_steps // 4)))
     learning_rate = float(config.algo_kwargs.get("learning_rate", 3e-4))
     aux_learning_rate = float(config.algo_kwargs.get("aux_learning_rate", learning_rate))
-    clip_coef = float(config.algo_kwargs.get("clip_coef", 0.2))
-    ent_coef = float(config.algo_kwargs.get("ent_coef", 0.01))
+    clip_coef = resolve_clip_coefficient(config, step=0, default=0.2)
+    ent_coef = resolve_entropy_coefficient(config, step=0, coefficient_key="ent_coef", default=0.01)
     vf_coef = float(config.algo_kwargs.get("vf_coef", 0.5))
     gamma = float(config.algo_kwargs.get("gamma", 0.99))
     gae_lambda = float(config.algo_kwargs.get("gae_lambda", 0.95))
@@ -282,7 +297,6 @@ def train_ppg(
     aux_value_coef = float(config.algo_kwargs.get("aux_value_coef", 1.0))
     behavior_clone_coef = float(config.algo_kwargs.get("behavior_clone_coef", 1.0))
     value_clone_coef = float(config.algo_kwargs.get("value_clone_coef", 1.0))
-    hidden_sizes = tuple(config.algo_kwargs.get("hidden_sizes", (64, 64)))
 
     torch.manual_seed(config.seed)
     np.random.seed(config.seed)
@@ -292,8 +306,9 @@ def train_ppg(
     metrics: MetricDict = {}
 
     try:
-        obs_dim, action_dim = _infer_spaces(envs)
-        model = MLPPPGModel(obs_dim=obs_dim, action_dim=action_dim, hidden_sizes=hidden_sizes).to(device)
+        obs_shape, action_dim = _infer_spaces(envs)
+        model = _build_model(config, obs_shape=obs_shape, action_dim=action_dim).to(device)
+        buffer_obs_dtype = torch.uint8 if len(obs_shape) == 3 else torch.float32
         algorithm = PPG(
             model=model,
             learning_rate=learning_rate,
@@ -321,9 +336,10 @@ def train_ppg(
             buffer = RolloutBuffer(
                 num_steps=num_steps,
                 num_envs=config.num_envs,
-                obs_shape=(obs_dim,),
+                obs_shape=obs_shape,
                 action_shape=(),
                 device=device,
+                obs_dtype=buffer_obs_dtype,
             )
 
             obs, global_step = _collect_rollout(
@@ -334,6 +350,7 @@ def train_ppg(
                 device=device,
                 num_steps=num_steps,
                 num_envs=config.num_envs,
+                buffer_obs_dtype=buffer_obs_dtype,
                 trainer_state=trainer_state,
                 global_step=global_step,
             )
@@ -363,10 +380,19 @@ def train_ppg(
                 aux_return_chunks,
                 num_steps=num_steps,
                 num_envs=config.num_envs,
-                obs_dim=obs_dim,
+                obs_shape=obs_shape,
                 aux_buffer_rollouts=aux_buffer_rollouts,
             )
 
+            current_ent_coef = resolve_entropy_coefficient(
+                config,
+                step=global_step,
+                coefficient_key="ent_coef",
+                default=0.01,
+            )
+            current_clip_coef = resolve_clip_coefficient(config, step=global_step, default=0.2)
+            algorithm.ent_coef = current_ent_coef
+            algorithm.clip_coef = current_clip_coef
             policy_metrics, policy_gradient_steps = _run_policy_updates(
                 algorithm,
                 buffer,
@@ -408,6 +434,8 @@ def train_ppg(
                 auxiliary_gradient_steps=auxiliary_gradient_steps,
                 auxiliary_phase_ran=auxiliary_phase_ran,
             )
+            metrics["ent_coef"] = float(current_ent_coef)
+            metrics["clip_coef"] = float(current_clip_coef)
             logger.log_metrics(metrics, step=global_step)
             callback_list.on_eval_end(trainer_state, metrics)
             update_index = current_update

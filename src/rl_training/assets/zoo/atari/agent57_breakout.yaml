@@ -1,0 +1,4 @@
+name: agent57_breakout
+config: configs/agent57/breakout_atari.yaml
+algorithm: agent57
+env_id: ALE/Breakout-v5

@@ -1,8 +1,108 @@
 suite: atari
+protocol:
+  name: atari_default_v1
+  description: Deterministic ALE training with no-op reset and 4-frame stack, plus sticky-action evaluation.
+  training:
+    frameskip: 1
+    repeat_action_probability: 0.0
+  evaluation:
+    frameskip: 1
+    repeat_action_probability: 0.25
+score_normalization:
+  type: human_random
+  game: breakout
+  source: atari_breakout_reference
 presets:
   - name: dqn_breakout
     config: zoo/atari/dqn_breakout.yaml
     description: Value-based Atari baseline with NatureCNN features.
+  - name: apex_dqn_breakout
+    config: zoo/atari/apex_dqn_breakout.yaml
+    description: Ape-X style DQN (single-process, multi-actor epsilons + PER + n-step) on Atari pixels.
+  - name: double_dqn_breakout
+    config: zoo/atari/double_dqn_breakout.yaml
+    description: Double Q-learning value baseline on Atari pixels.
+  - name: dueling_dqn_breakout
+    config: zoo/atari/dueling_dqn_breakout.yaml
+    description: Dueling network decomposition for Atari pixels.
+  - name: prioritized_dqn_breakout
+    config: zoo/atari/prioritized_dqn_breakout.yaml
+    description: Prioritized replay for Atari pixels.
+  - name: n_step_dqn_breakout
+    config: zoo/atari/n_step_dqn_breakout.yaml
+    description: N-step return DQN for Atari pixels.
+  - name: noisy_dqn_breakout
+    config: zoo/atari/noisy_dqn_breakout.yaml
+    description: Noisy networks (parameter noise) exploration on Atari pixels.
+  - name: rainbow_dqn_breakout
+    config: zoo/atari/rainbow_dqn_breakout.yaml
+    description: Rainbow-style combo (double + dueling + noisy + PER + n-step) on Atari pixels.
+  - name: c51_dqn_breakout
+    config: zoo/atari/c51_dqn_breakout.yaml
+    description: Distributional (C51) DQN for Atari pixels.
+  - name: qr_dqn_breakout
+    config: zoo/atari/qr_dqn_breakout.yaml
+    description: Quantile Regression DQN for Atari pixels.
+  - name: iqn_breakout
+    config: zoo/atari/iqn_breakout.yaml
+    description: Implicit Quantile Network for Atari pixels.
+  - name: fqf_breakout
+    config: zoo/atari/fqf_breakout.yaml
+    description: Fully-parameterized Quantile Function for Atari pixels.
+  - name: muzero_breakout
+    config: zoo/atari/muzero_breakout.yaml
+    description: MuZero (MVP) planning baseline via PUCT MCTS on Atari pixels.
+  - name: gumbel_muzero_breakout
+    config: zoo/atari/gumbel_muzero_breakout.yaml
+    description: Gumbel MuZero-lite baseline (MuZero + root Gumbel action selection, not full sequential-halving policy improvement) on Atari pixels.
+  - name: efficientzero_breakout
+    config: zoo/atari/efficientzero_breakout.yaml
+    description: EfficientZero-lite baseline (MuZero + latent consistency loss, not full reanalysis/value-prefix stack) on Atari pixels.
+  - name: scalezero_breakout
+    config: zoo/atari/scalezero_breakout.yaml
+    description: ScaleZero-lite baseline (MuZero-family + mixture-of-experts latent dynamics/prediction, not full multi-task MoE / LoRA / DPS stack) on Atari pixels.
+  - name: dreamerv3_breakout
+    config: zoo/atari/dreamerv3_breakout.yaml
+    description: DreamerV3-lite baseline (Dreamer + symlog targets + unimix actor sampling, not full RSSM/categorical-latent V3 stack) on Atari pixels.
+  - name: diamond_breakout
+    config: zoo/atari/diamond_breakout.yaml
+    description: DIAMOND-lite baseline (Dreamer + denoising world-model auxiliary loss, not full diffusion world model / train-in-imagination stack) on Atari pixels.
+  - name: horizon_imagination_breakout
+    config: zoo/atari/horizon_imagination_breakout.yaml
+    description: Horizon Imagination-lite baseline (DIAMOND-lite + horizon-weighted imagination schedule / rollout stabilization, not full parallel denoising / sub-frame budget / train-in-imagination stack) on Atari pixels.
+  - name: po_dreamer_breakout
+    config: zoo/atari/po_dreamer_breakout.yaml
+    description: PO-Dreamer-lite baseline (Dreamer + memory-guided latent fusion / memory-prediction auxiliary loss, not full partially observable paper stack) on Atari pixels.
+  - name: twisted_breakout
+    config: zoo/atari/twisted_breakout.yaml
+    description: TWISTED-lite baseline (Dreamer + frame-persistence / token-reuse auxiliary loss, not full transformer token world model / graph-based optimal decoding stack) on Atari pixels.
+  - name: eadream_breakout
+    config: zoo/atari/eadream_breakout.yaml
+    description: EADream-lite baseline (Dreamer-family + auxiliary event-boundary prediction / event-aware latent modulation, not full EAWM event harmonizer stack) on Atari pixels.
+  - name: mow_breakout
+    config: zoo/atari/mow_breakout.yaml
+    description: MoW-lite baseline (Dreamer-family + mixture-of-experts latent dynamics/value/policy, not full modular VAE / transformer / task clustering stack) on Atari pixels.
+  - name: jowa_breakout
+    config: zoo/atari/jowa_breakout.yaml
+    description: JOWA-lite baseline (pixel Q-learning + shared world-model regularization, not full offline transformer tokenizer/planning stack) on Atari pixels.
+  - name: spr_breakout
+    config: zoo/atari/spr_breakout.yaml
+    description: SPR-lite baseline (pixel DQN + 1-step latent self-prediction, not full multi-step Rainbow SPR) on Atari pixels.
+  - name: r2d2_breakout
+    config: zoo/atari/r2d2_breakout.yaml
+    description: R2D2 (recurrent prioritized replay) baseline for Atari pixels.
+  - name: agent57_breakout
+    config: zoo/atari/agent57_breakout.yaml
+    description: Agent57-lite baseline (R2D2 + RND intrinsic bonus, not full NGU/meta-controller) for Atari pixels.
+  - name: a2c_breakout
+    config: zoo/atari/a2c_breakout.yaml
+    description: A2C on-policy baseline with shared CNN actor-critic.
+  - name: impala_breakout
+    config: zoo/atari/impala_breakout.yaml
+    description: IMPALA (V-trace) on-policy baseline for Atari pixels.
+  - name: ppg_breakout
+    config: zoo/atari/ppg_breakout.yaml
+    description: PPG (Phasic Policy Gradient) on-policy baseline for Atari pixels.
   - name: ppo_breakout
     config: zoo/atari/ppo_breakout.yaml
     description: On-policy Atari baseline with shared CNN actor-critic.

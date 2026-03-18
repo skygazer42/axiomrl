@@ -1,0 +1,4 @@
+name: mow_breakout
+config: configs/mow/breakout_atari.yaml
+algorithm: mow
+env_id: ALE/Breakout-v5

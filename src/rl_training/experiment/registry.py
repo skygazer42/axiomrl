@@ -32,13 +32,16 @@ from rl_training.algorithms.curl import CURL as CURLAlgorithm
 from rl_training.algorithms.d4pg import D4PG as D4PGAlgorithm
 from rl_training.algorithms.ddpg import DDPG as DDPGAlgorithm
 from rl_training.algorithms.drqn import DRQN as DRQNAlgorithm
+from rl_training.algorithms.agent57 import Agent57 as Agent57Algorithm
 from rl_training.algorithms.r2d2 import R2D2 as R2D2Algorithm
 from rl_training.algorithms.naf import NAF as NAFAlgorithm
 from rl_training.algorithms.edac import EDAC as EDACAlgorithm
 from rl_training.algorithms.drq import DrQ as DrQAlgorithm
 from rl_training.algorithms.drqv2 import DrQv2 as DrQv2Algorithm
 from rl_training.algorithms.discrete_sac import DiscreteSAC as DiscreteSACAlgorithm
+from rl_training.algorithms.efficientzero import EfficientZero as EfficientZeroAlgorithm
 from rl_training.algorithms.ppg import PPG as PPGAlgorithm
+from rl_training.algorithms.scalezero import ScaleZero as ScaleZeroAlgorithm
 from rl_training.algorithms.dqn import DQN as DQNAlgorithm
 from rl_training.algorithms.dqn import AdvantageLearningDQN as AdvantageLearningDQNAlgorithm
 from rl_training.algorithms.dqn import BoltzmannDQN as BoltzmannDQNAlgorithm
@@ -65,8 +68,24 @@ from rl_training.algorithms.dqn import PrioritizedDQN as PrioritizedDQNAlgorithm
 from rl_training.algorithms.dqn import RainbowDQN as RainbowDQNAlgorithm
 from rl_training.algorithms.dqn import SoftDQN as SoftDQNAlgorithm
 from rl_training.algorithms.dqn import SoftDoubleDQN as SoftDoubleDQNAlgorithm
+from rl_training.algorithms.diamond import Diamond as DiamondAlgorithm
+from rl_training.algorithms.horizon_imagination import HorizonImagination as HorizonImaginationAlgorithm
+from rl_training.algorithms.po_dreamer import PODreamer as PODreamerAlgorithm
+from rl_training.algorithms.twisted import Twisted as TwistedAlgorithm
+from rl_training.algorithms.dreamer import Dreamer as DreamerAlgorithm
+from rl_training.algorithms.dreamerv3 import DreamerV3 as DreamerV3Algorithm
+from rl_training.algorithms.eadream import EADream as EADreamAlgorithm
+from rl_training.algorithms.mow import MoW as MoWAlgorithm
+from rl_training.algorithms.fqf import FQF as FQFAlgorithm
+from rl_training.algorithms.jowa import JOWA as JOWAAlgorithm
+from rl_training.algorithms.gail import GAIL as GAILAlgorithm
+from rl_training.algorithms.gumbel_muzero import GumbelMuZero as GumbelMuZeroAlgorithm
+from rl_training.algorithms.mbpo import MBPO as MBPOAlgorithm
+from rl_training.algorithms.muzero import MuZero as MuZeroAlgorithm
+from rl_training.algorithms.muzero import MuZeroMCTSConfig
 from rl_training.algorithms.ppo import PPO as PPOAlgorithm
 from rl_training.algorithms.qr_dqn import QRDQN as QRDQNAlgorithm
+from rl_training.algorithms.spr import SPR as SPRAlgorithm
 from rl_training.algorithms.redq import REDQ as REDQAlgorithm
 from rl_training.algorithms.rebrac import ReBRAC as ReBRACAlgorithm
 from rl_training.algorithms.sac import SAC as SACAlgorithm
@@ -79,7 +98,23 @@ from rl_training.experiment.checkpointing import CheckpointState
 from rl_training.experiment.config import TrainConfig
 from rl_training.envs.factory import build_env
 from rl_training.envs.goals import flatten_goal_observation
-from rl_training.models.cnn import CNNActorCritic, CNNCURLModel, CNNDrQModel, CNNDrQv2Model, CNNQNetwork
+from rl_training.models.cnn import (
+    CNNC51QNetwork,
+    CNNDuelingNoisyQNetwork,
+    CNNDuelingQNetwork,
+    CNNFQFNetwork,
+    CNNIQNetwork,
+    CNNJOWAQNetwork,
+    CNNNoisyQNetwork,
+    CNNActorCritic,
+    CNNPPGModel,
+    CNNCURLModel,
+    CNNDrQModel,
+    CNNDrQv2Model,
+    CNNQNetwork,
+    CNNQRQNetwork,
+    CNNSPRQNetwork,
+)
 from rl_training.models.decision_transformer import DecisionTransformerModel
 from rl_training.models.mlp_actor_critic import MLPActorCritic
 from rl_training.models.mlp_ars import MLPARSModel
@@ -100,6 +135,15 @@ from rl_training.models.mlp_naf import MLPNAFModel
 from rl_training.models.mlp_noisy_q_network import MLPNoisyQNetwork
 from rl_training.models.mlp_ppg import MLPPPGModel
 from rl_training.models.mlp_q_network import MLPQNetwork
+from rl_training.models.mlp_fqf_network import MLPFQFNetwork
+from rl_training.models.dreamer import DreamerModel
+from rl_training.models.eadream import EADreamModel
+from rl_training.models.mow import MoWModel
+from rl_training.models.po_dreamer import PODreamerModel
+from rl_training.models.mlp_gail_discriminator import CNNGAILDiscriminator, MLPGAILDiscriminator
+from rl_training.models.muzero import MuZeroModel
+from rl_training.models.scalezero import ScaleZeroModel
+from rl_training.models.rnd import RNDModel
 from rl_training.models.mlp_qr_q_network import MLPQRQNetwork
 from rl_training.models.mlp_redq import MLPREDQModel
 from rl_training.models.mlp_sac import MLPSACModel
@@ -122,6 +166,7 @@ from rl_training.runtime.decision_transformer_trainer import (
     train_decision_transformer,
 )
 from rl_training.runtime.mopo_trainer import train_mopo
+from rl_training.runtime.mbpo_trainer import train_mbpo
 from rl_training.runtime.pets_trainer import _evaluate_pets_policy, train_pets
 from rl_training.runtime.bcq_trainer import _evaluate_bcq_policy, train_bcq
 from rl_training.runtime.bear_trainer import train_bear
@@ -133,12 +178,18 @@ from rl_training.runtime.crr_trainer import train_crr
 from rl_training.runtime.d4pg_trainer import _evaluate_d4pg_policy, train_d4pg
 from rl_training.runtime.ddpg_trainer import _evaluate_ddpg_policy, train_ddpg
 from rl_training.runtime.drqn_trainer import _evaluate_drqn_policy, train_drqn
+from rl_training.runtime.agent57_trainer import train_agent57
 from rl_training.runtime.r2d2_trainer import _evaluate_r2d2_policy, train_r2d2
 from rl_training.runtime.edac_trainer import train_edac
 from rl_training.runtime.drq_trainer import _evaluate_drq_policy, train_drq
 from rl_training.runtime.drqv2_trainer import _evaluate_drqv2_policy, train_drqv2
 from rl_training.runtime.discrete_sac_trainer import _evaluate_discrete_sac_policy, train_discrete_sac
 from rl_training.runtime.dqn_trainer import _evaluate_q_policy, train_dqn
+from rl_training.runtime.apex_dqn_trainer import train_apex_dqn
+from rl_training.runtime.dreamer_trainer import train_dreamer
+from rl_training.runtime.efficientzero_trainer import train_efficientzero
+from rl_training.runtime.gail_trainer import train_gail
+from rl_training.runtime.muzero_trainer import _evaluate_muzero_policy, train_muzero
 from rl_training.runtime.naf_trainer import _evaluate_naf_policy, train_naf
 from rl_training.runtime.her_trainer import _evaluate_her_policy, _infer_her_spaces, train_her
 from rl_training.runtime.iql_trainer import _evaluate_iql_policy, train_iql
@@ -268,12 +319,23 @@ def _format_action_output(actions: torch.Tensor, *, discrete: bool) -> int | np.
 
 def _load_a2c_algorithm(config: TrainConfig, checkpoint_state: CheckpointState, *, device: torch.device) -> A2CAlgorithm:
     obs_shape, action_dim = _infer_discrete_env_spaces(config)
-    if len(obs_shape) != 1:
-        raise ValueError("a2c checkpoint loading currently supports flat observations only")
-    obs_dim = obs_shape[0]
-    hidden_sizes = tuple(config.algo_kwargs.get("hidden_sizes", (64, 64)))
+    if len(obs_shape) == 1:
+        policy: MLPActorCritic | CNNActorCritic = MLPActorCritic(
+            obs_dim=obs_shape[0],
+            action_dim=action_dim,
+            hidden_sizes=tuple(config.algo_kwargs.get("hidden_sizes", (64, 64))),
+        ).to(device)
+    else:
+        policy = CNNActorCritic(
+            obs_shape=obs_shape,
+            action_dim=action_dim,
+            hidden_sizes=tuple(
+                config.algo_kwargs.get("head_hidden_sizes", config.algo_kwargs.get("hidden_sizes", (512,)))
+            ),
+            features_dim=int(config.algo_kwargs.get("features_dim", 512)),
+        ).to(device)
     algorithm = A2CAlgorithm(
-        policy=MLPActorCritic(obs_dim=obs_dim, action_dim=action_dim, hidden_sizes=hidden_sizes).to(device),
+        policy=policy,
         learning_rate=float(config.algo_kwargs.get("learning_rate", 3e-4)),
         ent_coef=float(config.algo_kwargs.get("ent_coef", 0.01)),
         vf_coef=float(config.algo_kwargs.get("vf_coef", 0.5)),
@@ -326,12 +388,23 @@ def _load_impala_algorithm(
     device: torch.device,
 ) -> IMPALAAlgorithm:
     obs_shape, action_dim = _infer_discrete_env_spaces(config)
-    if len(obs_shape) != 1:
-        raise ValueError("impala checkpoint loading currently supports flat observations only")
-    obs_dim = obs_shape[0]
-    hidden_sizes = tuple(config.algo_kwargs.get("hidden_sizes", (64, 64)))
+    if len(obs_shape) == 1:
+        policy: MLPActorCritic | CNNActorCritic = MLPActorCritic(
+            obs_dim=obs_shape[0],
+            action_dim=action_dim,
+            hidden_sizes=tuple(config.algo_kwargs.get("hidden_sizes", (64, 64))),
+        ).to(device)
+    else:
+        policy = CNNActorCritic(
+            obs_shape=obs_shape,
+            action_dim=action_dim,
+            hidden_sizes=tuple(
+                config.algo_kwargs.get("head_hidden_sizes", config.algo_kwargs.get("hidden_sizes", (512,)))
+            ),
+            features_dim=int(config.algo_kwargs.get("features_dim", 512)),
+        ).to(device)
     algorithm = IMPALAAlgorithm(
-        policy=MLPActorCritic(obs_dim=obs_dim, action_dim=action_dim, hidden_sizes=hidden_sizes).to(device),
+        policy=policy,
         learning_rate=float(config.algo_kwargs.get("learning_rate", 3e-4)),
         ent_coef=float(config.algo_kwargs.get("ent_coef", 0.01)),
         vf_coef=float(config.algo_kwargs.get("vf_coef", 0.5)),
@@ -425,6 +498,28 @@ def _load_mopo_algorithm(config: TrainConfig, checkpoint_state: CheckpointState,
         alpha=float(config.algo_kwargs.get("alpha", 0.2)),
         tau=float(config.algo_kwargs.get("tau", 0.005)),
         penalty_coef=float(config.algo_kwargs.get("penalty_coef", 1.0)),
+    )
+    algorithm.load_state_dict(checkpoint_state.algorithm_state)
+    return algorithm
+
+
+def _load_mbpo_algorithm(config: TrainConfig, checkpoint_state: CheckpointState, *, device: torch.device) -> MBPOAlgorithm:
+    obs_dim, action_dim = _infer_continuous_env_spaces(config)
+    hidden_sizes = tuple(config.algo_kwargs.get("hidden_sizes", (256, 256)))
+    model_hidden_sizes = tuple(config.algo_kwargs.get("model_hidden_sizes", hidden_sizes))
+    algorithm = MBPOAlgorithm(
+        policy_model=MLPSACModel(obs_dim=obs_dim, action_dim=action_dim, hidden_sizes=hidden_sizes).to(device),
+        dynamics_model=MLPMOPOEnsembleModel(
+            obs_dim=obs_dim,
+            action_dim=action_dim,
+            hidden_sizes=model_hidden_sizes,
+            num_ensembles=int(config.algo_kwargs.get("num_ensembles", 5)),
+        ).to(device),
+        policy_learning_rate=float(config.algo_kwargs.get("policy_learning_rate", 3e-4)),
+        model_learning_rate=float(config.algo_kwargs.get("model_learning_rate", 1e-3)),
+        gamma=float(config.algo_kwargs.get("gamma", 0.99)),
+        alpha=float(config.algo_kwargs.get("alpha", 0.2)),
+        tau=float(config.algo_kwargs.get("tau", 0.005)),
     )
     algorithm.load_state_dict(checkpoint_state.algorithm_state)
     return algorithm
@@ -630,17 +725,296 @@ def _load_ppo_algorithm(config: TrainConfig, checkpoint_state: CheckpointState, 
     return algorithm
 
 
+def _load_gail_algorithm(config: TrainConfig, checkpoint_state: CheckpointState, *, device: torch.device) -> GAILAlgorithm:
+    obs_shape, action_dim = _infer_discrete_env_spaces(config)
+    if len(obs_shape) == 1:
+        hidden_sizes = tuple(config.algo_kwargs.get("hidden_sizes", (64, 64)))
+        policy = MLPActorCritic(obs_dim=obs_shape[0], action_dim=action_dim, hidden_sizes=hidden_sizes).to(device)
+        discriminator_hidden_sizes = tuple(config.algo_kwargs.get("discriminator_hidden_sizes", hidden_sizes))
+        discriminator = MLPGAILDiscriminator(
+            obs_dim=obs_shape[0],
+            action_dim=action_dim,
+            hidden_sizes=discriminator_hidden_sizes,
+        ).to(device)
+    else:
+        policy = CNNActorCritic(
+            obs_shape=obs_shape,
+            action_dim=action_dim,
+            hidden_sizes=tuple(config.algo_kwargs.get("head_hidden_sizes", config.algo_kwargs.get("hidden_sizes", (512,)))),
+            features_dim=int(config.algo_kwargs.get("features_dim", 512)),
+        ).to(device)
+        discriminator_hidden_sizes = tuple(
+            config.algo_kwargs.get(
+                "discriminator_head_hidden_sizes",
+                config.algo_kwargs.get("head_hidden_sizes", config.algo_kwargs.get("hidden_sizes", (512,))),
+            )
+        )
+        discriminator = CNNGAILDiscriminator(
+            obs_shape=obs_shape,
+            action_dim=action_dim,
+            hidden_sizes=discriminator_hidden_sizes,
+            features_dim=int(config.algo_kwargs.get("discriminator_features_dim", config.algo_kwargs.get("features_dim", 512))),
+        ).to(device)
+
+    algorithm = GAILAlgorithm(
+        policy=policy,
+        discriminator=discriminator,
+        learning_rate=float(config.algo_kwargs.get("learning_rate", 3e-4)),
+        clip_coef=float(config.algo_kwargs.get("clip_coef", 0.2)),
+        ent_coef=float(config.algo_kwargs.get("ent_coef", 0.01)),
+        vf_coef=float(config.algo_kwargs.get("vf_coef", 0.5)),
+        discriminator_learning_rate=float(config.algo_kwargs.get("discriminator_learning_rate", config.algo_kwargs.get("learning_rate", 3e-4))),
+        max_grad_norm=float(config.algo_kwargs.get("max_grad_norm", 0.5)),
+    )
+    algorithm.load_state_dict(checkpoint_state.algorithm_state)
+    return algorithm
+
+
+def _load_dreamer_algorithm(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    *,
+    device: torch.device,
+) -> (
+    DreamerAlgorithm
+    | DreamerV3Algorithm
+    | DiamondAlgorithm
+    | HorizonImaginationAlgorithm
+    | PODreamerAlgorithm
+    | TwistedAlgorithm
+    | EADreamAlgorithm
+    | MoWAlgorithm
+):
+    obs_shape, action_dim = _infer_discrete_env_spaces(config)
+    if len(obs_shape) != 3:
+        raise ValueError("dreamer checkpoint loading requires channel-first image observations")
+
+    if config.algo == "po_dreamer":
+        model_cls = PODreamerModel
+    elif config.algo == "mow":
+        model_cls = MoWModel
+    elif config.algo == "eadream":
+        model_cls = EADreamModel
+    else:
+        model_cls = DreamerModel
+    model_kwargs = {
+        "obs_shape": obs_shape,
+        "action_dim": action_dim,
+        "features_dim": int(config.algo_kwargs.get("features_dim", 128)),
+        "action_embed_dim": int(config.algo_kwargs.get("action_embed_dim", 32)),
+        "actor_hidden_sizes": tuple(config.algo_kwargs.get("actor_hidden_sizes", (256, 256))),
+        "critic_hidden_sizes": tuple(config.algo_kwargs.get("critic_hidden_sizes", (256, 256))),
+        "reward_hidden_sizes": tuple(config.algo_kwargs.get("reward_hidden_sizes", (256, 256))),
+    }
+    if model_cls is PODreamerModel:
+        model_kwargs["memory_dim"] = int(config.algo_kwargs.get("memory_dim", 64))
+        model_kwargs["memory_hidden_size"] = int(config.algo_kwargs.get("memory_hidden_size", 128))
+        model_kwargs["memory_mix"] = float(config.algo_kwargs.get("memory_mix", 0.35))
+    if model_cls is MoWModel:
+        model_kwargs["num_experts"] = int(config.algo_kwargs.get("num_experts", 4))
+        model_kwargs["gating_hidden_size"] = int(config.algo_kwargs.get("gating_hidden_size", 128))
+    if model_cls is EADreamModel:
+        model_kwargs["event_hidden_sizes"] = tuple(config.algo_kwargs.get("event_hidden_sizes", (128,)))
+        model_kwargs["event_scale"] = float(config.algo_kwargs.get("event_scale", 1.0))
+    model = model_cls(**model_kwargs).to(device)
+    if config.algo == "dreamerv3":
+        algorithm_cls = DreamerV3Algorithm
+    elif config.algo == "diamond":
+        algorithm_cls = DiamondAlgorithm
+    elif config.algo == "horizon_imagination":
+        algorithm_cls = HorizonImaginationAlgorithm
+    elif config.algo == "po_dreamer":
+        algorithm_cls = PODreamerAlgorithm
+    elif config.algo == "twisted":
+        algorithm_cls = TwistedAlgorithm
+    elif config.algo == "eadream":
+        algorithm_cls = EADreamAlgorithm
+    elif config.algo == "mow":
+        algorithm_cls = MoWAlgorithm
+    else:
+        algorithm_cls = DreamerAlgorithm
+    algorithm_kwargs = {
+        "model": model,
+        "world_model_learning_rate": float(config.algo_kwargs.get("world_model_learning_rate", 1e-3)),
+        "actor_learning_rate": float(config.algo_kwargs.get("actor_learning_rate", 3e-4)),
+        "critic_learning_rate": float(config.algo_kwargs.get("critic_learning_rate", 3e-4)),
+        "gamma": float(config.algo_kwargs.get("gamma", 0.99)),
+        "entropy_coef": float(config.algo_kwargs.get("entropy_coef", 1e-3)),
+    }
+    if algorithm_cls is DreamerV3Algorithm:
+        algorithm_kwargs["unimix_ratio"] = float(config.algo_kwargs.get("unimix_ratio", 0.01))
+    if algorithm_cls in {DiamondAlgorithm, HorizonImaginationAlgorithm}:
+        algorithm_kwargs["denoising_loss_coef"] = float(config.algo_kwargs.get("denoising_loss_coef", 0.5))
+        algorithm_kwargs["noise_scale"] = float(config.algo_kwargs.get("noise_scale", 0.15))
+        algorithm_kwargs["denoiser_hidden_channels"] = int(config.algo_kwargs.get("denoiser_hidden_channels", 64))
+    if algorithm_cls is HorizonImaginationAlgorithm:
+        algorithm_kwargs["stabilization_coef"] = float(config.algo_kwargs.get("stabilization_coef", 0.25))
+        algorithm_kwargs["schedule_bias"] = float(config.algo_kwargs.get("schedule_bias", 0.5))
+        algorithm_kwargs["subframe_budget_ratio"] = float(config.algo_kwargs.get("subframe_budget_ratio", 0.5))
+    if algorithm_cls is PODreamerAlgorithm:
+        algorithm_kwargs["memory_loss_coef"] = float(config.algo_kwargs.get("memory_loss_coef", 0.5))
+    if algorithm_cls is TwistedAlgorithm:
+        algorithm_kwargs["reuse_loss_coef"] = float(config.algo_kwargs.get("reuse_loss_coef", 0.5))
+        algorithm_kwargs["reuse_threshold"] = float(config.algo_kwargs.get("reuse_threshold", 0.03))
+        algorithm_kwargs["transport_temperature"] = float(
+            config.algo_kwargs.get("transport_temperature", 0.5)
+        )
+    if algorithm_cls is EADreamAlgorithm:
+        algorithm_kwargs["event_loss_coef"] = float(config.algo_kwargs.get("event_loss_coef", 0.5))
+        algorithm_kwargs["event_threshold"] = float(config.algo_kwargs.get("event_threshold", 0.01))
+    algorithm = algorithm_cls(**algorithm_kwargs)
+    algorithm.load_state_dict(checkpoint_state.algorithm_state)
+    return algorithm
+
+
+def _load_muzero_algorithm(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    *,
+    device: torch.device,
+) -> MuZeroAlgorithm | ScaleZeroAlgorithm:
+    obs_shape, action_dim = _infer_discrete_env_spaces(config)
+    if len(obs_shape) != 3:
+        raise ValueError("muzero checkpoint loading requires channel-first image observations")
+
+    model_cls = ScaleZeroModel if config.algo == "scalezero" else MuZeroModel
+    model_kwargs = {
+        "obs_shape": obs_shape,
+        "action_dim": action_dim,
+        "latent_dim": int(config.algo_kwargs.get("latent_dim", 256)),
+        "action_embed_dim": int(config.algo_kwargs.get("action_embed_dim", 64)),
+        "dynamics_hidden_sizes": tuple(config.algo_kwargs.get("dynamics_hidden_sizes", (256,))),
+        "prediction_hidden_sizes": tuple(config.algo_kwargs.get("prediction_hidden_sizes", (256,))),
+        "normalize_latent": bool(config.algo_kwargs.get("normalize_latent", True)),
+    }
+    if model_cls is ScaleZeroModel:
+        model_kwargs["num_experts"] = int(config.algo_kwargs.get("num_experts", 4))
+        model_kwargs["gating_hidden_size"] = int(config.algo_kwargs.get("gating_hidden_size", 128))
+    model = model_cls(**model_kwargs).to(device)
+    algorithm_cls = ScaleZeroAlgorithm if config.algo == "scalezero" else MuZeroAlgorithm
+    algorithm = algorithm_cls(
+        model=model,
+        learning_rate=float(config.algo_kwargs.get("learning_rate", 1e-3)),
+        gamma=float(config.algo_kwargs.get("gamma", 0.997)),
+        mcts_config=MuZeroMCTSConfig(
+            num_simulations=int(config.algo_kwargs.get("num_simulations", 25)),
+            pb_c_base=float(config.algo_kwargs.get("pb_c_base", 19652.0)),
+            pb_c_init=float(config.algo_kwargs.get("pb_c_init", 1.25)),
+            root_dirichlet_alpha=float(config.algo_kwargs.get("root_dirichlet_alpha", 0.3)),
+            root_exploration_fraction=float(config.algo_kwargs.get("root_exploration_fraction", 0.25)),
+        ),
+        unroll_steps=int(config.algo_kwargs.get("unroll_steps", 5)),
+        value_loss_weight=float(config.algo_kwargs.get("value_loss_weight", 1.0)),
+        reward_loss_weight=float(config.algo_kwargs.get("reward_loss_weight", 1.0)),
+        policy_loss_weight=float(config.algo_kwargs.get("policy_loss_weight", 1.0)),
+        max_grad_norm=float(config.algo_kwargs.get("max_grad_norm", 10.0)),
+    )
+    algorithm.load_state_dict(checkpoint_state.algorithm_state)
+    return algorithm
+
+
+def _load_gumbel_muzero_algorithm(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    *,
+    device: torch.device,
+) -> GumbelMuZeroAlgorithm:
+    obs_shape, action_dim = _infer_discrete_env_spaces(config)
+    if len(obs_shape) != 3:
+        raise ValueError("gumbel_muzero checkpoint loading requires channel-first image observations")
+
+    model = MuZeroModel(
+        obs_shape=obs_shape,
+        action_dim=action_dim,
+        latent_dim=int(config.algo_kwargs.get("latent_dim", 256)),
+        action_embed_dim=int(config.algo_kwargs.get("action_embed_dim", 64)),
+        dynamics_hidden_sizes=tuple(config.algo_kwargs.get("dynamics_hidden_sizes", (256,))),
+        prediction_hidden_sizes=tuple(config.algo_kwargs.get("prediction_hidden_sizes", (256,))),
+        normalize_latent=bool(config.algo_kwargs.get("normalize_latent", True)),
+    ).to(device)
+    algorithm = GumbelMuZeroAlgorithm(
+        model=model,
+        learning_rate=float(config.algo_kwargs.get("learning_rate", 1e-3)),
+        gamma=float(config.algo_kwargs.get("gamma", 0.997)),
+        mcts_config=MuZeroMCTSConfig(
+            num_simulations=int(config.algo_kwargs.get("num_simulations", 25)),
+            pb_c_base=float(config.algo_kwargs.get("pb_c_base", 19652.0)),
+            pb_c_init=float(config.algo_kwargs.get("pb_c_init", 1.25)),
+            root_dirichlet_alpha=float(config.algo_kwargs.get("root_dirichlet_alpha", 0.3)),
+            root_exploration_fraction=float(config.algo_kwargs.get("root_exploration_fraction", 0.25)),
+        ),
+        unroll_steps=int(config.algo_kwargs.get("unroll_steps", 5)),
+        value_loss_weight=float(config.algo_kwargs.get("value_loss_weight", 1.0)),
+        reward_loss_weight=float(config.algo_kwargs.get("reward_loss_weight", 1.0)),
+        policy_loss_weight=float(config.algo_kwargs.get("policy_loss_weight", 1.0)),
+        max_grad_norm=float(config.algo_kwargs.get("max_grad_norm", 10.0)),
+        gumbel_scale=float(config.algo_kwargs.get("gumbel_scale", 1.0)),
+    )
+    algorithm.load_state_dict(checkpoint_state.algorithm_state)
+    return algorithm
+
+
+def _load_efficientzero_algorithm(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    *,
+    device: torch.device,
+) -> EfficientZeroAlgorithm:
+    obs_shape, action_dim = _infer_discrete_env_spaces(config)
+    if len(obs_shape) != 3:
+        raise ValueError("efficientzero checkpoint loading requires channel-first image observations")
+
+    model = MuZeroModel(
+        obs_shape=obs_shape,
+        action_dim=action_dim,
+        latent_dim=int(config.algo_kwargs.get("latent_dim", 256)),
+        action_embed_dim=int(config.algo_kwargs.get("action_embed_dim", 64)),
+        dynamics_hidden_sizes=tuple(config.algo_kwargs.get("dynamics_hidden_sizes", (256,))),
+        prediction_hidden_sizes=tuple(config.algo_kwargs.get("prediction_hidden_sizes", (256,))),
+        normalize_latent=bool(config.algo_kwargs.get("normalize_latent", True)),
+    ).to(device)
+    algorithm = EfficientZeroAlgorithm(
+        model=model,
+        learning_rate=float(config.algo_kwargs.get("learning_rate", 1e-3)),
+        gamma=float(config.algo_kwargs.get("gamma", 0.997)),
+        mcts_config=MuZeroMCTSConfig(
+            num_simulations=int(config.algo_kwargs.get("num_simulations", 25)),
+            pb_c_base=float(config.algo_kwargs.get("pb_c_base", 19652.0)),
+            pb_c_init=float(config.algo_kwargs.get("pb_c_init", 1.25)),
+            root_dirichlet_alpha=float(config.algo_kwargs.get("root_dirichlet_alpha", 0.3)),
+            root_exploration_fraction=float(config.algo_kwargs.get("root_exploration_fraction", 0.25)),
+        ),
+        unroll_steps=int(config.algo_kwargs.get("unroll_steps", 5)),
+        value_loss_weight=float(config.algo_kwargs.get("value_loss_weight", 1.0)),
+        reward_loss_weight=float(config.algo_kwargs.get("reward_loss_weight", 1.0)),
+        policy_loss_weight=float(config.algo_kwargs.get("policy_loss_weight", 1.0)),
+        consistency_loss_weight=float(config.algo_kwargs.get("consistency_loss_weight", 1.0)),
+        max_grad_norm=float(config.algo_kwargs.get("max_grad_norm", 10.0)),
+    )
+    algorithm.load_state_dict(checkpoint_state.algorithm_state)
+    return algorithm
+
+
 def _load_ppg_algorithm(config: TrainConfig, checkpoint_state: CheckpointState, *, device: torch.device) -> PPGAlgorithm:
     obs_shape, action_dim = _infer_discrete_env_spaces(config)
-    if len(obs_shape) != 1:
-        raise ValueError("ppg checkpoint loading currently supports flat observations only")
-
-    algorithm = PPGAlgorithm(
-        model=MLPPPGModel(
+    if len(obs_shape) == 1:
+        model: MLPPPGModel | CNNPPGModel = MLPPPGModel(
             obs_dim=obs_shape[0],
             action_dim=action_dim,
             hidden_sizes=tuple(config.algo_kwargs.get("hidden_sizes", (64, 64))),
-        ).to(device),
+        ).to(device)
+    else:
+        model = CNNPPGModel(
+            obs_shape=obs_shape,
+            action_dim=action_dim,
+            hidden_sizes=tuple(
+                config.algo_kwargs.get("head_hidden_sizes", config.algo_kwargs.get("hidden_sizes", (512,)))
+            ),
+            features_dim=int(config.algo_kwargs.get("features_dim", 512)),
+        ).to(device)
+
+    algorithm = PPGAlgorithm(
+        model=model,
         learning_rate=float(config.algo_kwargs.get("learning_rate", 3e-4)),
         aux_learning_rate=float(config.algo_kwargs.get("aux_learning_rate", config.algo_kwargs.get("learning_rate", 3e-4))),
         clip_coef=float(config.algo_kwargs.get("clip_coef", 0.2)),
@@ -721,20 +1095,72 @@ def _build_image_dqn_loader(
     obs_shape: tuple[int, ...],
     action_dim: int,
     device: torch.device,
-) -> tuple[CNNQNetwork, type[DQNAlgorithm]]:
-    if config.algo != "dqn":
-        raise ValueError(f"image observations are currently supported for algo='dqn' only, got {config.algo!r}")
+) -> tuple[CNNQNetwork | CNNSPRQNetwork | CNNJOWAQNetwork, type[DQNAlgorithm] | type[SPRAlgorithm] | type[JOWAAlgorithm]]:
+    head_hidden_sizes = tuple(config.algo_kwargs.get("head_hidden_sizes", config.algo_kwargs.get("hidden_sizes", (512,))))
+    features_dim = int(config.algo_kwargs.get("features_dim", 512))
+    sigma_init = float(config.algo_kwargs.get("sigma_init", 0.5))
+
+    if config.algo == "rainbow_dqn":
+        q_network = CNNDuelingNoisyQNetwork(
+            obs_shape=obs_shape,
+            action_dim=action_dim,
+            hidden_sizes=head_hidden_sizes,
+            sigma_init=sigma_init,
+            features_dim=features_dim,
+        ).to(device)
+        return q_network, RainbowDQNAlgorithm
+    if config.algo == "dueling_dqn":
+        q_network = CNNDuelingQNetwork(
+            obs_shape=obs_shape,
+            action_dim=action_dim,
+            hidden_sizes=head_hidden_sizes,
+            features_dim=features_dim,
+        ).to(device)
+        return q_network, DuelingDQNAlgorithm
+    if config.algo == "noisy_dqn":
+        q_network = CNNNoisyQNetwork(
+            obs_shape=obs_shape,
+            action_dim=action_dim,
+            hidden_sizes=head_hidden_sizes,
+            sigma_init=sigma_init,
+            features_dim=features_dim,
+        ).to(device)
+        return q_network, NoisyDQNAlgorithm
+    if config.algo == "spr":
+        q_network = CNNSPRQNetwork(
+            obs_shape=obs_shape,
+            action_dim=action_dim,
+            hidden_sizes=head_hidden_sizes,
+            features_dim=features_dim,
+            transition_hidden_size=int(config.algo_kwargs.get("spr_hidden_size", features_dim)),
+            projection_dim=int(config.algo_kwargs.get("spr_projection_dim", 256)),
+            action_embed_dim=int(config.algo_kwargs.get("spr_action_embed_dim", 64)),
+        ).to(device)
+        return q_network, SPRAlgorithm
+    if config.algo == "jowa":
+        q_network = CNNJOWAQNetwork(
+            obs_shape=obs_shape,
+            action_dim=action_dim,
+            hidden_sizes=head_hidden_sizes,
+            features_dim=features_dim,
+            transition_hidden_size=int(config.algo_kwargs.get("jowa_transition_hidden_size", features_dim)),
+            reward_hidden_size=int(config.algo_kwargs.get("jowa_reward_hidden_size", features_dim)),
+            action_embed_dim=int(config.algo_kwargs.get("jowa_action_embed_dim", 64)),
+        ).to(device)
+        return q_network, JOWAAlgorithm
+
     q_network = CNNQNetwork(
         obs_shape=obs_shape,
         action_dim=action_dim,
-        hidden_sizes=tuple(config.algo_kwargs.get("head_hidden_sizes", config.algo_kwargs.get("hidden_sizes", (512,)))),
-        features_dim=int(config.algo_kwargs.get("features_dim", 512)),
+        hidden_sizes=head_hidden_sizes,
+        features_dim=features_dim,
     ).to(device)
-    return q_network, DQNAlgorithm
+    return q_network, _resolve_vector_dqn_algorithm_class(config.algo)
 
 
 def _resolve_vector_dqn_algorithm_class(algo_name: str) -> type[DQNAlgorithm]:
     return {
+        "apex_dqn": DoubleDQNAlgorithm,
         "double_dqn": DoubleDQNAlgorithm,
         "expected_sarsa": ExpectedSARSAAlgorithm,
         "expected_double_dqn": ExpectedDoubleDQNAlgorithm,
@@ -781,7 +1207,7 @@ def _build_dqn_algorithm_kwargs(
     config: TrainConfig,
     *,
     q_network: nn.Module,
-    algorithm_cls: type[DQNAlgorithm],
+    algorithm_cls: type[DQNAlgorithm] | type[SPRAlgorithm] | type[JOWAAlgorithm],
 ) -> dict[str, float | int | nn.Module]:
     algorithm_kwargs: dict[str, float | int | nn.Module] = {
         "q_network": q_network,
@@ -809,12 +1235,21 @@ def _build_dqn_algorithm_kwargs(
         algorithm_kwargs["cql_alpha"] = float(config.algo_kwargs.get("cql_alpha", 1.0))
     elif algorithm_cls is HystereticDQNAlgorithm:
         algorithm_kwargs["hysteretic_beta"] = float(config.algo_kwargs.get("hysteretic_beta", 0.1))
+    elif algorithm_cls is SPRAlgorithm:
+        algorithm_kwargs["spr_loss_coef"] = float(config.algo_kwargs.get("spr_loss_coef", 1.0))
+    elif algorithm_cls is JOWAAlgorithm:
+        algorithm_kwargs["jowa_world_model_loss_coef"] = float(config.algo_kwargs.get("jowa_world_model_loss_coef", 1.0))
+        algorithm_kwargs["jowa_reward_loss_coef"] = float(config.algo_kwargs.get("jowa_reward_loss_coef", 1.0))
+        algorithm_kwargs["jowa_reconstruction_loss_coef"] = float(config.algo_kwargs.get("jowa_reconstruction_loss_coef", 1.0))
+        algorithm_kwargs["jowa_consistency_loss_coef"] = float(config.algo_kwargs.get("jowa_consistency_loss_coef", 0.5))
     return algorithm_kwargs
 
 
 def _load_dqn_algorithm(config: TrainConfig, checkpoint_state: CheckpointState, *, device: torch.device) -> DQNAlgorithm:
     obs_shape, action_dim = _infer_discrete_env_spaces(config)
     hidden_sizes = tuple(config.algo_kwargs.get("hidden_sizes", (64, 64)))
+    if config.algo in {"spr", "jowa"} and len(obs_shape) != 3:
+        raise ValueError(f"{config.algo} checkpoint loading requires channel-first image observations")
 
     if len(obs_shape) == 3:
         q_network, algorithm_cls = _build_image_dqn_loader(
@@ -844,22 +1279,36 @@ def _load_dqn_algorithm(config: TrainConfig, checkpoint_state: CheckpointState, 
 
 def _load_c51_dqn_algorithm(config: TrainConfig, checkpoint_state: CheckpointState, *, device: torch.device) -> C51DQNAlgorithm:
     obs_shape, action_dim = _infer_discrete_env_spaces(config)
-    if len(obs_shape) != 1:
-        raise ValueError("c51_dqn checkpoint loading currently supports flat observations only")
-    obs_dim = obs_shape[0]
-    hidden_sizes = tuple(config.algo_kwargs.get("hidden_sizes", (64, 64)))
     v_min = float(config.algo_kwargs.get("v_min", 0.0))
     v_max = float(config.algo_kwargs.get("v_max", 200.0))
     num_atoms = int(config.algo_kwargs.get("num_atoms", 51))
 
-    q_network = MLPC51QNetwork(
-        obs_dim=obs_dim,
-        action_dim=action_dim,
-        hidden_sizes=hidden_sizes,
-        v_min=v_min,
-        v_max=v_max,
-        num_atoms=num_atoms,
-    ).to(device)
+    if len(obs_shape) == 3:
+        head_hidden_sizes = tuple(
+            config.algo_kwargs.get("head_hidden_sizes", config.algo_kwargs.get("hidden_sizes", (512,)))
+        )
+        q_network = CNNC51QNetwork(
+            obs_shape=obs_shape,
+            action_dim=action_dim,
+            hidden_sizes=head_hidden_sizes,
+            features_dim=int(config.algo_kwargs.get("features_dim", 512)),
+            v_min=v_min,
+            v_max=v_max,
+            num_atoms=num_atoms,
+        ).to(device)
+    else:
+        if len(obs_shape) != 1:
+            raise ValueError("c51_dqn checkpoint loading expects flat or 3D image observations")
+        obs_dim = obs_shape[0]
+        hidden_sizes = tuple(config.algo_kwargs.get("hidden_sizes", (64, 64)))
+        q_network = MLPC51QNetwork(
+            obs_dim=obs_dim,
+            action_dim=action_dim,
+            hidden_sizes=hidden_sizes,
+            v_min=v_min,
+            v_max=v_max,
+            num_atoms=num_atoms,
+        ).to(device)
     algorithm = C51DQNAlgorithm(
         q_network=q_network,
         learning_rate=float(config.algo_kwargs.get("learning_rate", 1e-3)),
@@ -875,19 +1324,31 @@ def _load_c51_dqn_algorithm(config: TrainConfig, checkpoint_state: CheckpointSta
 
 def _load_qr_dqn_algorithm(config: TrainConfig, checkpoint_state: CheckpointState, *, device: torch.device) -> QRDQNAlgorithm:
     obs_shape, action_dim = _infer_discrete_env_spaces(config)
-    if len(obs_shape) != 1:
-        raise ValueError("qr_dqn checkpoint loading currently supports flat observations only")
-    obs_dim = obs_shape[0]
-    hidden_sizes = tuple(config.algo_kwargs.get("hidden_sizes", (64, 64)))
     num_quantiles = int(config.algo_kwargs.get("num_quantiles", 51))
     kappa = float(config.algo_kwargs.get("kappa", 1.0))
 
-    q_network = MLPQRQNetwork(
-        obs_dim=obs_dim,
-        action_dim=action_dim,
-        num_quantiles=num_quantiles,
-        hidden_sizes=hidden_sizes,
-    ).to(device)
+    if len(obs_shape) == 3:
+        head_hidden_sizes = tuple(
+            config.algo_kwargs.get("head_hidden_sizes", config.algo_kwargs.get("hidden_sizes", (512,)))
+        )
+        q_network = CNNQRQNetwork(
+            obs_shape=obs_shape,
+            action_dim=action_dim,
+            num_quantiles=num_quantiles,
+            hidden_sizes=head_hidden_sizes,
+            features_dim=int(config.algo_kwargs.get("features_dim", 512)),
+        ).to(device)
+    else:
+        if len(obs_shape) != 1:
+            raise ValueError("qr_dqn checkpoint loading expects flat or 3D image observations")
+        obs_dim = obs_shape[0]
+        hidden_sizes = tuple(config.algo_kwargs.get("hidden_sizes", (64, 64)))
+        q_network = MLPQRQNetwork(
+            obs_dim=obs_dim,
+            action_dim=action_dim,
+            num_quantiles=num_quantiles,
+            hidden_sizes=hidden_sizes,
+        ).to(device)
     algorithm = QRDQNAlgorithm(
         q_network=q_network,
         learning_rate=float(config.algo_kwargs.get("learning_rate", 1e-3)),
@@ -902,21 +1363,34 @@ def _load_qr_dqn_algorithm(config: TrainConfig, checkpoint_state: CheckpointStat
 
 def _load_iqn_algorithm(config: TrainConfig, checkpoint_state: CheckpointState, *, device: torch.device) -> IQNAlgorithm:
     obs_shape, action_dim = _infer_discrete_env_spaces(config)
-    if len(obs_shape) != 1:
-        raise ValueError("iqn checkpoint loading currently supports flat observations only")
-    obs_dim = obs_shape[0]
-    hidden_sizes = tuple(config.algo_kwargs.get("hidden_sizes", (64, 64)))
     num_quantiles = int(config.algo_kwargs.get("num_quantiles", 32))
     embedding_dim = int(config.algo_kwargs.get("embedding_dim", 64))
     kappa = float(config.algo_kwargs.get("kappa", 1.0))
 
-    q_network = MLPIQNetwork(
-        obs_dim=obs_dim,
-        action_dim=action_dim,
-        num_quantiles=num_quantiles,
-        hidden_sizes=hidden_sizes,
-        embedding_dim=embedding_dim,
-    ).to(device)
+    if len(obs_shape) == 3:
+        head_hidden_sizes = tuple(
+            config.algo_kwargs.get("head_hidden_sizes", config.algo_kwargs.get("hidden_sizes", (512,)))
+        )
+        q_network = CNNIQNetwork(
+            obs_shape=obs_shape,
+            action_dim=action_dim,
+            num_quantiles=num_quantiles,
+            hidden_sizes=head_hidden_sizes,
+            embedding_dim=embedding_dim,
+            features_dim=int(config.algo_kwargs.get("features_dim", 512)),
+        ).to(device)
+    else:
+        if len(obs_shape) != 1:
+            raise ValueError("iqn checkpoint loading expects flat or 3D image observations")
+        obs_dim = obs_shape[0]
+        hidden_sizes = tuple(config.algo_kwargs.get("hidden_sizes", (64, 64)))
+        q_network = MLPIQNetwork(
+            obs_dim=obs_dim,
+            action_dim=action_dim,
+            num_quantiles=num_quantiles,
+            hidden_sizes=hidden_sizes,
+            embedding_dim=embedding_dim,
+        ).to(device)
     algorithm = IQNAlgorithm(
         q_network=q_network,
         learning_rate=float(config.algo_kwargs.get("learning_rate", 1e-3)),
@@ -924,6 +1398,51 @@ def _load_iqn_algorithm(config: TrainConfig, checkpoint_state: CheckpointState, 
         target_update_interval=int(config.algo_kwargs.get("target_update_interval", 250)),
         num_quantiles=num_quantiles,
         kappa=kappa,
+    )
+    algorithm.load_state_dict(checkpoint_state.algorithm_state)
+    return algorithm
+
+
+def _load_fqf_algorithm(config: TrainConfig, checkpoint_state: CheckpointState, *, device: torch.device) -> FQFAlgorithm:
+    obs_shape, action_dim = _infer_discrete_env_spaces(config)
+    num_quantiles = int(config.algo_kwargs.get("num_quantiles", 32))
+    embedding_dim = int(config.algo_kwargs.get("embedding_dim", 64))
+    kappa = float(config.algo_kwargs.get("kappa", 1.0))
+    entropy_coef = float(config.algo_kwargs.get("entropy_coef", 1e-3))
+
+    if len(obs_shape) == 3:
+        head_hidden_sizes = tuple(
+            config.algo_kwargs.get("head_hidden_sizes", config.algo_kwargs.get("hidden_sizes", (512,)))
+        )
+        q_network = CNNFQFNetwork(
+            obs_shape=obs_shape,
+            action_dim=action_dim,
+            num_quantiles=num_quantiles,
+            hidden_sizes=head_hidden_sizes,
+            embedding_dim=embedding_dim,
+            features_dim=int(config.algo_kwargs.get("features_dim", 512)),
+        ).to(device)
+    else:
+        if len(obs_shape) != 1:
+            raise ValueError("fqf checkpoint loading expects flat or 3D image observations")
+        obs_dim = obs_shape[0]
+        hidden_sizes = tuple(config.algo_kwargs.get("hidden_sizes", (64, 64)))
+        q_network = MLPFQFNetwork(
+            obs_dim=obs_dim,
+            action_dim=action_dim,
+            num_quantiles=num_quantiles,
+            hidden_sizes=hidden_sizes,
+            embedding_dim=embedding_dim,
+        ).to(device)
+    algorithm = FQFAlgorithm(
+        q_network=q_network,
+        learning_rate=float(config.algo_kwargs.get("learning_rate", 1e-3)),
+        fraction_learning_rate=float(config.algo_kwargs.get("fraction_learning_rate", config.algo_kwargs.get("learning_rate", 1e-3))),
+        gamma=float(config.algo_kwargs.get("gamma", 0.99)),
+        target_update_interval=int(config.algo_kwargs.get("target_update_interval", 250)),
+        num_quantiles=num_quantiles,
+        kappa=kappa,
+        entropy_coef=entropy_coef,
     )
     algorithm.load_state_dict(checkpoint_state.algorithm_state)
     return algorithm
@@ -1179,8 +1698,6 @@ def _load_drqn_algorithm(config: TrainConfig, checkpoint_state: CheckpointState,
 
 def _load_r2d2_algorithm(config: TrainConfig, checkpoint_state: CheckpointState, *, device: torch.device) -> R2D2Algorithm:
     obs_shape, action_dim = _infer_discrete_env_spaces(config)
-    if len(obs_shape) != 1:
-        raise ValueError("r2d2 checkpoint loading currently supports flat observations only")
 
     algorithm = R2D2Algorithm(
         q_network=LSTMQNetwork(
@@ -1197,6 +1714,41 @@ def _load_r2d2_algorithm(config: TrainConfig, checkpoint_state: CheckpointState,
         target_update_interval=int(config.algo_kwargs.get("target_update_interval", 250)),
         double_q=True,
         priority_eta=float(config.algo_kwargs.get("priority_eta", 0.9)),
+    )
+    algorithm.load_state_dict(checkpoint_state.algorithm_state)
+    return algorithm
+
+
+def _load_agent57_algorithm(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    *,
+    device: torch.device,
+) -> Agent57Algorithm:
+    obs_shape, action_dim = _infer_discrete_env_spaces(config)
+
+    algorithm = Agent57Algorithm(
+        q_network=LSTMQNetwork(
+            obs_shape=obs_shape,
+            action_dim=action_dim,
+            features_dim=int(config.algo_kwargs.get("features_dim", 256)),
+            encoder_hidden_sizes=tuple(config.algo_kwargs.get("hidden_sizes", (128,))),
+            head_hidden_sizes=tuple(config.algo_kwargs.get("head_hidden_sizes", (128,))),
+            hidden_size=int(config.algo_kwargs.get("recurrent_hidden_size", 256)),
+            num_layers=int(config.algo_kwargs.get("recurrent_num_layers", 1)),
+        ).to(device),
+        rnd_model=RNDModel(
+            obs_shape=obs_shape,
+            hidden_sizes=tuple(config.algo_kwargs.get("rnd_hidden_sizes", (256,))),
+            embedding_dim=int(config.algo_kwargs.get("rnd_embedding_dim", 128)),
+        ).to(device),
+        learning_rate=float(config.algo_kwargs.get("learning_rate", 1e-3)),
+        rnd_learning_rate=float(config.algo_kwargs.get("rnd_learning_rate", 1e-4)),
+        gamma=float(config.algo_kwargs.get("gamma", 0.99)) ** int(config.algo_kwargs.get("n_step", 3)),
+        target_update_interval=int(config.algo_kwargs.get("target_update_interval", 250)),
+        double_q=True,
+        priority_eta=float(config.algo_kwargs.get("priority_eta", 0.9)),
+        intrinsic_reward_coef=float(config.algo_kwargs.get("intrinsic_reward_coef", 0.1)),
     )
     algorithm.load_state_dict(checkpoint_state.algorithm_state)
     return algorithm
@@ -1435,6 +1987,11 @@ def _evaluate_mopo(config: TrainConfig, checkpoint_state: CheckpointState, devic
     return _evaluate_sac_policy(algorithm.policy_model, config, device=device, num_episodes=num_episodes)
 
 
+def _evaluate_mbpo(config: TrainConfig, checkpoint_state: CheckpointState, device: torch.device, num_episodes: int) -> MetricDict:
+    algorithm = _load_mbpo_algorithm(config, checkpoint_state, device=device)
+    return _evaluate_sac_policy(algorithm.model, config, device=device, num_episodes=num_episodes)
+
+
 def _evaluate_pets(config: TrainConfig, checkpoint_state: CheckpointState, device: torch.device, num_episodes: int) -> MetricDict:
     algorithm = _load_pets_algorithm(config, checkpoint_state, device=device)
     return _evaluate_pets_policy(algorithm, config, device=device, num_episodes=num_episodes)
@@ -1468,6 +2025,131 @@ def _evaluate_her(config: TrainConfig, checkpoint_state: CheckpointState, device
 def _evaluate_ppo(config: TrainConfig, checkpoint_state: CheckpointState, device: torch.device, num_episodes: int) -> MetricDict:
     algorithm = _load_ppo_algorithm(config, checkpoint_state, device=device)
     return _evaluate_policy(algorithm.policy, config, device=device, num_episodes=num_episodes)
+
+
+def _evaluate_gail(config: TrainConfig, checkpoint_state: CheckpointState, device: torch.device, num_episodes: int) -> MetricDict:
+    algorithm = _load_gail_algorithm(config, checkpoint_state, device=device)
+    return _evaluate_policy(algorithm.policy, config, device=device, num_episodes=num_episodes)
+
+
+def _evaluate_dreamer(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    num_episodes: int,
+) -> MetricDict:
+    algorithm = _load_dreamer_algorithm(config, checkpoint_state, device=device)
+    return _evaluate_policy(algorithm, config, device=device, num_episodes=num_episodes)
+
+
+def _evaluate_dreamerv3(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    num_episodes: int,
+) -> MetricDict:
+    algorithm = _load_dreamer_algorithm(config, checkpoint_state, device=device)
+    return _evaluate_policy(algorithm, config, device=device, num_episodes=num_episodes)
+
+
+def _evaluate_diamond(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    num_episodes: int,
+) -> MetricDict:
+    algorithm = _load_dreamer_algorithm(config, checkpoint_state, device=device)
+    return _evaluate_policy(algorithm, config, device=device, num_episodes=num_episodes)
+
+
+def _evaluate_horizon_imagination(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    num_episodes: int,
+) -> MetricDict:
+    algorithm = _load_dreamer_algorithm(config, checkpoint_state, device=device)
+    return _evaluate_policy(algorithm, config, device=device, num_episodes=num_episodes)
+
+
+def _evaluate_po_dreamer(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    num_episodes: int,
+) -> MetricDict:
+    algorithm = _load_dreamer_algorithm(config, checkpoint_state, device=device)
+    return _evaluate_policy(algorithm, config, device=device, num_episodes=num_episodes)
+
+
+def _evaluate_twisted(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    num_episodes: int,
+) -> MetricDict:
+    algorithm = _load_dreamer_algorithm(config, checkpoint_state, device=device)
+    return _evaluate_policy(algorithm, config, device=device, num_episodes=num_episodes)
+
+
+def _evaluate_mow(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    num_episodes: int,
+) -> MetricDict:
+    algorithm = _load_dreamer_algorithm(config, checkpoint_state, device=device)
+    return _evaluate_policy(algorithm, config, device=device, num_episodes=num_episodes)
+
+
+def _evaluate_eadream(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    num_episodes: int,
+) -> MetricDict:
+    algorithm = _load_dreamer_algorithm(config, checkpoint_state, device=device)
+    return _evaluate_policy(algorithm, config, device=device, num_episodes=num_episodes)
+
+
+def _evaluate_muzero(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    num_episodes: int,
+) -> MetricDict:
+    algorithm = _load_muzero_algorithm(config, checkpoint_state, device=device)
+    return _evaluate_muzero_policy(algorithm, config, device=device, num_episodes=num_episodes)
+
+
+def _evaluate_gumbel_muzero(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    num_episodes: int,
+) -> MetricDict:
+    algorithm = _load_gumbel_muzero_algorithm(config, checkpoint_state, device=device)
+    return _evaluate_muzero_policy(algorithm, config, device=device, num_episodes=num_episodes)
+
+
+def _evaluate_efficientzero(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    num_episodes: int,
+) -> MetricDict:
+    algorithm = _load_efficientzero_algorithm(config, checkpoint_state, device=device)
+    return _evaluate_muzero_policy(algorithm, config, device=device, num_episodes=num_episodes)
+
+
+def _evaluate_scalezero(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    num_episodes: int,
+) -> MetricDict:
+    algorithm = _load_muzero_algorithm(config, checkpoint_state, device=device)
+    return _evaluate_muzero_policy(algorithm, config, device=device, num_episodes=num_episodes)
 
 
 def _evaluate_trpo(config: TrainConfig, checkpoint_state: CheckpointState, device: torch.device, num_episodes: int) -> MetricDict:
@@ -1507,6 +2189,12 @@ def _evaluate_qr_dqn(config: TrainConfig, checkpoint_state: CheckpointState, dev
 
 def _evaluate_iqn(config: TrainConfig, checkpoint_state: CheckpointState, device: torch.device, num_episodes: int) -> MetricDict:
     algorithm = _load_iqn_algorithm(config, checkpoint_state, device=device)
+    algorithm.set_eval_mode()
+    return _evaluate_q_policy(algorithm.q_network, config, device=device, num_episodes=num_episodes)
+
+
+def _evaluate_fqf(config: TrainConfig, checkpoint_state: CheckpointState, device: torch.device, num_episodes: int) -> MetricDict:
+    algorithm = _load_fqf_algorithm(config, checkpoint_state, device=device)
     algorithm.set_eval_mode()
     return _evaluate_q_policy(algorithm.q_network, config, device=device, num_episodes=num_episodes)
 
@@ -1604,6 +2292,17 @@ def _evaluate_drqn(config: TrainConfig, checkpoint_state: CheckpointState, devic
 
 def _evaluate_r2d2(config: TrainConfig, checkpoint_state: CheckpointState, device: torch.device, num_episodes: int) -> MetricDict:
     algorithm = _load_r2d2_algorithm(config, checkpoint_state, device=device)
+    algorithm.set_eval_mode()
+    return _evaluate_r2d2_policy(algorithm.q_network, config, device=device, num_episodes=num_episodes)
+
+
+def _evaluate_agent57(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    num_episodes: int,
+) -> MetricDict:
+    algorithm = _load_agent57_algorithm(config, checkpoint_state, device=device)
     algorithm.set_eval_mode()
     return _evaluate_r2d2_policy(algorithm.q_network, config, device=device, num_episodes=num_episodes)
 
@@ -1936,6 +2635,184 @@ def _predict_ppo(
     return _format_action_output(actions, discrete=True)
 
 
+def _predict_gail(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    obs: object,
+    deterministic: bool,
+) -> int | np.ndarray:
+    algorithm = _load_gail_algorithm(config, checkpoint_state, device=device)
+    obs_tensor = _prepare_observation(obs, device=device)
+    with torch.no_grad():
+        actions = algorithm.policy.act(obs_tensor, deterministic=deterministic).actions
+    return _format_action_output(actions, discrete=True)
+
+
+def _predict_dreamer(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    obs: object,
+    deterministic: bool,
+) -> int | np.ndarray:
+    algorithm = _load_dreamer_algorithm(config, checkpoint_state, device=device)
+    obs_tensor = _prepare_observation(obs, device=device)
+    with torch.no_grad():
+        actions = algorithm.act(obs_tensor, deterministic=deterministic).actions
+    return _format_action_output(actions, discrete=True)
+
+
+def _predict_dreamerv3(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    obs: object,
+    deterministic: bool,
+) -> int | np.ndarray:
+    algorithm = _load_dreamer_algorithm(config, checkpoint_state, device=device)
+    obs_tensor = _prepare_observation(obs, device=device)
+    with torch.no_grad():
+        actions = algorithm.act(obs_tensor, deterministic=deterministic).actions
+    return _format_action_output(actions, discrete=True)
+
+
+def _predict_diamond(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    obs: object,
+    deterministic: bool,
+) -> int | np.ndarray:
+    algorithm = _load_dreamer_algorithm(config, checkpoint_state, device=device)
+    obs_tensor = _prepare_observation(obs, device=device)
+    with torch.no_grad():
+        actions = algorithm.act(obs_tensor, deterministic=deterministic).actions
+    return _format_action_output(actions, discrete=True)
+
+
+def _predict_horizon_imagination(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    obs: object,
+    deterministic: bool,
+) -> int | np.ndarray:
+    algorithm = _load_dreamer_algorithm(config, checkpoint_state, device=device)
+    obs_tensor = _prepare_observation(obs, device=device)
+    with torch.no_grad():
+        actions = algorithm.act(obs_tensor, deterministic=deterministic).actions
+    return _format_action_output(actions, discrete=True)
+
+
+def _predict_po_dreamer(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    obs: object,
+    deterministic: bool,
+) -> int | np.ndarray:
+    algorithm = _load_dreamer_algorithm(config, checkpoint_state, device=device)
+    obs_tensor = _prepare_observation(obs, device=device)
+    with torch.no_grad():
+        actions = algorithm.act(obs_tensor, deterministic=deterministic).actions
+    return _format_action_output(actions, discrete=True)
+
+
+def _predict_twisted(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    obs: object,
+    deterministic: bool,
+) -> int | np.ndarray:
+    algorithm = _load_dreamer_algorithm(config, checkpoint_state, device=device)
+    obs_tensor = _prepare_observation(obs, device=device)
+    with torch.no_grad():
+        actions = algorithm.act(obs_tensor, deterministic=deterministic).actions
+    return _format_action_output(actions, discrete=True)
+
+
+def _predict_mow(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    obs: object,
+    deterministic: bool,
+) -> int | np.ndarray:
+    algorithm = _load_dreamer_algorithm(config, checkpoint_state, device=device)
+    obs_tensor = _prepare_observation(obs, device=device)
+    with torch.no_grad():
+        actions = algorithm.act(obs_tensor, deterministic=deterministic).actions
+    return _format_action_output(actions, discrete=True)
+
+
+def _predict_eadream(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    obs: object,
+    deterministic: bool,
+) -> int | np.ndarray:
+    algorithm = _load_dreamer_algorithm(config, checkpoint_state, device=device)
+    obs_tensor = _prepare_observation(obs, device=device)
+    with torch.no_grad():
+        actions = algorithm.act(obs_tensor, deterministic=deterministic).actions
+    return _format_action_output(actions, discrete=True)
+
+
+def _predict_muzero(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    obs: object,
+    deterministic: bool,
+) -> int | np.ndarray:
+    algorithm = _load_muzero_algorithm(config, checkpoint_state, device=device)
+    with torch.no_grad():
+        action_tensor = algorithm.act(obs, deterministic=deterministic).actions
+    return int(action_tensor.squeeze(0).detach().cpu().item())
+
+
+def _predict_gumbel_muzero(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    obs: object,
+    deterministic: bool,
+) -> int | np.ndarray:
+    algorithm = _load_gumbel_muzero_algorithm(config, checkpoint_state, device=device)
+    with torch.no_grad():
+        action_tensor = algorithm.act(obs, deterministic=deterministic).actions
+    return int(action_tensor.squeeze(0).detach().cpu().item())
+
+
+def _predict_efficientzero(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    obs: object,
+    deterministic: bool,
+) -> int | np.ndarray:
+    algorithm = _load_efficientzero_algorithm(config, checkpoint_state, device=device)
+    with torch.no_grad():
+        action_tensor = algorithm.act(obs, deterministic=deterministic).actions
+    return int(action_tensor.squeeze(0).detach().cpu().item())
+
+
+def _predict_scalezero(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    obs: object,
+    deterministic: bool,
+) -> int | np.ndarray:
+    algorithm = _load_muzero_algorithm(config, checkpoint_state, device=device)
+    with torch.no_grad():
+        action_tensor = algorithm.act(obs, deterministic=deterministic).actions
+    return int(action_tensor.squeeze(0).detach().cpu().item())
+
+
 def _predict_trpo(
     config: TrainConfig,
     checkpoint_state: CheckpointState,
@@ -2022,6 +2899,22 @@ def _predict_iqn(
 ) -> int | np.ndarray:
     del deterministic
     algorithm = _load_iqn_algorithm(config, checkpoint_state, device=device)
+    algorithm.set_eval_mode()
+    obs_tensor = _prepare_observation(obs, device=device)
+    with torch.no_grad():
+        actions = algorithm.q_network.act(obs_tensor, epsilon=0.0)
+    return _format_action_output(actions, discrete=True)
+
+
+def _predict_fqf(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    obs: object,
+    deterministic: bool,
+) -> int | np.ndarray:
+    del deterministic
+    algorithm = _load_fqf_algorithm(config, checkpoint_state, device=device)
     algorithm.set_eval_mode()
     obs_tensor = _prepare_observation(obs, device=device)
     with torch.no_grad():
@@ -2117,6 +3010,22 @@ def _predict_sac(
     deterministic: bool,
 ) -> int | np.ndarray:
     algorithm = _load_sac_algorithm(config, checkpoint_state, device=device)
+    obs_tensor = _prepare_observation(obs, device=device)
+    low, high = _continuous_action_bounds(config, device=device)
+    with torch.no_grad():
+        normalized_actions = algorithm.model.sample_actions(obs_tensor, deterministic=deterministic).actions
+        actions = _scale_continuous_actions(normalized_actions, low=low, high=high)
+    return _format_action_output(actions, discrete=False)
+
+
+def _predict_mbpo(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    obs: object,
+    deterministic: bool,
+) -> int | np.ndarray:
+    algorithm = _load_mbpo_algorithm(config, checkpoint_state, device=device)
     obs_tensor = _prepare_observation(obs, device=device)
     low, high = _continuous_action_bounds(config, device=device)
     with torch.no_grad():
@@ -2435,6 +3344,29 @@ def _predict_r2d2(
     return _format_action_output(actions, discrete=True)
 
 
+def _predict_agent57(
+    config: TrainConfig,
+    checkpoint_state: CheckpointState,
+    device: torch.device,
+    obs: object,
+    deterministic: bool,
+) -> int | np.ndarray:
+    algorithm = _load_agent57_algorithm(config, checkpoint_state, device=device)
+    algorithm.set_eval_mode()
+    obs_tensor = _prepare_observation(obs, device=device)
+    initial_state = algorithm.q_network.initial_state(int(obs_tensor.shape[0]), device=device)
+    episode_starts = torch.ones(int(obs_tensor.shape[0]), dtype=torch.bool, device=device)
+    with torch.no_grad():
+        actions = algorithm.q_network.act(
+            obs_tensor,
+            state=initial_state,
+            epsilon=0.0,
+            deterministic=deterministic,
+            episode_starts=episode_starts,
+        ).actions
+    return _format_action_output(actions, discrete=True)
+
+
 _ALGORITHM_REGISTRY: dict[str, AlgorithmSpec] = {
     "a2c": AlgorithmSpec(
         name="a2c",
@@ -2496,6 +3428,12 @@ _ALGORITHM_REGISTRY: dict[str, AlgorithmSpec] = {
         evaluate_fn=_evaluate_mopo,
         predict_fn=_predict_mopo,
     ),
+    "mbpo": AlgorithmSpec(
+        name="mbpo",
+        train_fn=train_mbpo,
+        evaluate_fn=_evaluate_mbpo,
+        predict_fn=_predict_mbpo,
+    ),
     "pets": AlgorithmSpec(
         name="pets",
         train_fn=train_pets,
@@ -2526,6 +3464,84 @@ _ALGORITHM_REGISTRY: dict[str, AlgorithmSpec] = {
         evaluate_fn=_evaluate_ppo,
         predict_fn=_predict_ppo,
     ),
+    "gail": AlgorithmSpec(
+        name="gail",
+        train_fn=train_gail,
+        evaluate_fn=_evaluate_gail,
+        predict_fn=_predict_gail,
+    ),
+    "dreamer": AlgorithmSpec(
+        name="dreamer",
+        train_fn=train_dreamer,
+        evaluate_fn=_evaluate_dreamer,
+        predict_fn=_predict_dreamer,
+    ),
+    "dreamerv3": AlgorithmSpec(
+        name="dreamerv3",
+        train_fn=train_dreamer,
+        evaluate_fn=_evaluate_dreamerv3,
+        predict_fn=_predict_dreamerv3,
+    ),
+    "diamond": AlgorithmSpec(
+        name="diamond",
+        train_fn=train_dreamer,
+        evaluate_fn=_evaluate_diamond,
+        predict_fn=_predict_diamond,
+    ),
+    "horizon_imagination": AlgorithmSpec(
+        name="horizon_imagination",
+        train_fn=train_dreamer,
+        evaluate_fn=_evaluate_horizon_imagination,
+        predict_fn=_predict_horizon_imagination,
+    ),
+    "po_dreamer": AlgorithmSpec(
+        name="po_dreamer",
+        train_fn=train_dreamer,
+        evaluate_fn=_evaluate_po_dreamer,
+        predict_fn=_predict_po_dreamer,
+    ),
+    "twisted": AlgorithmSpec(
+        name="twisted",
+        train_fn=train_dreamer,
+        evaluate_fn=_evaluate_twisted,
+        predict_fn=_predict_twisted,
+    ),
+    "mow": AlgorithmSpec(
+        name="mow",
+        train_fn=train_dreamer,
+        evaluate_fn=_evaluate_mow,
+        predict_fn=_predict_mow,
+    ),
+    "eadream": AlgorithmSpec(
+        name="eadream",
+        train_fn=train_dreamer,
+        evaluate_fn=_evaluate_eadream,
+        predict_fn=_predict_eadream,
+    ),
+    "muzero": AlgorithmSpec(
+        name="muzero",
+        train_fn=train_muzero,
+        evaluate_fn=_evaluate_muzero,
+        predict_fn=_predict_muzero,
+    ),
+    "gumbel_muzero": AlgorithmSpec(
+        name="gumbel_muzero",
+        train_fn=train_muzero,
+        evaluate_fn=_evaluate_gumbel_muzero,
+        predict_fn=_predict_gumbel_muzero,
+    ),
+    "efficientzero": AlgorithmSpec(
+        name="efficientzero",
+        train_fn=train_efficientzero,
+        evaluate_fn=_evaluate_efficientzero,
+        predict_fn=_predict_efficientzero,
+    ),
+    "scalezero": AlgorithmSpec(
+        name="scalezero",
+        train_fn=train_muzero,
+        evaluate_fn=_evaluate_scalezero,
+        predict_fn=_predict_scalezero,
+    ),
     "trpo": AlgorithmSpec(
         name="trpo",
         train_fn=train_trpo,
@@ -2541,6 +3557,24 @@ _ALGORITHM_REGISTRY: dict[str, AlgorithmSpec] = {
     "dqn": AlgorithmSpec(
         name="dqn",
         train_fn=train_dqn,
+        evaluate_fn=_evaluate_dqn,
+        predict_fn=_predict_dqn,
+    ),
+    "jowa": AlgorithmSpec(
+        name="jowa",
+        train_fn=train_dqn,
+        evaluate_fn=_evaluate_dqn,
+        predict_fn=_predict_dqn,
+    ),
+    "spr": AlgorithmSpec(
+        name="spr",
+        train_fn=train_dqn,
+        evaluate_fn=_evaluate_dqn,
+        predict_fn=_predict_dqn,
+    ),
+    "apex_dqn": AlgorithmSpec(
+        name="apex_dqn",
+        train_fn=train_apex_dqn,
         evaluate_fn=_evaluate_dqn,
         predict_fn=_predict_dqn,
     ),
@@ -2676,6 +3710,12 @@ _ALGORITHM_REGISTRY: dict[str, AlgorithmSpec] = {
         evaluate_fn=_evaluate_iqn,
         predict_fn=_predict_iqn,
     ),
+    "fqf": AlgorithmSpec(
+        name="fqf",
+        train_fn=train_dqn,
+        evaluate_fn=_evaluate_fqf,
+        predict_fn=_predict_fqf,
+    ),
     "cal_ql": AlgorithmSpec(
         name="cal_ql",
         train_fn=train_cal_ql,
@@ -2735,6 +3775,12 @@ _ALGORITHM_REGISTRY: dict[str, AlgorithmSpec] = {
         train_fn=train_r2d2,
         evaluate_fn=_evaluate_r2d2,
         predict_fn=_predict_r2d2,
+    ),
+    "agent57": AlgorithmSpec(
+        name="agent57",
+        train_fn=train_agent57,
+        evaluate_fn=_evaluate_agent57,
+        predict_fn=_predict_agent57,
     ),
     "drq": AlgorithmSpec(
         name="drq",

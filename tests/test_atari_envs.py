@@ -122,6 +122,19 @@ def test_resolve_atari_wrapper_config_uses_tags_and_eval_mode() -> None:
     assert eval_config.clip_reward is False
 
 
+def test_resolve_atari_wrapper_config_defers_to_generic_reward_strategy_by_default() -> None:
+    train_config = resolve_atari_wrapper_config(
+        env_id="ALE/Breakout-v5",
+        tags=("atari",),
+        wrapper_kwargs={},
+        evaluation=False,
+        reward_wrapper_active=True,
+    )
+
+    assert train_config is not None
+    assert train_config.clip_reward is False
+
+
 def test_channel_first_observation_converts_hwc_to_chw() -> None:
     env = ChannelFirstObservation(DummyImageEnv())
     obs, _ = env.reset()
@@ -161,6 +174,177 @@ def test_build_env_applies_atari_wrappers_when_requested(monkeypatch, tmp_path: 
     _, reward, terminated, truncated, _ = env.step(1)
 
     assert obs.shape == (4, 84, 84)
+    assert reward == pytest.approx(1.0)
+    assert terminated or truncated
+
+    env.close()
+
+
+def test_build_env_prefers_generic_reward_strategy_over_default_atari_clip(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(gym, "make", lambda env_id, **kwargs: DummyImageEnv())
+    monkeypatch.setattr(gym.wrappers, "AtariPreprocessing", DummyAtariPreprocessing)
+
+    config = TrainConfig(
+        algo="dqn",
+        env_id="ALE/Breakout-v5",
+        seed=11,
+        total_timesteps=32,
+        output_dir=tmp_path,
+        tags=("atari",),
+        env_kwargs={
+            "wrappers": {
+                "reward": {
+                    "scale": 0.5,
+                }
+            }
+        },
+    )
+
+    env = build_env(config, env_index=0)
+    env.reset(seed=config.seed)
+    _, reward, terminated, truncated, _ = env.step(1)
+
+    assert reward == pytest.approx(1.25)
+    assert terminated or truncated
+
+    env.close()
+
+
+def test_build_env_keeps_explicit_atari_clip_reward_with_generic_reward_strategy(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(gym, "make", lambda env_id, **kwargs: DummyImageEnv())
+    monkeypatch.setattr(gym.wrappers, "AtariPreprocessing", DummyAtariPreprocessing)
+
+    config = TrainConfig(
+        algo="dqn",
+        env_id="ALE/Breakout-v5",
+        seed=13,
+        total_timesteps=32,
+        output_dir=tmp_path,
+        tags=("atari",),
+        env_kwargs={
+            "wrappers": {
+                "atari": {
+                    "clip_reward": True,
+                },
+                "reward": {
+                    "scale": 0.5,
+                },
+            }
+        },
+    )
+
+    env = build_env(config, env_index=0)
+    env.reset(seed=config.seed)
+    _, reward, terminated, truncated, _ = env.step(1)
+
+    assert reward == pytest.approx(0.5)
+    assert terminated or truncated
+
+    env.close()
+
+
+def test_build_env_applies_evaluation_env_overrides_for_atari_protocol(monkeypatch, tmp_path: Path) -> None:
+    captured_kwargs: dict[str, object] = {}
+
+    def _make_env(env_id: str, **kwargs):
+        del env_id
+        captured_kwargs.update(kwargs)
+        return DummyImageEnv()
+
+    monkeypatch.setattr(gym, "make", _make_env)
+    monkeypatch.setattr(gym.wrappers, "AtariPreprocessing", DummyAtariPreprocessing)
+
+    config = TrainConfig(
+        algo="dqn",
+        env_id="ALE/Breakout-v5",
+        seed=17,
+        total_timesteps=32,
+        output_dir=tmp_path,
+        tags=("atari",),
+        env_kwargs={
+            "frameskip": 1,
+            "repeat_action_probability": 0.0,
+            "wrappers": {
+                "atari": {
+                    "screen_size": 84,
+                    "frame_skip": 4,
+                    "noop_max": 30,
+                    "grayscale_obs": True,
+                    "frame_stack": 4,
+                    "clip_reward": True,
+                    "channel_first": True,
+                }
+            },
+            "evaluation": {
+                "repeat_action_probability": 0.25,
+                "wrappers": {
+                    "atari": {
+                        "clip_reward": False,
+                    }
+                },
+            },
+        },
+    )
+
+    env = build_env(config, env_index=0, evaluation=True)
+    obs, _ = env.reset(seed=config.seed)
+    _, reward, terminated, truncated, _ = env.step(1)
+
+    assert captured_kwargs["frameskip"] == 1
+    assert captured_kwargs["repeat_action_probability"] == pytest.approx(0.25)
+    assert obs.shape == (4, 84, 84)
+    assert reward == pytest.approx(2.5)
+    assert terminated or truncated
+
+    env.close()
+
+
+def test_build_env_applies_training_env_overrides_for_atari_protocol(monkeypatch, tmp_path: Path) -> None:
+    captured_kwargs: dict[str, object] = {}
+
+    def _make_env(env_id: str, **kwargs):
+        del env_id
+        captured_kwargs.update(kwargs)
+        return DummyImageEnv()
+
+    monkeypatch.setattr(gym, "make", _make_env)
+    monkeypatch.setattr(gym.wrappers, "AtariPreprocessing", DummyAtariPreprocessing)
+
+    config = TrainConfig(
+        algo="dqn",
+        env_id="ALE/Breakout-v5",
+        seed=19,
+        total_timesteps=32,
+        output_dir=tmp_path,
+        tags=("atari",),
+        env_kwargs={
+            "frameskip": 1,
+            "repeat_action_probability": 0.25,
+            "wrappers": {
+                "atari": {
+                    "screen_size": 84,
+                    "frame_skip": 4,
+                    "noop_max": 30,
+                    "grayscale_obs": True,
+                    "frame_stack": 4,
+                    "clip_reward": True,
+                    "channel_first": True,
+                }
+            },
+            "training": {
+                "repeat_action_probability": 0.0,
+            },
+        },
+    )
+
+    env = build_env(config, env_index=0, evaluation=False)
+    env.reset(seed=config.seed)
+    _, reward, terminated, truncated, _ = env.step(1)
+
+    assert captured_kwargs["repeat_action_probability"] == pytest.approx(0.0)
     assert reward == pytest.approx(1.0)
     assert terminated or truncated
 

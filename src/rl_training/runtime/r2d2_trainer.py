@@ -18,7 +18,12 @@ from rl_training.experiment.config import TrainConfig
 from rl_training.models.recurrent import LSTMQNetwork
 from rl_training.runtime.callbacks import Callback, CallbackList, merge_callbacks
 from rl_training.runtime.collector import CollectResult
-from rl_training.runtime.controls import build_control_callbacks, resolve_eval_interval, should_run_evaluation
+from rl_training.runtime.controls import (
+    build_control_callbacks,
+    resolve_eval_interval,
+    resolve_exploration_epsilon,
+    should_run_evaluation,
+)
 from rl_training.runtime.run_utils import create_training_run, resolve_device, save_training_checkpoint
 from rl_training.runtime.trainer import TrainResult, TrainerState
 from rl_training.runtime.types import MetricDict
@@ -40,8 +45,11 @@ def _infer_spaces(envs: gym.vector.SyncVectorEnv) -> tuple[tuple[int, ...], int]
         raise TypeError(f"unsupported observation space for R2D2 trainer: {type(obs_space)!r}")
     if not isinstance(action_space, gym.spaces.Discrete):
         raise TypeError(f"unsupported action space for R2D2 trainer: {type(action_space)!r}")
-    if obs_space.shape is None or len(obs_space.shape) != 1:
-        raise ValueError(f"R2D2 v1 currently supports flat 1D observations only, got shape={obs_space.shape!r}")
+    if obs_space.shape is None or len(obs_space.shape) not in (1, 3):
+        raise ValueError(
+            "expected flat 1D or channel-first image observations, "
+            f"got shape={obs_space.shape!r}"
+        )
 
     return tuple(int(dim) for dim in obs_space.shape), int(action_space.n)
 
@@ -313,9 +321,6 @@ def train_r2d2(
     sequence_length = int(config.algo_kwargs.get("sequence_length", 8))
     hidden_size = int(config.algo_kwargs.get("recurrent_hidden_size", 256))
     num_layers = int(config.algo_kwargs.get("recurrent_num_layers", 1))
-    epsilon_start = float(config.algo_kwargs.get("epsilon_start", 1.0))
-    epsilon_end = float(config.algo_kwargs.get("epsilon_end", 0.05))
-    exploration_fraction = float(config.algo_kwargs.get("exploration_fraction", 0.3))
     prioritized_alpha = float(config.algo_kwargs.get("prioritized_alpha", 0.6))
     prioritized_beta_start = float(config.algo_kwargs.get("prioritized_beta_start", 0.4))
     prioritized_beta_end = float(config.algo_kwargs.get("prioritized_beta_end", 1.0))
@@ -351,6 +356,7 @@ def train_r2d2(
             double_q=True,
             priority_eta=priority_eta,
         )
+        buffer_obs_dtype = torch.uint8 if len(obs_shape) == 3 else torch.float32
         replay_buffer = PrioritizedRecurrentReplayBuffer(
             capacity=buffer_capacity,
             num_envs=config.num_envs,
@@ -360,6 +366,7 @@ def train_r2d2(
             num_layers=num_layers,
             alpha=prioritized_alpha,
             device=device,
+            obs_dtype=buffer_obs_dtype,
         )
         if checkpoint_state is not None:
             algorithm.load_state_dict(checkpoint_state.algorithm_state)
@@ -380,13 +387,7 @@ def train_r2d2(
         callback_list.on_train_start(trainer_state)
 
         while global_step < config.total_timesteps:
-            epsilon = _epsilon_at_step(
-                global_step,
-                total_timesteps=config.total_timesteps,
-                epsilon_start=epsilon_start,
-                epsilon_end=epsilon_end,
-                exploration_fraction=exploration_fraction,
-            )
+            epsilon = resolve_exploration_epsilon(config, step=global_step)
 
             recurrent_state = q_network.reset_state(recurrent_state, episode_starts)
             state_snapshot = (recurrent_state[0].detach().clone(), recurrent_state[1].detach().clone())

@@ -1,0 +1,4 @@
+name: impala_breakout
+config: configs/impala/breakout_atari.yaml
+algorithm: impala
+env_id: ALE/Breakout-v5

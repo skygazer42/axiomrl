@@ -1,0 +1,4 @@
+name: jowa_breakout
+config: configs/jowa/breakout_atari.yaml
+algorithm: jowa
+env_id: ALE/Breakout-v5

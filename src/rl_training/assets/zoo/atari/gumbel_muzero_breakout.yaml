@@ -1,0 +1,4 @@
+name: gumbel_muzero_breakout
+config: configs/gumbel_muzero/breakout_atari.yaml
+algorithm: gumbel_muzero
+env_id: ALE/Breakout-v5

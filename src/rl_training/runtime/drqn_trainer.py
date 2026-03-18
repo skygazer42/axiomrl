@@ -15,7 +15,12 @@ from rl_training.experiment.config import TrainConfig
 from rl_training.models.recurrent import LSTMQNetwork
 from rl_training.runtime.callbacks import Callback, CallbackList, merge_callbacks
 from rl_training.runtime.collector import CollectResult
-from rl_training.runtime.controls import build_control_callbacks, resolve_eval_interval, should_run_evaluation
+from rl_training.runtime.controls import (
+    build_control_callbacks,
+    resolve_eval_interval,
+    resolve_exploration_epsilon,
+    should_run_evaluation,
+)
 from rl_training.runtime.run_utils import create_training_run, resolve_device, save_training_checkpoint
 from rl_training.runtime.trainer import TrainResult, TrainerState
 from rl_training.runtime.types import MetricDict
@@ -130,9 +135,6 @@ def train_drqn(
     sequence_length = int(config.algo_kwargs.get("sequence_length", 8))
     hidden_size = int(config.algo_kwargs.get("recurrent_hidden_size", 256))
     num_layers = int(config.algo_kwargs.get("recurrent_num_layers", 1))
-    epsilon_start = float(config.algo_kwargs.get("epsilon_start", 1.0))
-    epsilon_end = float(config.algo_kwargs.get("epsilon_end", 0.05))
-    exploration_fraction = float(config.algo_kwargs.get("exploration_fraction", 0.3))
     eval_interval = resolve_eval_interval(config)
 
     torch.manual_seed(config.seed)
@@ -176,13 +178,7 @@ def train_drqn(
         callback_list.on_train_start(trainer_state)
 
         while global_step < config.total_timesteps:
-            epsilon = _epsilon_at_step(
-                global_step,
-                total_timesteps=config.total_timesteps,
-                epsilon_start=epsilon_start,
-                epsilon_end=epsilon_end,
-                exploration_fraction=exploration_fraction,
-            )
+            epsilon = resolve_exploration_epsilon(config, step=global_step)
 
             recurrent_state = q_network.reset_state(recurrent_state, episode_starts)
             state_snapshot = (recurrent_state[0].detach().clone(), recurrent_state[1].detach().clone())

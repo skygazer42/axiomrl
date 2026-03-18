@@ -1,12 +1,23 @@
 from rl_training.models.cnn import (
     CNNActorCritic,
+    CNNC51QNetwork,
     CNNCURLModel,
     CNNDrQModel,
     CNNDrQv2Model,
+    CNNDuelingNoisyQNetwork,
+    CNNDuelingQNetwork,
+    CNNFQFNetwork,
+    CNNIQNetwork,
+    CNNJOWAQNetwork,
+    CNNNoisyQNetwork,
+    CNNPPGModel,
     CNNQNetwork,
+    CNNQRQNetwork,
+    CNNSPRQNetwork,
     CURLSample,
     DrQSample,
     DrQv2Sample,
+    FQFNetworkOutput,
     NatureCNN,
 )
 from rl_training.models.decision_transformer import DecisionTransformerModel
@@ -34,17 +45,29 @@ from rl_training.models.mlp_sac import MLPSACModel, SACSample
 from rl_training.models.mlp_tqc import MLPTQCModel, TQCSample
 from rl_training.models.mlp_td3 import MLPTD3Model
 from rl_training.models.recurrent import LSTMActorCritic, LSTMQNetwork
+from rl_training.models.rnd import RNDModel
 
 __all__ = [
     "CNNActorCritic",
+    "CNNC51QNetwork",
     "CNNCURLModel",
     "CNNDrQModel",
     "CNNDrQv2Model",
+    "CNNDuelingNoisyQNetwork",
+    "CNNDuelingQNetwork",
+    "CNNFQFNetwork",
+    "CNNIQNetwork",
+    "CNNJOWAQNetwork",
+    "CNNNoisyQNetwork",
+    "CNNPPGModel",
     "CNNQNetwork",
+    "CNNQRQNetwork",
+    "CNNSPRQNetwork",
     "CURLSample",
     "DecisionTransformerModel",
     "DrQSample",
     "DrQv2Sample",
+    "FQFNetworkOutput",
     "LSTMActorCritic",
     "LSTMQNetwork",
     "MLPARSModel",
@@ -72,6 +95,7 @@ __all__ = [
     "MLPSACModel",
     "MLPTQCModel",
     "MLPTD3Model",
+    "RNDModel",
     "DiscreteSACSample",
     "CrossQSample",
     "REDQSample",

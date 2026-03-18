@@ -20,8 +20,8 @@ def test_package_exposes_contrib_namespace() -> None:
 def test_pyproject_declares_cli_entrypoints_and_package_assets() -> None:
     pyproject_text = (REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8")
 
-    assert 'rl-training = "rl_training.cli:main"' in pyproject_text
-    assert 'rl-training-zoo = "rl_training.zoo_cli:main"' in pyproject_text
+    assert 'axiomrl = "rl_training.cli:main"' in pyproject_text
+    assert 'axiomrl-zoo = "rl_training.zoo_cli:main"' in pyproject_text
     assert 'offline = [' in pyproject_text
     assert '"minari"' in pyproject_text
     assert 'assets/configs/*/*.yaml' in pyproject_text
@@ -33,20 +33,20 @@ def test_readme_describes_core_contrib_and_zoo_workflows() -> None:
     readme_text = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
 
     assert "core + contrib + zoo" in readme_text
-    assert "rl-training train --config configs/ppo/cartpole.yaml" in readme_text
-    assert "rl-training train --config configs/ars/pendulum.yaml" in readme_text
-    assert "rl-training train --config configs/openai_es/pendulum.yaml" in readme_text
-    assert "rl-training train --config configs/pets/pendulum.yaml" in readme_text
-    assert "rl-training train --config configs/crr/pendulum.yaml" in readme_text
-    assert "rl-training train --config configs/awr/pendulum.yaml" in readme_text
-    assert "rl-training train --config configs/marwil/pendulum.yaml" in readme_text
-    assert "rl-training train --config configs/cal_ql/pendulum.yaml" in readme_text
-    assert "rl-training train --config configs/edac/pendulum.yaml" in readme_text
-    assert "rl-training train --config configs/rlpd/pendulum.yaml" in readme_text
-    assert "rl-training train --config configs/xql/pendulum.yaml" in readme_text
-    assert "rl-training train --config configs/rebrac/pendulum.yaml" in readme_text
-    assert "rl-training train --config zoo/atari/dqn_breakout.yaml" in readme_text
-    assert "rl-training zoo --format commands" in readme_text
+    assert "axiomrl train --config configs/ppo/cartpole.yaml" in readme_text
+    assert "axiomrl train --config configs/ars/pendulum.yaml" in readme_text
+    assert "axiomrl train --config configs/openai_es/pendulum.yaml" in readme_text
+    assert "axiomrl train --config configs/pets/pendulum.yaml" in readme_text
+    assert "axiomrl train --config configs/crr/pendulum.yaml" in readme_text
+    assert "axiomrl train --config configs/awr/pendulum.yaml" in readme_text
+    assert "axiomrl train --config configs/marwil/pendulum.yaml" in readme_text
+    assert "axiomrl train --config configs/cal_ql/pendulum.yaml" in readme_text
+    assert "axiomrl train --config configs/edac/pendulum.yaml" in readme_text
+    assert "axiomrl train --config configs/rlpd/pendulum.yaml" in readme_text
+    assert "axiomrl train --config configs/xql/pendulum.yaml" in readme_text
+    assert "axiomrl train --config configs/rebrac/pendulum.yaml" in readme_text
+    assert "axiomrl train --config zoo/atari/dqn_breakout.yaml" in readme_text
+    assert "axiomrl zoo --format commands" in readme_text
     assert 'pip install -e ".[offline]"' in readme_text
     assert "configs/awac/pendulum.yaml" in readme_text
     assert "configs/bear/pendulum.yaml" in readme_text

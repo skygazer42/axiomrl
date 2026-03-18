@@ -1,0 +1,4 @@
+name: horizon_imagination_breakout
+config: configs/horizon_imagination/breakout_atari.yaml
+algorithm: horizon_imagination
+env_id: ALE/Breakout-v5

@@ -105,6 +105,66 @@ class PPO(ManagedAlgorithm):
     algo_name = "ppo"
 
 
+class GAIL(ManagedAlgorithm):
+    algo_name = "gail"
+
+
+class Dreamer(ManagedAlgorithm):
+    algo_name = "dreamer"
+
+
+class DreamerV3(ManagedAlgorithm):
+    algo_name = "dreamerv3"
+
+
+class Diamond(ManagedAlgorithm):
+    algo_name = "diamond"
+
+
+class HorizonImagination(ManagedAlgorithm):
+    algo_name = "horizon_imagination"
+
+
+class PODreamer(ManagedAlgorithm):
+    algo_name = "po_dreamer"
+
+
+class Twisted(ManagedAlgorithm):
+    algo_name = "twisted"
+
+
+class EADream(ManagedAlgorithm):
+    algo_name = "eadream"
+
+
+class MoW(ManagedAlgorithm):
+    algo_name = "mow"
+
+
+class JOWA(ManagedAlgorithm):
+    algo_name = "jowa"
+
+
+class MuZero(ManagedAlgorithm):
+    algo_name = "muzero"
+
+
+class GumbelMuZero(ManagedAlgorithm):
+    algo_name = "gumbel_muzero"
+
+
+class EfficientZero(ManagedAlgorithm):
+    algo_name = "efficientzero"
+
+
+class ScaleZero(ManagedAlgorithm):
+    algo_name = "scalezero"
+
+
+class SPR(ManagedAlgorithm):
+    algo_name = "spr"
+
+
 class TRPO(ManagedAlgorithm):
     algo_name = "trpo"
 
@@ -153,6 +213,10 @@ class MOPO(ManagedAlgorithm):
     algo_name = "mopo"
 
 
+class MBPO(ManagedAlgorithm):
+    algo_name = "mbpo"
+
+
 class PETS(ManagedAlgorithm):
     algo_name = "pets"
 
@@ -183,6 +247,10 @@ class DRQN(ManagedAlgorithm):
 
 class R2D2(ManagedAlgorithm):
     algo_name = "r2d2"
+
+
+class Agent57(ManagedAlgorithm):
+    algo_name = "agent57"
 
 
 class HER(ManagedAlgorithm):
@@ -307,6 +375,10 @@ class QRDQN(ManagedAlgorithm):
 
 class IQN(ManagedAlgorithm):
     algo_name = "iqn"
+
+
+class FQF(ManagedAlgorithm):
+    algo_name = "fqf"
 
 
 class IQL(ManagedAlgorithm):

@@ -12,16 +12,17 @@ from rl_training.data.rollout_buffer import RolloutBuffer
 from rl_training.envs.factory import build_env, make_vector_env
 from rl_training.experiment.checkpointing import CheckpointState
 from rl_training.experiment.config import TrainConfig
+from rl_training.models.cnn import CNNActorCritic
 from rl_training.models.mlp_actor_critic import MLPActorCritic
 from rl_training.runtime.callbacks import Callback, CallbackList, merge_callbacks
 from rl_training.runtime.collector import CollectResult
-from rl_training.runtime.controls import build_control_callbacks
+from rl_training.runtime.controls import build_control_callbacks, resolve_entropy_coefficient
 from rl_training.runtime.run_utils import create_training_run, resolve_device, save_training_checkpoint
 from rl_training.runtime.trainer import TrainResult, TrainerState
 from rl_training.runtime.types import MetricDict
 
 
-def _infer_spaces(envs: gym.vector.SyncVectorEnv) -> tuple[int, int]:
+def _infer_spaces(envs: gym.vector.SyncVectorEnv) -> tuple[tuple[int, ...], int]:
     obs_space = envs.single_observation_space
     action_space = envs.single_action_space
 
@@ -29,14 +30,31 @@ def _infer_spaces(envs: gym.vector.SyncVectorEnv) -> tuple[int, int]:
         raise TypeError(f"unsupported observation space for A2C trainer: {type(obs_space)!r}")
     if not isinstance(action_space, gym.spaces.Discrete):
         raise TypeError(f"unsupported action space for A2C trainer: {type(action_space)!r}")
-    if obs_space.shape is None or len(obs_space.shape) != 1:
-        raise ValueError(f"expected flat 1D observations, got shape={obs_space.shape!r}")
+    if obs_space.shape is None or len(obs_space.shape) not in (1, 3):
+        raise ValueError(f"expected flat 1D or channel-first image observations, got shape={obs_space.shape!r}")
 
-    return int(obs_space.shape[0]), int(action_space.n)
+    return tuple(int(dim) for dim in obs_space.shape), int(action_space.n)
+
+
+def _build_policy(config: TrainConfig, *, obs_shape: tuple[int, ...], action_dim: int) -> MLPActorCritic | CNNActorCritic:
+    if len(obs_shape) == 1:
+        hidden_sizes = tuple(config.algo_kwargs.get("hidden_sizes", (64, 64)))
+        return MLPActorCritic(
+            obs_dim=obs_shape[0],
+            action_dim=action_dim,
+            hidden_sizes=hidden_sizes,
+        )
+
+    return CNNActorCritic(
+        obs_shape=obs_shape,
+        action_dim=action_dim,
+        hidden_sizes=tuple(config.algo_kwargs.get("head_hidden_sizes", config.algo_kwargs.get("hidden_sizes", (512,)))),
+        features_dim=int(config.algo_kwargs.get("features_dim", 512)),
+    )
 
 
 def _evaluate_policy(
-    policy: MLPActorCritic,
+    policy: MLPActorCritic | CNNActorCritic,
     config: TrainConfig,
     *,
     device: torch.device,
@@ -85,9 +103,8 @@ def train_a2c(
     trainer_state = TrainerState(algorithm="a2c", run_dir=run_context.run_dir)
 
     num_steps = int(config.algo_kwargs.get("num_steps", 128))
-    hidden_sizes = tuple(config.algo_kwargs.get("hidden_sizes", (64, 64)))
     learning_rate = float(config.algo_kwargs.get("learning_rate", 3e-4))
-    ent_coef = float(config.algo_kwargs.get("ent_coef", 0.01))
+    ent_coef = resolve_entropy_coefficient(config, step=0, coefficient_key="ent_coef", default=0.01)
     vf_coef = float(config.algo_kwargs.get("vf_coef", 0.5))
     gamma = float(config.algo_kwargs.get("gamma", 0.99))
     gae_lambda = float(config.algo_kwargs.get("gae_lambda", 0.95))
@@ -101,12 +118,9 @@ def train_a2c(
     metrics: MetricDict = {}
 
     try:
-        obs_dim, action_dim = _infer_spaces(envs)
-        policy = MLPActorCritic(
-            obs_dim=obs_dim,
-            action_dim=action_dim,
-            hidden_sizes=hidden_sizes,
-        ).to(device)
+        obs_shape, action_dim = _infer_spaces(envs)
+        policy = _build_policy(config, obs_shape=obs_shape, action_dim=action_dim).to(device)
+        buffer_obs_dtype = torch.uint8 if len(obs_shape) == 3 else torch.float32
         algorithm = A2C(
             policy=policy,
             learning_rate=learning_rate,
@@ -128,9 +142,10 @@ def train_a2c(
             buffer = RolloutBuffer(
                 num_steps=num_steps,
                 num_envs=config.num_envs,
-                obs_shape=(obs_dim,),
+                obs_shape=obs_shape,
                 action_shape=(),
                 device=device,
+                obs_dtype=buffer_obs_dtype,
             )
 
             for _ in range(num_steps):
@@ -142,7 +157,7 @@ def train_a2c(
                 dones = np.logical_or(terminated, truncated).astype(np.float32)
 
                 buffer.add(
-                    obs=obs_tensor,
+                    obs=obs if buffer_obs_dtype == torch.uint8 else obs_tensor,
                     actions=rollout.actions,
                     rewards=torch.as_tensor(rewards, dtype=torch.float32, device=device),
                     dones=torch.as_tensor(dones, dtype=torch.float32, device=device),
@@ -173,6 +188,13 @@ def train_a2c(
                 gae_lambda=gae_lambda,
             )
 
+            current_ent_coef = resolve_entropy_coefficient(
+                config,
+                step=global_step,
+                coefficient_key="ent_coef",
+                default=0.01,
+            )
+            algorithm.ent_coef = current_ent_coef
             batch = next(buffer.iter_minibatches(minibatch_size=num_steps * config.num_envs, shuffle=False))
             result = algorithm.update(
                 {
@@ -197,6 +219,7 @@ def train_a2c(
                 "global_step": float(global_step),
                 "update": float(update_index + 1),
                 "gradient_steps": float(result.num_gradient_steps),
+                "ent_coef": float(current_ent_coef),
             }
             logger.log_metrics(metrics, step=global_step)
             callback_list.on_eval_end(trainer_state, metrics)

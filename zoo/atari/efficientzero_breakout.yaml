@@ -1,0 +1,4 @@
+name: efficientzero_breakout
+config: configs/efficientzero/breakout_atari.yaml
+algorithm: efficientzero
+env_id: ALE/Breakout-v5

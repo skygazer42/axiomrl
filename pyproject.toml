@@ -3,7 +3,7 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "rl-training"
+name = "axiomrl"
 version = "0.1.0"
 description = "A modular reinforcement learning package with core, contrib, and zoo workflows."
 readme = "README.md"
@@ -33,8 +33,8 @@ offline = [
 ]
 
 [project.scripts]
-rl-training = "rl_training.cli:main"
-rl-training-zoo = "rl_training.zoo_cli:main"
+axiomrl = "rl_training.cli:main"
+axiomrl-zoo = "rl_training.zoo_cli:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

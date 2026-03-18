@@ -1,0 +1,4 @@
+name: eadream_breakout
+config: configs/eadream/breakout_atari.yaml
+algorithm: eadream
+env_id: ALE/Breakout-v5

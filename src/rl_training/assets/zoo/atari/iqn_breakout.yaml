@@ -1,0 +1,5 @@
+name: iqn_breakout
+config: configs/iqn/breakout_atari.yaml
+algorithm: iqn
+env_id: ALE/Breakout-v5
+

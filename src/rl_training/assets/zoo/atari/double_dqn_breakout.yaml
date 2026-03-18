@@ -1,0 +1,5 @@
+name: double_dqn_breakout
+config: configs/double_dqn/breakout_atari.yaml
+algorithm: double_dqn
+env_id: ALE/Breakout-v5
+

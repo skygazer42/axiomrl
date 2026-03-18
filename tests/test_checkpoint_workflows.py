@@ -99,6 +99,13 @@ def test_evaluate_checkpoint_returns_metrics_for_ppo(tmp_path: Path) -> None:
         output_dir=tmp_path,
         num_envs=2,
         eval_episodes=1,
+        benchmark={
+            "score_normalization": {
+                "type": "human_random",
+                "random_score": 0.0,
+                "human_score": 500.0,
+            },
+        },
         algo_kwargs={
             "num_steps": 32,
             "update_epochs": 1,
@@ -110,7 +117,12 @@ def test_evaluate_checkpoint_returns_metrics_for_ppo(tmp_path: Path) -> None:
     train_result = train_ppo(config, run_suffix="eval-source")
     metrics = evaluate_checkpoint(train_result.checkpoint_path, num_episodes=1)
 
-    assert set(metrics) >= {"eval_return_mean", "eval_return_std", "eval_episodes"}
+    assert set(metrics) >= {
+        "eval_return_mean",
+        "eval_return_std",
+        "eval_episodes",
+        "eval_human_normalized_score",
+    }
 
 
 def test_evaluate_checkpoint_returns_metrics_for_ars(tmp_path: Path) -> None:

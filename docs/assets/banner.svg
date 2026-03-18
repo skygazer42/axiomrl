@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 200" font-family="'Segoe UI',system-ui,-apple-system,sans-serif">
+  <defs>
+    <linearGradient id="bannerBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="50%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="accentLine" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#3b82f6" stop-opacity="0"/>
+      <stop offset="20%" stop-color="#3b82f6"/>
+      <stop offset="50%" stop-color="#8b5cf6"/>
+      <stop offset="80%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/>
+    </linearGradient>
+    <!-- Decorative grid pattern -->
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#334155" stroke-width="0.5" opacity="0.3"/>
+    </pattern>
+    <!-- RL agent icon abstraction -->
+    <linearGradient id="iconGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#60a5fa"/>
+      <stop offset="100%" stop-color="#a78bfa"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="200" fill="url(#bannerBg)"/>
+  <rect width="900" height="200" fill="url(#grid)"/>
+
+  <!-- Decorative circles (state nodes) -->
+  <circle cx="80" cy="100" r="35" fill="none" stroke="#3b82f6" stroke-width="1.5" opacity="0.15"/>
+  <circle cx="80" cy="100" r="50" fill="none" stroke="#3b82f6" stroke-width="0.8" opacity="0.08"/>
+  <circle cx="820" cy="100" r="35" fill="none" stroke="#f59e0b" stroke-width="1.5" opacity="0.15"/>
+  <circle cx="820" cy="100" r="50" fill="none" stroke="#f59e0b" stroke-width="0.8" opacity="0.08"/>
+
+  <!-- Decorative connection lines -->
+  <path d="M115 100 Q200 60 280 100 Q360 140 440 100" stroke="#3b82f6" stroke-width="1" fill="none" opacity="0.12" stroke-dasharray="4,4"/>
+  <path d="M460 100 Q540 60 620 100 Q700 140 785 100" stroke="#f59e0b" stroke-width="1" fill="none" opacity="0.12" stroke-dasharray="4,4"/>
+
+  <!-- Small state dots -->
+  <circle cx="280" cy="100" r="3" fill="#3b82f6" opacity="0.3"/>
+  <circle cx="440" cy="100" r="3" fill="#8b5cf6" opacity="0.3"/>
+  <circle cx="620" cy="100" r="3" fill="#f59e0b" opacity="0.3"/>
+
+  <!-- Icon: stylized RL loop -->
+  <g transform="translate(350, 48)">
+    <rect x="0" y="0" width="46" height="46" rx="10" fill="url(#iconGrad)" opacity="0.9"/>
+    <text x="23" y="32" text-anchor="middle" fill="#fff" font-size="24" font-weight="800">A</text>
+  </g>
+
+  <!-- Title -->
+  <text x="450" y="80" text-anchor="middle" fill="#f8fafc" font-size="42" font-weight="800" letter-spacing="-1">
+    <tspan fill="#f8fafc">Axiom</tspan><tspan fill="#60a5fa">RL</tspan>
+  </text>
+
+  <!-- Accent line -->
+  <rect x="100" y="100" width="700" height="2" rx="1" fill="url(#accentLine)"/>
+
+  <!-- Subtitle -->
+  <text x="450" y="128" text-anchor="middle" fill="#94a3b8" font-size="15" font-weight="400">A modular reinforcement learning library for research and production</text>
+
+  <!-- Tags -->
+  <g transform="translate(200, 148)">
+    <rect x="0" y="0" width="72" height="22" rx="11" fill="#1e3a5f"/>
+    <text x="36" y="15" text-anchor="middle" fill="#60a5fa" font-size="10" font-weight="600">PyTorch</text>
+  </g>
+  <g transform="translate(285, 148)">
+    <rect x="0" y="0" width="88" height="22" rx="11" fill="#1e3a5f"/>
+    <text x="44" y="15" text-anchor="middle" fill="#60a5fa" font-size="10" font-weight="600">Gymnasium</text>
+  </g>
+  <g transform="translate(386, 148)">
+    <rect x="0" y="0" width="100" height="22" rx="11" fill="#1e3a5f"/>
+    <text x="50" y="15" text-anchor="middle" fill="#60a5fa" font-size="10" font-weight="600">80+ Algorithms</text>
+  </g>
+  <g transform="translate(499, 148)">
+    <rect x="0" y="0" width="100" height="22" rx="11" fill="#1e3a5f"/>
+    <text x="50" y="15" text-anchor="middle" fill="#60a5fa" font-size="10" font-weight="600">Python 3.10+</text>
+  </g>
+  <g transform="translate(612, 148)">
+    <rect x="0" y="0" width="82" height="22" rx="11" fill="#1e3a5f"/>
+    <text x="41" y="15" text-anchor="middle" fill="#60a5fa" font-size="10" font-weight="600">CLI + API</text>
+  </g>
+
+  <!-- Version -->
+  <text x="450" y="194" text-anchor="middle" fill="#475569" font-size="10">v0.1.0 � Alpha</text>
+</svg>

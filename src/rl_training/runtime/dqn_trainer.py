@@ -7,6 +7,7 @@ from collections.abc import Sequence
 import gymnasium as gym
 import numpy as np
 import torch
+from torch import nn
 
 from rl_training.algorithms.c51_dqn import C51DQN
 from rl_training.algorithms.dqn import (
@@ -31,25 +32,45 @@ from rl_training.algorithms.dqn import (
     SoftDQN,
     SoftDoubleDQN,
 )
+from rl_training.algorithms.fqf import FQF
 from rl_training.algorithms.iqn import IQN
+from rl_training.algorithms.jowa import JOWA
 from rl_training.algorithms.qr_dqn import QRDQN
+from rl_training.algorithms.spr import SPR
 from rl_training.data.n_step import NStepAccumulator
 from rl_training.data.prioritized_replay_buffer import PrioritizedReplayBuffer
 from rl_training.data.replay_buffer import ReplayBuffer
 from rl_training.envs.factory import build_env, make_vector_env
 from rl_training.experiment.checkpointing import CheckpointState
 from rl_training.experiment.config import TrainConfig
-from rl_training.models.cnn import CNNQNetwork
+from rl_training.models.cnn import (
+    CNNC51QNetwork,
+    CNNDuelingNoisyQNetwork,
+    CNNDuelingQNetwork,
+    CNNFQFNetwork,
+    CNNIQNetwork,
+    CNNJOWAQNetwork,
+    CNNNoisyQNetwork,
+    CNNQNetwork,
+    CNNQRQNetwork,
+    CNNSPRQNetwork,
+)
 from rl_training.models.mlp_c51_q_network import MLPC51QNetwork
 from rl_training.models.mlp_dueling_noisy_q_network import MLPDuelingNoisyQNetwork
 from rl_training.models.mlp_dueling_q_network import MLPDuelingQNetwork
+from rl_training.models.mlp_fqf_network import MLPFQFNetwork
 from rl_training.models.mlp_iqn_network import MLPIQNetwork
 from rl_training.models.mlp_noisy_q_network import MLPNoisyQNetwork
 from rl_training.models.mlp_q_network import MLPQNetwork
 from rl_training.models.mlp_qr_q_network import MLPQRQNetwork
 from rl_training.runtime.callbacks import Callback, CallbackList, merge_callbacks
 from rl_training.runtime.collector import CollectResult
-from rl_training.runtime.controls import build_control_callbacks, resolve_eval_interval, should_run_evaluation
+from rl_training.runtime.controls import (
+    build_control_callbacks,
+    resolve_eval_interval,
+    resolve_exploration_epsilon,
+    should_run_evaluation,
+)
 from rl_training.runtime.run_utils import create_training_run, resolve_device, save_training_checkpoint
 from rl_training.runtime.trainer import TrainResult, TrainerState
 from rl_training.runtime.types import MetricDict
@@ -112,7 +133,16 @@ def _build_q_network(
     action_dim: int,
     hidden_sizes: tuple[int, ...],
 ) -> (
-    CNNQNetwork
+    CNNC51QNetwork
+    | CNNDuelingNoisyQNetwork
+    | CNNDuelingQNetwork
+    | CNNFQFNetwork
+    | CNNIQNetwork
+    | CNNJOWAQNetwork
+    | CNNNoisyQNetwork
+    | CNNQNetwork
+    | CNNQRQNetwork
+    | CNNSPRQNetwork
     | MLPQNetwork
     | MLPDuelingQNetwork
     | MLPNoisyQNetwork
@@ -120,18 +150,107 @@ def _build_q_network(
     | MLPC51QNetwork
     | MLPQRQNetwork
     | MLPIQNetwork
+    | MLPFQFNetwork
 ):
     if len(obs_shape) == 3:
-        if config.algo != "dqn":
-            raise ValueError(f"image observations are currently supported for algo='dqn' only, got {config.algo!r}")
+        head_hidden_sizes = tuple(
+            config.algo_kwargs.get(
+                "head_hidden_sizes",
+                config.algo_kwargs.get("hidden_sizes", hidden_sizes or (512,)),
+            )
+        )
+        features_dim = int(config.algo_kwargs.get("features_dim", 512))
+
+        if config.algo == "dueling_dqn":
+            return CNNDuelingQNetwork(
+                obs_shape=obs_shape,
+                action_dim=action_dim,
+                hidden_sizes=head_hidden_sizes,
+                features_dim=features_dim,
+            )
+        if config.algo == "noisy_dqn":
+            return CNNNoisyQNetwork(
+                obs_shape=obs_shape,
+                action_dim=action_dim,
+                hidden_sizes=head_hidden_sizes,
+                sigma_init=float(config.algo_kwargs.get("sigma_init", 0.5)),
+                features_dim=features_dim,
+            )
+        if config.algo == "rainbow_dqn":
+            return CNNDuelingNoisyQNetwork(
+                obs_shape=obs_shape,
+                action_dim=action_dim,
+                hidden_sizes=head_hidden_sizes,
+                sigma_init=float(config.algo_kwargs.get("sigma_init", 0.5)),
+                features_dim=features_dim,
+            )
+        if config.algo == "c51_dqn":
+            return CNNC51QNetwork(
+                obs_shape=obs_shape,
+                action_dim=action_dim,
+                v_min=float(config.algo_kwargs.get("v_min", 0.0)),
+                v_max=float(config.algo_kwargs.get("v_max", 200.0)),
+                num_atoms=int(config.algo_kwargs.get("num_atoms", 51)),
+                hidden_sizes=head_hidden_sizes,
+                features_dim=features_dim,
+            )
+        if config.algo == "qr_dqn":
+            return CNNQRQNetwork(
+                obs_shape=obs_shape,
+                action_dim=action_dim,
+                num_quantiles=int(config.algo_kwargs.get("num_quantiles", 51)),
+                hidden_sizes=head_hidden_sizes,
+                features_dim=features_dim,
+            )
+        if config.algo == "iqn":
+            return CNNIQNetwork(
+                obs_shape=obs_shape,
+                action_dim=action_dim,
+                num_quantiles=int(config.algo_kwargs.get("num_quantiles", 32)),
+                hidden_sizes=head_hidden_sizes,
+                embedding_dim=int(config.algo_kwargs.get("embedding_dim", 64)),
+                features_dim=features_dim,
+            )
+        if config.algo == "fqf":
+            return CNNFQFNetwork(
+                obs_shape=obs_shape,
+                action_dim=action_dim,
+                num_quantiles=int(config.algo_kwargs.get("num_quantiles", 32)),
+                hidden_sizes=head_hidden_sizes,
+                embedding_dim=int(config.algo_kwargs.get("embedding_dim", 64)),
+                features_dim=features_dim,
+            )
+        if config.algo == "spr":
+            return CNNSPRQNetwork(
+                obs_shape=obs_shape,
+                action_dim=action_dim,
+                hidden_sizes=head_hidden_sizes,
+                features_dim=features_dim,
+                transition_hidden_size=int(config.algo_kwargs.get("spr_hidden_size", features_dim)),
+                projection_dim=int(config.algo_kwargs.get("spr_projection_dim", 256)),
+                action_embed_dim=int(config.algo_kwargs.get("spr_action_embed_dim", 64)),
+            )
+        if config.algo == "jowa":
+            return CNNJOWAQNetwork(
+                obs_shape=obs_shape,
+                action_dim=action_dim,
+                hidden_sizes=head_hidden_sizes,
+                features_dim=features_dim,
+                transition_hidden_size=int(config.algo_kwargs.get("jowa_transition_hidden_size", features_dim)),
+                reward_hidden_size=int(config.algo_kwargs.get("jowa_reward_hidden_size", features_dim)),
+                action_embed_dim=int(config.algo_kwargs.get("jowa_action_embed_dim", 64)),
+            )
+
         return CNNQNetwork(
             obs_shape=obs_shape,
             action_dim=action_dim,
-            hidden_sizes=tuple(config.algo_kwargs.get("head_hidden_sizes", hidden_sizes or (512,))),
-            features_dim=int(config.algo_kwargs.get("features_dim", 512)),
+            hidden_sizes=head_hidden_sizes,
+            features_dim=features_dim,
         )
 
     obs_dim = obs_shape[0]
+    if config.algo in {"spr", "jowa"}:
+        raise ValueError(f"{config.algo} currently supports channel-first image observations only")
     if config.algo == "dueling_dqn":
         return MLPDuelingQNetwork(
             obs_dim=obs_dim,
@@ -174,6 +293,14 @@ def _build_q_network(
             hidden_sizes=hidden_sizes,
             embedding_dim=int(config.algo_kwargs.get("embedding_dim", 64)),
         )
+    if config.algo == "fqf":
+        return MLPFQFNetwork(
+            obs_dim=obs_dim,
+            action_dim=action_dim,
+            num_quantiles=int(config.algo_kwargs.get("num_quantiles", 32)),
+            hidden_sizes=hidden_sizes,
+            embedding_dim=int(config.algo_kwargs.get("embedding_dim", 64)),
+        )
     return MLPQNetwork(
         obs_dim=obs_dim,
         action_dim=action_dim,
@@ -181,51 +308,30 @@ def _build_q_network(
     )
 
 
-def _build_image_dqn_algorithm(
-    *,
-    q_network: CNNQNetwork,
-    learning_rate: float,
-    gamma: float,
-    target_update_interval: int,
-) -> DQN:
-    return DQN(
-        q_network=q_network,
-        learning_rate=learning_rate,
-        gamma=gamma,
-        target_update_interval=target_update_interval,
-    )
-
-
 def _build_distributional_dqn_algorithm(
     config: TrainConfig,
     *,
-    q_network: MLPQNetwork
-    | MLPDuelingQNetwork
-    | MLPNoisyQNetwork
-    | MLPDuelingNoisyQNetwork
-    | MLPC51QNetwork
-    | MLPQRQNetwork
-    | MLPIQNetwork,
+    q_network: nn.Module,
     learning_rate: float,
     gamma: float,
     target_update_interval: int,
-) -> C51DQN | QRDQN | IQN | None:
+) -> C51DQN | QRDQN | IQN | FQF | None:
     if config.algo == "c51_dqn":
-        if not isinstance(q_network, MLPC51QNetwork):
-            raise TypeError(f"expected MLPC51QNetwork for c51_dqn, got {type(q_network)!r}")
+        if not isinstance(q_network, (CNNC51QNetwork, MLPC51QNetwork)):
+            raise TypeError(f"expected C51 q_network for c51_dqn, got {type(q_network)!r}")
         return C51DQN(
             q_network=q_network,
             learning_rate=learning_rate,
             gamma=gamma,
             target_update_interval=target_update_interval,
-            v_min=float(config.algo_kwargs.get("v_min", q_network.v_min)),
-            v_max=float(config.algo_kwargs.get("v_max", q_network.v_max)),
-            num_atoms=int(config.algo_kwargs.get("num_atoms", q_network.num_atoms)),
+            v_min=float(config.algo_kwargs.get("v_min", q_network.v_min)),  # type: ignore[attr-defined]
+            v_max=float(config.algo_kwargs.get("v_max", q_network.v_max)),  # type: ignore[attr-defined]
+            num_atoms=int(config.algo_kwargs.get("num_atoms", q_network.num_atoms)),  # type: ignore[attr-defined]
         )
     if config.algo == "qr_dqn":
-        if not isinstance(q_network, MLPQRQNetwork):
-            raise TypeError(f"expected MLPQRQNetwork for qr_dqn, got {type(q_network)!r}")
-        num_quantiles = int(config.algo_kwargs.get("num_quantiles", q_network.num_quantiles))
+        if not isinstance(q_network, (CNNQRQNetwork, MLPQRQNetwork)):
+            raise TypeError(f"expected QR q_network for qr_dqn, got {type(q_network)!r}")
+        num_quantiles = int(config.algo_kwargs.get("num_quantiles", q_network.num_quantiles))  # type: ignore[attr-defined]
         return QRDQN(
             q_network=q_network,
             learning_rate=learning_rate,
@@ -235,9 +341,9 @@ def _build_distributional_dqn_algorithm(
             kappa=float(config.algo_kwargs.get("kappa", 1.0)),
         )
     if config.algo == "iqn":
-        if not isinstance(q_network, MLPIQNetwork):
-            raise TypeError(f"expected MLPIQNetwork for iqn, got {type(q_network)!r}")
-        num_quantiles = int(config.algo_kwargs.get("num_quantiles", q_network.num_quantiles))
+        if not isinstance(q_network, (CNNIQNetwork, MLPIQNetwork)):
+            raise TypeError(f"expected IQN q_network for iqn, got {type(q_network)!r}")
+        num_quantiles = int(config.algo_kwargs.get("num_quantiles", q_network.num_quantiles))  # type: ignore[attr-defined]
         return IQN(
             q_network=q_network,
             learning_rate=learning_rate,
@@ -245,6 +351,20 @@ def _build_distributional_dqn_algorithm(
             target_update_interval=target_update_interval,
             num_quantiles=num_quantiles,
             kappa=float(config.algo_kwargs.get("kappa", 1.0)),
+        )
+    if config.algo == "fqf":
+        if not isinstance(q_network, (CNNFQFNetwork, MLPFQFNetwork)):
+            raise TypeError(f"expected FQF q_network for fqf, got {type(q_network)!r}")
+        num_quantiles = int(config.algo_kwargs.get("num_quantiles", q_network.num_quantiles))  # type: ignore[attr-defined]
+        return FQF(
+            q_network=q_network,
+            learning_rate=learning_rate,
+            fraction_learning_rate=float(config.algo_kwargs.get("fraction_learning_rate", learning_rate)),
+            gamma=gamma,
+            target_update_interval=target_update_interval,
+            num_quantiles=num_quantiles,
+            kappa=float(config.algo_kwargs.get("kappa", 1.0)),
+            entropy_coef=float(config.algo_kwargs.get("entropy_coef", 1e-3)),
         )
     return None
 
@@ -403,14 +523,7 @@ def _select_default_dqn_algorithm_class(algo: str) -> type[DQN]:
 def _build_algorithm(
     config: TrainConfig,
     *,
-    q_network: CNNQNetwork
-    | MLPQNetwork
-    | MLPDuelingQNetwork
-    | MLPNoisyQNetwork
-    | MLPDuelingNoisyQNetwork
-    | MLPC51QNetwork
-    | MLPQRQNetwork
-    | MLPIQNetwork,
+    q_network: nn.Module,
     learning_rate: float,
     gamma: float,
     target_update_interval: int,
@@ -434,13 +547,32 @@ def _build_algorithm(
     | C51DQN
     | QRDQN
     | IQN
+    | FQF
+    | SPR
+    | JOWA
 ):
-    if isinstance(q_network, CNNQNetwork):
-        return _build_image_dqn_algorithm(
+    if config.algo == "spr":
+        if not isinstance(q_network, CNNSPRQNetwork):
+            raise TypeError(f"expected SPR q_network for spr, got {type(q_network)!r}")
+        return SPR(
             q_network=q_network,
             learning_rate=learning_rate,
             gamma=gamma,
             target_update_interval=target_update_interval,
+            spr_loss_coef=float(config.algo_kwargs.get("spr_loss_coef", 1.0)),
+        )
+    if config.algo == "jowa":
+        if not isinstance(q_network, CNNJOWAQNetwork):
+            raise TypeError(f"expected JOWA q_network for jowa, got {type(q_network)!r}")
+        return JOWA(
+            q_network=q_network,
+            learning_rate=learning_rate,
+            gamma=gamma,
+            target_update_interval=target_update_interval,
+            jowa_world_model_loss_coef=float(config.algo_kwargs.get("jowa_world_model_loss_coef", 1.0)),
+            jowa_reward_loss_coef=float(config.algo_kwargs.get("jowa_reward_loss_coef", 1.0)),
+            jowa_reconstruction_loss_coef=float(config.algo_kwargs.get("jowa_reconstruction_loss_coef", 1.0)),
+            jowa_consistency_loss_coef=float(config.algo_kwargs.get("jowa_consistency_loss_coef", 0.5)),
         )
 
     distributional_algorithm = _build_distributional_dqn_algorithm(
@@ -496,6 +628,7 @@ def _build_dqn_replay_buffer(
     prioritized_alpha: float,
     prioritized_eps: float,
 ) -> ReplayBuffer | PrioritizedReplayBuffer:
+    obs_dtype = torch.uint8 if len(obs_shape) == 3 else torch.float32
     if use_prioritized_replay:
         return PrioritizedReplayBuffer(
             capacity=buffer_capacity,
@@ -504,12 +637,14 @@ def _build_dqn_replay_buffer(
             alpha=prioritized_alpha,
             priority_eps=prioritized_eps,
             device=device,
+            obs_dtype=obs_dtype,
         )
     return ReplayBuffer(
         capacity=buffer_capacity,
         obs_shape=obs_shape,
         action_shape=(),
         device=device,
+        obs_dtype=obs_dtype,
     )
 
 
@@ -790,9 +925,6 @@ def train_dqn(
     learning_rate = float(config.algo_kwargs.get("learning_rate", 1e-3))
     gamma = float(config.algo_kwargs.get("gamma", 0.99))
     n_step = int(config.algo_kwargs.get("n_step", 1))
-    epsilon_start = float(config.algo_kwargs.get("epsilon_start", 1.0))
-    epsilon_end = float(config.algo_kwargs.get("epsilon_end", 0.05))
-    exploration_fraction = float(config.algo_kwargs.get("exploration_fraction", 0.3))
     prioritized_alpha = float(config.algo_kwargs.get("prioritized_alpha", 0.6))
     prioritized_beta_start = float(config.algo_kwargs.get("prioritized_beta_start", 0.4))
     prioritized_beta_end = float(config.algo_kwargs.get("prioritized_beta_end", 1.0))
@@ -867,13 +999,7 @@ def train_dqn(
         callback_list.on_train_start(trainer_state)
 
         while global_step < config.total_timesteps:
-            epsilon = _epsilon_at_step(
-                global_step,
-                total_timesteps=config.total_timesteps,
-                epsilon_start=epsilon_start,
-                epsilon_end=epsilon_end,
-                exploration_fraction=exploration_fraction,
-            )
+            epsilon = resolve_exploration_epsilon(config, step=global_step)
 
             obs_tensor = torch.as_tensor(obs, dtype=torch.float32, device=device)
             with torch.no_grad():

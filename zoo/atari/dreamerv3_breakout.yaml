@@ -1,0 +1,4 @@
+name: dreamerv3_breakout
+config: configs/dreamerv3/breakout_atari.yaml
+algorithm: dreamerv3
+env_id: ALE/Breakout-v5

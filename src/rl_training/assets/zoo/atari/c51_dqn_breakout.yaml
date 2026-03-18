@@ -1,0 +1,5 @@
+name: c51_dqn_breakout
+config: configs/c51_dqn/breakout_atari.yaml
+algorithm: c51_dqn
+env_id: ALE/Breakout-v5
+

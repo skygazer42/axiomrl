@@ -1,0 +1,4 @@
+name: diamond_breakout
+config: configs/diamond/breakout_atari.yaml
+algorithm: diamond
+env_id: ALE/Breakout-v5
