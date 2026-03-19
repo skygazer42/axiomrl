@@ -4,16 +4,19 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "axiomrl"
-version = "0.1.0"
-description = "A modular reinforcement learning package with core, contrib, and zoo workflows."
+version = "1.0.0"
+description = "A stable-core reinforcement learning package with semver-governed APIs, experimental extensions, and benchmark workflows."
 readme = "README.md"
 requires-python = ">=3.10"
 keywords = ["reinforcement-learning", "deep-learning", "pytorch", "gymnasium", "atari"]
 classifiers = [
-  "Development Status :: 3 - Alpha",
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
   "Intended Audience :: Science/Research",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
   "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
@@ -24,12 +27,26 @@ dependencies = [
   "torch",
 ]
 
+[project.urls]
+Homepage = "https://github.com/skygazer42/axiomrl"
+Documentation = "https://github.com/skygazer42/axiomrl#readme"
+Repository = "https://github.com/skygazer42/axiomrl"
+Issues = "https://github.com/skygazer42/axiomrl/issues"
+Changelog = "https://github.com/skygazer42/axiomrl/blob/main/CHANGELOG.md"
+
 [project.optional-dependencies]
 atari = [
   "ale-py",
 ]
 offline = [
   "minari",
+]
+experimental = []
+dev = [
+  "build",
+  "pytest",
+  "pytest-cov",
+  "twine",
 ]
 
 [project.scripts]

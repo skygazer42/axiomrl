@@ -8,7 +8,7 @@
   <a href="#installation"><img src="https://img.shields.io/badge/Gymnasium-compatible-4c1?logo=openaigym&logoColor=white" alt="Gymnasium"></a>
   <img src="https://img.shields.io/badge/algorithms-80+-8b5cf6" alt="80+ Algorithms">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="License">
-  <img src="https://img.shields.io/badge/status-alpha-orange" alt="Status: Alpha">
+  <img src="https://img.shields.io/badge/status-beta-orange" alt="Status: Beta">
 </p>
 
 <p align="center">
@@ -35,6 +35,28 @@ The project is organized as **core + contrib + zoo** so stable training code, ex
 | **Pixel observations** | Atari wrappers, generic pixel wrappers for continuous control |
 | **Goal-conditioned** | HER with built-in sparse-reward environments |
 | **YAML config** | Declarative experiment configuration with packaged presets |
+
+## Stable Core API
+
+AxiomRL now draws a hard line between the small semver-governed surface for application engineers and the broader research surface for advanced workflows.
+
+- Import stable algorithms and `TrainConfig` from `rl_training.core` for day-to-day usage.
+- Use `rl_training.experimental` for the wider algorithm catalog when you accept faster-moving APIs.
+- Keep using `rl_training.contrib` for extensions that are intentionally outside the stable core contract.
+- Legacy advanced imports from the package root remain available, but they are deprecated and warn so downstream users can migrate before removal.
+
+The current stable core covers `A2C`, `BC`, `CQL`, `DQN`, `DiscreteSAC`, `IQL`, `PPO`, `SAC`, `TD3`, and `TRPO`.
+
+```python
+from rl_training.core import PPO, TrainConfig
+from rl_training.experimental import DrQ
+```
+
+## Semantic Versioning
+
+AxiomRL uses Semantic Versioning for the stable core API. Breaking changes to `rl_training.core`, the stable root exports, and the supported `TrainConfig` contract land only in major releases. Deprecations first ship with warnings and stay available for at least one minor release before removal.
+
+The compatibility policy, supported dependency matrix, and deprecation rules are documented in [docs/compatibility.md](docs/compatibility.md).
 
 ## Quick Start
 
@@ -169,6 +191,12 @@ Packaged config paths also include `configs/awac/pendulum.yaml`, `configs/bear/p
 pip install -e .
 ```
 
+**With development tooling:**
+
+```bash
+pip install -e ".[dev]"
+```
+
 **With Atari support:**
 
 ```bash
@@ -179,6 +207,12 @@ pip install -e ".[atari]"
 
 ```bash
 pip install -e ".[offline]"
+```
+
+**With the experimental namespace enabled:**
+
+```bash
+pip install -e ".[experimental]"
 ```
 
 > **Requirements:** Python 3.10+ · PyTorch · Gymnasium · NumPy · PyYAML · TensorBoard

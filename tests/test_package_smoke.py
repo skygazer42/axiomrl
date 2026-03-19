@@ -9,7 +9,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_package_exports_version() -> None:
-    assert __version__ == "0.1.0"
+    assert __version__ == "1.0.0"
 
 
 def test_package_exposes_contrib_namespace() -> None:
@@ -33,6 +33,8 @@ def test_readme_describes_core_contrib_and_zoo_workflows() -> None:
     readme_text = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
 
     assert "core + contrib + zoo" in readme_text
+    assert "Stable Core API" in readme_text
+    assert "Semantic Versioning" in readme_text
     assert "axiomrl train --config configs/ppo/cartpole.yaml" in readme_text
     assert "axiomrl train --config configs/ars/pendulum.yaml" in readme_text
     assert "axiomrl train --config configs/openai_es/pendulum.yaml" in readme_text
