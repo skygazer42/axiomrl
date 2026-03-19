@@ -1,14 +1,16 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from copy import deepcopy
+from dataclasses import dataclass, replace
 from pathlib import Path
 from collections.abc import Sequence
 
 from rl_training.experiment.config import TrainConfig
 from rl_training.experiment.manager import ExperimentManager
 from rl_training.experiment.registry import get_algorithm_spec
+from rl_training.experiment.sweeps import SeedSweepPlan, resolve_benchmark_seeds
 from rl_training.runtime.callbacks import Callback
-from rl_training.runtime.runner import FunctionRunner, Runner
+from rl_training.runtime.runner import BenchmarkRunner, FunctionRunner, Runner
 from rl_training.runtime.trainer import TrainResult, Trainer
 from rl_training.runtime.workflows import resume_training
 
@@ -23,7 +25,25 @@ class FunctionTrainer(Trainer):
 
 class DefaultExperimentManager(ExperimentManager):
     def setup_runner(self, config: TrainConfig, *, callbacks: Sequence[Callback] | None = None) -> Runner:
+        sweep_seeds = resolve_benchmark_seeds(config)
         spec = get_algorithm_spec(config.algo)
+        if sweep_seeds:
+            summary_path = config.output_dir / "benchmark-summary.json"
+            seed_sweep = SeedSweepPlan(seeds=sweep_seeds)
+
+            def _make_runner(seed: int) -> Runner:
+                child_benchmark = dict(config.benchmark)
+                child_benchmark.pop("seeds", None)
+                child_config = replace(config, seed=seed, benchmark=child_benchmark)
+                seed_callbacks = None if callbacks is None else tuple(deepcopy(tuple(callbacks)))
+                return FunctionRunner(run_fn=lambda: spec.train_fn(child_config, callbacks=seed_callbacks))
+
+            return BenchmarkRunner(
+                seed_sweep=seed_sweep,
+                make_runner=_make_runner,
+                summary_path=summary_path,
+            )
+
         return FunctionRunner(run_fn=lambda: spec.train_fn(config, callbacks=callbacks))
 
     def setup(self, config: TrainConfig, *, callbacks: Sequence[Callback] | None = None) -> Trainer:

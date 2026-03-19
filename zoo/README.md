@@ -68,6 +68,19 @@ axiomrl zoo --format leaderboard --runs-dir runs --group-by preset --report-outp
 axiomrl-zoo --format commands
 ```
 
+Before running zoo reports, prefer launching presets with a multi-seed sweep:
+
+```bash
+axiomrl train --config zoo/atari/dqn_breakout.yaml --seeds 1,2,3
+```
+
+This produces normal per-seed run directories plus one aggregate benchmark
+summary artifact at `<output_dir>/benchmark-summary.json`. This is the
+recommended path before feeding runs into `axiomrl zoo --format report` or
+`axiomrl zoo --format leaderboard`. If `<output_dir>/benchmark-summary.json`
+already exists, the sweep fails instead of overwriting it, so pick a fresh
+`output_dir` or remove the existing summary before rerunning.
+
 `axiomrl zoo --format report --runs-dir runs` prints:
 
 - one line per run from `runs/*/metadata.json`

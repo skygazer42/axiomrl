@@ -2429,6 +2429,250 @@ def test_train_command_overrides_execution_backend(tmp_path: Path) -> None:
     assert config_payload["execution_backend"] == "local_async"
 
 
+def test_train_command_runs_seed_sweep_and_writes_benchmark_summary(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    config_file = tmp_path / "ppo-seed-sweep.yaml"
+    run_root = tmp_path / "runs"
+    config_file.write_text(
+        "\n".join(
+            [
+                "algo: ppo",
+                "env_id: CartPole-v1",
+                "seed: 31",
+                "total_timesteps: 64",
+                f"output_dir: {run_root}",
+                "num_envs: 1",
+                "eval_episodes: 1",
+                "algo_kwargs:",
+                "  num_steps: 32",
+                "  update_epochs: 1",
+                "  minibatch_size: 32",
+                "  hidden_sizes: [16, 16]",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    exit_code = main(
+        [
+            "train",
+            "--config",
+            str(config_file),
+            "--seeds",
+            "11,13",
+        ]
+    )
+
+    run_dirs = [path for path in run_root.iterdir() if path.is_dir()]
+    summary_path = run_root / "benchmark-summary.json"
+
+    assert exit_code == 0
+    assert len(run_dirs) == 2
+    assert summary_path.exists()
+    summary_payload = json.loads(summary_path.read_text(encoding="utf-8"))
+    assert "aggregate_metrics" in summary_payload
+    assert "runs" in summary_payload
+    assert {entry["seed"] for entry in summary_payload["runs"]} == {11, 13}
+    captured = capsys.readouterr().out
+    assert f"benchmark_summary_path={summary_path}" in captured
+    assert "metrics=" in captured
+
+
+def test_train_command_rejects_malformed_seed_list_with_cli_error(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    config_file = tmp_path / "ppo-bad-seeds.yaml"
+    config_file.write_text(
+        "\n".join(
+            [
+                "algo: ppo",
+                "env_id: CartPole-v1",
+                "seed: 31",
+                "total_timesteps: 64",
+                f"output_dir: {tmp_path / 'runs'}",
+                "num_envs: 1",
+                "eval_episodes: 1",
+                "algo_kwargs:",
+                "  num_steps: 32",
+                "  update_epochs: 1",
+                "  minibatch_size: 32",
+                "  hidden_sizes: [16, 16]",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(SystemExit) as exc:
+        main(
+            [
+                "train",
+                "--config",
+                str(config_file),
+                "--seeds",
+                "11,,13",
+            ]
+        )
+
+    assert exc.value.code == 2
+    stderr = capsys.readouterr().err
+    assert "error: --seeds expects a comma-separated list of integers" in stderr
+
+
+def test_train_command_rejects_negative_seed_values_with_cli_error(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    config_file = tmp_path / "ppo-negative-seeds.yaml"
+    config_file.write_text(
+        "\n".join(
+            [
+                "algo: ppo",
+                "env_id: CartPole-v1",
+                "seed: 31",
+                "total_timesteps: 64",
+                f"output_dir: {tmp_path / 'runs'}",
+                "num_envs: 1",
+                "eval_episodes: 1",
+                "algo_kwargs:",
+                "  num_steps: 32",
+                "  update_epochs: 1",
+                "  minibatch_size: 32",
+                "  hidden_sizes: [16, 16]",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(SystemExit) as exc:
+        main(
+            [
+                "train",
+                "--config",
+                str(config_file),
+                "--seeds",
+                "-1,2",
+            ]
+        )
+
+    assert exc.value.code == 2
+    stderr = capsys.readouterr().err
+    assert "error: --seeds expects a comma-separated list of non-negative integers" in stderr
+
+
+def test_train_command_reports_summary_collision_as_cli_error(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    run_root = tmp_path / "runs"
+    run_root.mkdir(parents=True, exist_ok=True)
+    (run_root / "benchmark-summary.json").write_text('{"status": "existing"}', encoding="utf-8")
+    config_file = tmp_path / "ppo-collision.yaml"
+    config_file.write_text(
+        "\n".join(
+            [
+                "algo: ppo",
+                "env_id: CartPole-v1",
+                "seed: 31",
+                "total_timesteps: 64",
+                f"output_dir: {run_root}",
+                "num_envs: 1",
+                "eval_episodes: 1",
+                "algo_kwargs:",
+                "  num_steps: 32",
+                "  update_epochs: 1",
+                "  minibatch_size: 32",
+                "  hidden_sizes: [16, 16]",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(SystemExit) as exc:
+        main(
+            [
+                "train",
+                "--config",
+                str(config_file),
+                "--seeds",
+                "11,13",
+            ]
+        )
+
+    assert exc.value.code == 2
+    stderr = capsys.readouterr().err
+    assert "error: benchmark summary already exists" in stderr
+
+
+def test_train_command_merges_seed_override_with_existing_benchmark_keys(tmp_path: Path) -> None:
+    run_root = tmp_path / "runs"
+    config_file = tmp_path / "ppo-benchmark-merge.yaml"
+    config_file.write_text(
+        "\n".join(
+            [
+                "algo: ppo",
+                "env_id: CartPole-v1",
+                "seed: 31",
+                "total_timesteps: 64",
+                f"output_dir: {run_root}",
+                "num_envs: 1",
+                "eval_episodes: 1",
+                "benchmark:",
+                "  best_metric_mode: min",
+                "  best_metric: eval_return_mean",
+                "algo_kwargs:",
+                "  num_steps: 32",
+                "  update_epochs: 1",
+                "  minibatch_size: 32",
+                "  hidden_sizes: [16, 16]",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    exit_code = main(["train", "--config", str(config_file), "--seeds", "11,13"])
+
+    run_dir = next(path for path in run_root.iterdir() if path.is_dir())
+    payload = json.loads((run_dir / "config.yaml").read_text(encoding="utf-8"))
+
+    assert exit_code == 0
+    assert payload["benchmark"]["best_metric_mode"] == "min"
+    assert payload["benchmark"]["best_metric"] == "eval_return_mean"
+    assert "seeds" not in payload["benchmark"]
+
+
+def test_train_command_rejects_invalid_benchmark_seeds_from_config_with_cli_error(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    config_file = tmp_path / "ppo-invalid-benchmark-seeds.yaml"
+    config_file.write_text(
+        "\n".join(
+            [
+                "algo: ppo",
+                "env_id: CartPole-v1",
+                "seed: 31",
+                "total_timesteps: 64",
+                f"output_dir: {tmp_path / 'runs'}",
+                "num_envs: 1",
+                "eval_episodes: 1",
+                "benchmark:",
+                "  seeds: not-a-sequence",
+                "algo_kwargs:",
+                "  num_steps: 32",
+                "  update_epochs: 1",
+                "  minibatch_size: 32",
+                "  hidden_sizes: [16, 16]",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(SystemExit) as exc:
+        main(["train", "--config", str(config_file)])
+
+    assert exc.value.code == 2
+    stderr = capsys.readouterr().err
+    assert "error: benchmark['seeds'] must be a sequence of integers" in stderr
+
+
 def test_eval_command_runs_from_checkpoint(tmp_path: Path) -> None:
     config = TrainConfig(
         algo="ppo",

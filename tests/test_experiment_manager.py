@@ -1,8 +1,14 @@
 from pathlib import Path
+from types import SimpleNamespace
 
+import rl_training.experiment.default_manager as default_manager_module
 from rl_training.experiment.config import TrainConfig
 from rl_training.experiment.default_manager import DefaultExperimentManager
 from rl_training.experiment.registry import get_algorithm_spec
+from rl_training.experiment.sweeps import SeedSweepPlan
+from rl_training.runtime import runner as runner_module
+from rl_training.runtime.runner import FunctionRunner
+from rl_training.runtime.trainer import TrainResult
 
 
 def test_builtin_algorithm_specs_are_registered() -> None:
@@ -850,3 +856,113 @@ def test_default_experiment_manager_handles_recurrent_ppo(tmp_path: Path) -> Non
     assert resumed.checkpoint_path is not None
     assert resumed.checkpoint_path.exists()
     assert resumed.metrics["global_step"] >= 128
+
+
+def test_default_experiment_manager_uses_benchmark_runner_for_seed_sweeps(tmp_path: Path) -> None:
+    manager = DefaultExperimentManager()
+    benchmark_config = TrainConfig(
+        algo="ppo",
+        env_id="CartPole-v1",
+        seed=77,
+        total_timesteps=64,
+        output_dir=tmp_path / "benchmark-runs",
+        num_envs=1,
+        eval_episodes=1,
+        benchmark={"seeds": [3, 5]},
+        algo_kwargs={
+            "num_steps": 32,
+            "update_epochs": 1,
+            "minibatch_size": 32,
+            "hidden_sizes": (16, 16),
+        },
+    )
+    single_config = TrainConfig(
+        algo="ppo",
+        env_id="CartPole-v1",
+        seed=78,
+        total_timesteps=64,
+        output_dir=tmp_path / "single-run",
+        num_envs=1,
+        eval_episodes=1,
+        algo_kwargs={
+            "num_steps": 32,
+            "update_epochs": 1,
+            "minibatch_size": 32,
+            "hidden_sizes": (16, 16),
+        },
+    )
+
+    benchmark_runner = manager.setup_runner(benchmark_config)
+    single_runner = manager.setup_runner(single_config)
+
+    benchmark_runner_cls = getattr(runner_module, "BenchmarkRunner", None)
+    assert benchmark_runner_cls is not None
+    assert isinstance(benchmark_runner, benchmark_runner_cls)
+    assert isinstance(benchmark_runner.seed_sweep, SeedSweepPlan)
+    assert benchmark_runner.seed_sweep.seeds == (3, 5)
+    assert callable(benchmark_runner.run)
+    assert isinstance(single_runner, FunctionRunner)
+
+
+def test_default_experiment_manager_clones_callbacks_per_seed_run(monkeypatch, tmp_path: Path) -> None:
+    manager = DefaultExperimentManager()
+    config = TrainConfig(
+        algo="ppo",
+        env_id="CartPole-v1",
+        seed=100,
+        total_timesteps=64,
+        output_dir=tmp_path / "benchmark-runs",
+        num_envs=1,
+        eval_episodes=1,
+        benchmark={"seeds": [3, 5]},
+    )
+    captured_callbacks: list[tuple[object, ...] | None] = []
+
+    def fake_train_fn(train_config: TrainConfig, *, callbacks=None):
+        run_dir = config.output_dir / f"seed-{train_config.seed}"
+        run_dir.mkdir(parents=True, exist_ok=True)
+        captured_callbacks.append(tuple(callbacks) if callbacks is not None else None)
+        return TrainResult(
+            run_dir=run_dir,
+            checkpoint_path=None,
+            metrics={"eval_return_mean": float(train_config.seed), "global_step": 64.0},
+        )
+
+    monkeypatch.setattr(
+        default_manager_module,
+        "get_algorithm_spec",
+        lambda _: SimpleNamespace(train_fn=fake_train_fn),
+    )
+
+    class StatefulCallback:
+        def __init__(self) -> None:
+            self.history: list[str] = []
+
+        def on_train_start(self, trainer: object) -> None:
+            self.history.append("start")
+
+        def on_collect_end(self, trainer: object, result: object) -> None:
+            self.history.append("collect")
+
+        def on_update_end(self, trainer: object, result: object) -> None:
+            self.history.append("update")
+
+        def on_eval_end(self, trainer: object, metrics: object) -> None:
+            self.history.append("eval")
+
+        def on_train_end(self, trainer: object, result: object) -> None:
+            self.history.append("end")
+
+    original_callback = StatefulCallback()
+    runner = manager.setup_runner(config, callbacks=(original_callback,))
+    runner.run()
+
+    assert len(captured_callbacks) == 2
+    assert captured_callbacks[0] is not None
+    assert captured_callbacks[1] is not None
+
+    first_callback = captured_callbacks[0][0]
+    second_callback = captured_callbacks[1][0]
+    assert first_callback is not original_callback
+    assert second_callback is not original_callback
+    assert first_callback is not second_callback

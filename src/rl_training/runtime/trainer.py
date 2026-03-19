@@ -12,6 +12,7 @@ class TrainResult:
     run_dir: Path
     checkpoint_path: Path | None
     metrics: MetricDict
+    benchmark_summary_path: Path | None = None
 
 
 @dataclass(slots=True)

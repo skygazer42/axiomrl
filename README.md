@@ -58,6 +58,19 @@ axiomrl train --config configs/ppo/cartpole.yaml
 axiomrl eval  --checkpoint runs/<run-id>/checkpoints/step_<n>.pt
 ```
 
+For benchmark-grade comparisons, run a multi-seed sweep from one config:
+
+```bash
+axiomrl train --config configs/ppo/cartpole.yaml --seeds 1,2,3
+```
+
+This launches standard per-seed training runs under the configured `output_dir`
+and also writes one aggregate benchmark summary artifact at
+`<output_dir>/benchmark-summary.json`. Use this sweep workflow before feeding
+the resulting runs into `axiomrl zoo` report and leaderboard commands. If
+`<output_dir>/benchmark-summary.json` already exists, the sweep fails instead
+of overwriting it, so use a fresh `output_dir` or remove the old summary first.
+
 <details>
 <summary><b>More CLI examples</b></summary>
 

@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from rl_training.experiment.benchmarking import resolve_score_normalization_config
+from rl_training.experiment.benchmarking import aggregate_numeric_metrics, resolve_score_normalization_config
 from rl_training.experiment.config import TrainConfig
 from rl_training.experiment.logging import RunLogger
 from rl_training.runtime.run_utils import create_training_run, save_training_checkpoint
@@ -101,3 +101,56 @@ def test_run_logger_accepts_benchmark_augmented_metrics(tmp_path: Path) -> None:
 
     metrics_path = tmp_path / "metrics.jsonl"
     assert metrics_path.exists()
+
+
+def test_aggregate_numeric_metrics_uses_population_std_for_shared_numeric_keys() -> None:
+    aggregated = aggregate_numeric_metrics(
+        [
+            {
+                "eval_return_mean": 10.0,
+                "global_step": 64.0,
+                "sample_count": 4,
+            },
+            {
+                "eval_return_mean": 14.0,
+                "global_step": 64.0,
+                "sample_count": 8,
+            },
+        ]
+    )
+
+    assert aggregated["eval_return_mean_mean"] == pytest.approx(12.0)
+    assert aggregated["eval_return_mean_std"] == pytest.approx(2.0)
+    assert aggregated["eval_return_mean_min"] == pytest.approx(10.0)
+    assert aggregated["eval_return_mean_max"] == pytest.approx(14.0)
+    assert aggregated["global_step_mean"] == pytest.approx(64.0)
+    assert aggregated["global_step_std"] == pytest.approx(0.0)
+    assert aggregated["sample_count_mean"] == pytest.approx(6.0)
+    assert aggregated["sample_count_std"] == pytest.approx(2.0)
+
+
+def test_aggregate_numeric_metrics_only_aggregates_shared_numeric_keys() -> None:
+    aggregated = aggregate_numeric_metrics(
+        [
+            {
+                "eval_return_mean": 10.0,
+                "global_step": 64.0,
+                "status": "ok",
+            },
+            {
+                "eval_return_mean": 14.0,
+                "global_step": 64.0,
+                "status": "ok",
+                "extra_only_here": 1.0,
+            },
+        ]
+    )
+
+    assert "eval_return_mean_mean" in aggregated
+    assert "global_step_mean" in aggregated
+    assert "status_mean" not in aggregated
+    assert "extra_only_here_mean" not in aggregated
+
+
+def test_aggregate_numeric_metrics_handles_empty_input() -> None:
+    assert aggregate_numeric_metrics([]) == {}

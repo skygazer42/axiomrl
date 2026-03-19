@@ -3,12 +3,14 @@ from __future__ import annotations
 import argparse
 from dataclasses import replace
 from pathlib import Path
+import sys
 from typing import Any, cast
 
 import yaml
 
 from rl_training.experiment.config import TrainConfig
-from rl_training.experiment.registry import get_algorithm_spec
+from rl_training.experiment.default_manager import DefaultExperimentManager
+from rl_training.experiment.sweeps import resolve_benchmark_seeds
 from rl_training.resources import find_packaged_asset
 from rl_training.runtime.trainer import TrainResult
 from rl_training.runtime.workflows import evaluate_checkpoint, resume_training
@@ -106,6 +108,20 @@ def _apply_overrides(config: TrainConfig, args: argparse.Namespace) -> TrainConf
         overrides["num_envs"] = int(args.num_envs)
     if getattr(args, "eval_episodes", None) is not None:
         overrides["eval_episodes"] = int(args.eval_episodes)
+    if getattr(args, "seeds", None) is not None:
+        raw_value = str(args.seeds)
+        tokens = [token.strip() for token in raw_value.split(",")]
+        if any(token == "" for token in tokens):
+            raise ValueError("--seeds expects a comma-separated list of integers, for example: 1,2,3")
+        try:
+            seed_values = [int(token) for token in tokens]
+        except ValueError as exc:
+            raise ValueError("--seeds expects a comma-separated list of integers, for example: 1,2,3") from exc
+        if any(seed < 0 for seed in seed_values):
+            raise ValueError("--seeds expects a comma-separated list of non-negative integers, for example: 1,2,3")
+        benchmark = dict(config.benchmark)
+        benchmark["seeds"] = seed_values
+        overrides["benchmark"] = benchmark
 
     return cast(TrainConfig, replace(config, **overrides))
 
@@ -113,6 +129,8 @@ def _apply_overrides(config: TrainConfig, args: argparse.Namespace) -> TrainConf
 def _print_result(result: TrainResult) -> None:
     print(f"run_dir={result.run_dir}")
     print(f"checkpoint_path={result.checkpoint_path}")
+    if result.benchmark_summary_path is not None:
+        print(f"benchmark_summary_path={result.benchmark_summary_path}")
     print(f"metrics={result.metrics}")
 
 
@@ -127,6 +145,7 @@ def _build_parser() -> argparse.ArgumentParser:
     train_parser.add_argument("--total-timesteps", type=int)
     train_parser.add_argument("--num-envs", type=int)
     train_parser.add_argument("--eval-episodes", type=int)
+    train_parser.add_argument("--seeds")
 
     eval_parser = subparsers.add_parser("eval")
     eval_parser.add_argument("--checkpoint", required=True)
@@ -206,14 +225,38 @@ def _build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _normalize_seed_argument_tokens(argv: list[str]) -> list[str]:
+    normalized: list[str] = []
+    index = 0
+    while index < len(argv):
+        token = argv[index]
+        if token == "--seeds" and index + 1 < len(argv):
+            value_token = argv[index + 1]
+            if value_token.startswith("-") and not value_token.startswith("--"):
+                normalized.append(f"--seeds={value_token}")
+                index += 2
+                continue
+        normalized.append(token)
+        index += 1
+    return normalized
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
-    args = parser.parse_args(argv)
+    args_argv = list(sys.argv[1:] if argv is None else argv)
+    args = parser.parse_args(_normalize_seed_argument_tokens(args_argv))
 
     if args.command == "train":
-        config = _apply_overrides(load_config(args.config), args)
-        spec = get_algorithm_spec(config.algo)
-        result = spec.train_fn(config)
+        try:
+            config = _apply_overrides(load_config(args.config), args)
+            resolve_benchmark_seeds(config)
+        except (TypeError, ValueError) as exc:
+            parser.error(str(exc))
+        manager = DefaultExperimentManager()
+        try:
+            result = manager.setup(config).train()
+        except FileExistsError as exc:
+            parser.error(str(exc))
         _print_result(result)
         return 0
 

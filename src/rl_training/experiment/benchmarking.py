@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from math import sqrt
 
 from rl_training.runtime.types import MetricDict
 
@@ -96,3 +97,35 @@ def augment_metrics_with_benchmark(metrics: MetricDict, benchmark: Mapping[str, 
 
     metrics["eval_human_normalized_score"] = compute_human_normalized_score(float(eval_return_mean), normalization)
     return metrics
+
+
+def aggregate_numeric_metrics(rows: Sequence[Mapping[str, object]]) -> MetricDict:
+    """Aggregate only numeric keys shared by every row using population standard deviation."""
+    if not rows:
+        return {}
+
+    # Keep aggregation semantics strict: a metric must exist in every row to be aggregated.
+    shared_keys = set(rows[0].keys())
+    for row in rows[1:]:
+        shared_keys.intersection_update(row.keys())
+
+    aggregated: MetricDict = {}
+    for key in sorted(shared_keys):
+        values: list[float] = []
+        for row in rows:
+            value = row[key]
+            if isinstance(value, bool) or not isinstance(value, (int, float)):
+                values = []
+                break
+            values.append(float(value))
+        if not values:
+            continue
+
+        mean = sum(values) / len(values)
+        # Use population variance/std because benchmark rows represent the full sweep being summarized.
+        variance = sum((value - mean) ** 2 for value in values) / len(values)
+        aggregated[f"{key}_mean"] = mean
+        aggregated[f"{key}_std"] = sqrt(variance)
+        aggregated[f"{key}_min"] = min(values)
+        aggregated[f"{key}_max"] = max(values)
+    return aggregated
