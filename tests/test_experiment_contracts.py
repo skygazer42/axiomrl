@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import patch
 
@@ -37,6 +38,27 @@ def test_create_run_context_auto_suffixes_are_unique(tmp_path: Path) -> None:
 
     first = create_run_context(config)
     second = create_run_context(config)
+
+    assert first.run_id != second.run_id
+    assert first.run_dir != second.run_dir
+    assert first.run_dir.exists()
+    assert second.run_dir.exists()
+
+
+def test_create_run_context_auto_suffix_retries_when_timestamp_collides(tmp_path: Path) -> None:
+    config = TrainConfig(
+        algo="ppo",
+        env_id="CartPole-v1",
+        seed=9,
+        total_timesteps=256,
+        output_dir=tmp_path,
+    )
+    fixed_now = datetime(2026, 3, 19, 12, 34, 56, 123456, tzinfo=timezone.utc)
+
+    with patch("rl_training.experiment.runs.datetime") as mocked_datetime:
+        mocked_datetime.now.return_value = fixed_now
+        first = create_run_context(config)
+        second = create_run_context(config)
 
     assert first.run_id != second.run_id
     assert first.run_dir != second.run_dir

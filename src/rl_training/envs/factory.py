@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping
+from copy import deepcopy
 from functools import partial
 
 import gymnasium as gym
+from gymnasium.envs.registration import EnvSpec
 
 from rl_training.envs.atari import apply_atari_wrappers, resolve_atari_wrapper_config, split_env_kwargs
 from rl_training.envs.goals import register_builtin_goal_envs
@@ -42,8 +44,41 @@ def resolve_mode_env_kwargs(env_kwargs: Mapping[str, object], *, evaluation: boo
     return _merge_env_kwargs(base_kwargs, selected_overrides)
 
 
-def build_env(config: TrainConfig, env_index: int, *, evaluation: bool = False) -> gym.Env:
+def _resolve_registered_env_spec(env_id: str) -> EnvSpec | None:
+    try:
+        return gym.spec(env_id)
+    except gym.error.Error:
+        return None
+
+
+def _ensure_registered_env_spec(env_spec: EnvSpec | None) -> None:
+    if env_spec is None:
+        return
+    if _resolve_registered_env_spec(env_spec.id) is not None:
+        return
+    gym.register(
+        id=env_spec.id,
+        entry_point=env_spec.entry_point,
+        reward_threshold=env_spec.reward_threshold,
+        nondeterministic=env_spec.nondeterministic,
+        max_episode_steps=env_spec.max_episode_steps,
+        order_enforce=env_spec.order_enforce,
+        disable_env_checker=env_spec.disable_env_checker,
+        additional_wrappers=tuple(env_spec.additional_wrappers),
+        vector_entry_point=env_spec.vector_entry_point,
+        kwargs=deepcopy(env_spec.kwargs),
+    )
+
+
+def build_env(
+    config: TrainConfig,
+    env_index: int,
+    *,
+    evaluation: bool = False,
+    parent_env_spec: EnvSpec | None = None,
+) -> gym.Env:
     register_builtin_goal_envs()
+    _ensure_registered_env_spec(parent_env_spec)
     env_kwargs, wrapper_kwargs = split_env_kwargs(resolve_mode_env_kwargs(config.env_kwargs, evaluation=evaluation))
     reward_config = resolve_reward_wrapper_config(wrapper_kwargs)
     env = gym.make(config.env_id, **env_kwargs)
@@ -74,7 +109,8 @@ def build_env(config: TrainConfig, env_index: int, *, evaluation: bool = False) 
 
 
 def make_env(config: TrainConfig, env_index: int, *, evaluation: bool = False) -> EnvFactory:
-    return partial(build_env, config, env_index, evaluation=evaluation)
+    parent_env_spec = _resolve_registered_env_spec(config.env_id)
+    return partial(build_env, config, env_index, evaluation=evaluation, parent_env_spec=parent_env_spec)
 
 
 def make_vector_env(config: TrainConfig, *, evaluation: bool = False) -> gym.vector.VectorEnv:

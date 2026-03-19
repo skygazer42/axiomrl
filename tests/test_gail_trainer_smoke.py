@@ -47,7 +47,7 @@ def _register_tiny_render_env() -> str:
     try:
         gym.spec(env_id)
     except gym.error.Error:
-        gym.register(id=env_id, entry_point=TinyRenderDiscreteEnv)
+        gym.register(id=env_id, entry_point="tests.support.envs:TinyRenderDiscreteEnv")
     return env_id
 
 

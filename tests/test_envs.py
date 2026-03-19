@@ -100,7 +100,7 @@ def _register_tiny_image_env() -> str:
     try:
         gym.spec(env_id)
     except gym.error.Error:
-        gym.register(id=env_id, entry_point=TinyImageEnv)
+        gym.register(id=env_id, entry_point="tests.support.envs:TinyImageEnv")
     return env_id
 
 
@@ -109,7 +109,7 @@ def _register_tiny_render_env() -> str:
     try:
         gym.spec(env_id)
     except gym.error.Error:
-        gym.register(id=env_id, entry_point=TinyRenderContinuousEnv)
+        gym.register(id=env_id, entry_point="tests.support.envs:TinyRenderContinuousEnv")
     return env_id
 
 
@@ -148,6 +148,36 @@ def test_make_vector_env_returns_async_vector_env_when_requested(tmp_path: Path)
 
     assert isinstance(envs, gym.vector.AsyncVectorEnv)
     assert obs.shape[0] == 2
+
+    envs.close()
+
+
+def test_make_vector_env_supports_parent_registered_custom_env_with_async_backend(tmp_path: Path) -> None:
+    config = TrainConfig(
+        algo="drqv2",
+        env_id=_register_tiny_render_env(),
+        seed=21,
+        total_timesteps=64,
+        output_dir=tmp_path,
+        execution_backend="local_async",
+        num_envs=2,
+        env_kwargs={
+            "render_mode": "rgb_array",
+            "wrappers": {
+                "pixels": {
+                    "resize_shape": [84, 84],
+                    "frame_stack": 3,
+                    "channel_first": True,
+                }
+            },
+        },
+    )
+
+    envs = make_vector_env(config)
+    obs, _ = envs.reset(seed=config.seed)
+
+    assert isinstance(envs, gym.vector.AsyncVectorEnv)
+    assert obs.shape == (2, 9, 84, 84)
 
     envs.close()
 

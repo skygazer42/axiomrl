@@ -37,7 +37,11 @@ def _register_tiny_image_env() -> str:
     try:
         gym.spec(env_id)
     except gym.error.Error:
-        gym.register(id=env_id, entry_point=TinyImageDiscreteEnv)
+        gym.register(
+            id=env_id,
+            entry_point="tests.support.envs:TinyImageDiscreteEnv",
+            kwargs={"num_actions": 3, "reward_action": 2},
+        )
     return env_id
 
 

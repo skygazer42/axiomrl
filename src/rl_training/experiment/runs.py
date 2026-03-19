@@ -18,12 +18,26 @@ class RunContext:
 
 
 def create_run_context(config: TrainConfig, run_suffix: str | None = None) -> RunContext:
-    suffix = run_suffix or datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S-%f")
-    run_id = f"{config.algo}__{config.env_id}__seed{config.seed}__{suffix}"
-    run_dir = config.output_dir / run_id
-    checkpoints_dir = run_dir / "checkpoints"
-    tensorboard_dir = run_dir / "tensorboard"
-    run_dir.mkdir(parents=True, exist_ok=False)
+    attempt = 0
+    while True:
+        if run_suffix is not None:
+            suffix = run_suffix
+        else:
+            base_suffix = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S-%f")
+            suffix = base_suffix if attempt == 0 else f"{base_suffix}-{attempt}"
+
+        run_id = f"{config.algo}__{config.env_id}__seed{config.seed}__{suffix}"
+        run_dir = config.output_dir / run_id
+        checkpoints_dir = run_dir / "checkpoints"
+        tensorboard_dir = run_dir / "tensorboard"
+        try:
+            run_dir.mkdir(parents=True, exist_ok=False)
+            break
+        except FileExistsError:
+            if run_suffix is not None:
+                raise
+            attempt += 1
+
     checkpoints_dir.mkdir(parents=True, exist_ok=True)
     tensorboard_dir.mkdir(parents=True, exist_ok=True)
     return RunContext(
