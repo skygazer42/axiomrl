@@ -33,3 +33,35 @@ def test_train_d4pg_writes_checkpoint_and_metrics(tmp_path: Path) -> None:
     assert result.checkpoint_path.exists()
     assert result.metrics["global_step"] >= 128
     assert "eval_return_mean" in result.metrics
+
+
+def test_train_d4pg_supports_local_async_backend(tmp_path: Path) -> None:
+    config = TrainConfig(
+        algo="d4pg",
+        env_id="Pendulum-v1",
+        seed=207,
+        total_timesteps=128,
+        output_dir=tmp_path,
+        execution_backend="local_async",
+        num_envs=2,
+        eval_episodes=1,
+        algo_kwargs={
+            "buffer_capacity": 512,
+            "batch_size": 32,
+            "learning_starts": 32,
+            "train_frequency": 1,
+            "hidden_sizes": (32, 32),
+            "tau": 0.005,
+            "exploration_noise": 0.1,
+            "v_min": -50.0,
+            "v_max": 10.0,
+            "num_atoms": 21,
+        },
+    )
+
+    result = train_d4pg(config, run_suffix="async-smoke")
+
+    assert result.checkpoint_path is not None
+    assert result.checkpoint_path.exists()
+    assert result.metrics["global_step"] >= 128
+    assert "eval_return_mean" in result.metrics

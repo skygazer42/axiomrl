@@ -17,6 +17,8 @@ from rl_training.runtime.cal_ql_trainer import train_cal_ql
 from rl_training.runtime.curl_trainer import train_curl
 from rl_training.runtime.crossq_trainer import train_crossq
 from rl_training.runtime.crr_trainer import train_crr
+from rl_training.runtime.d4pg_trainer import train_d4pg
+from rl_training.runtime.ddpg_trainer import train_ddpg
 from rl_training.runtime.drq_trainer import train_drq
 from rl_training.runtime.drqv2_trainer import train_drqv2
 from rl_training.runtime.r2d2_trainer import train_r2d2
@@ -29,6 +31,7 @@ from rl_training.runtime.decision_transformer_trainer import train_decision_tran
 from rl_training.runtime.impala_trainer import train_impala
 from rl_training.runtime.appo_trainer import train_appo
 from rl_training.runtime.mopo_trainer import train_mopo
+from rl_training.runtime.naf_trainer import train_naf
 from rl_training.runtime.pets_trainer import train_pets
 from rl_training.runtime.ppo_trainer import train_ppo
 from rl_training.runtime.ppg_trainer import train_ppg
@@ -38,6 +41,7 @@ from rl_training.runtime.rlpd_trainer import train_rlpd
 from rl_training.runtime.rebrac_trainer import train_rebrac
 from rl_training.runtime.cql_trainer import train_cql
 from rl_training.runtime.sac_trainer import train_sac
+from rl_training.runtime.td3_trainer import train_td3
 from rl_training.runtime.td3_bc_trainer import train_td3_bc
 from rl_training.runtime.tqc_trainer import train_tqc
 from rl_training.runtime.trpo_trainer import train_trpo
@@ -500,6 +504,63 @@ def test_evaluate_checkpoint_returns_metrics_for_drq(tmp_path: Path) -> None:
     )
 
     train_result = train_drq(config, run_suffix="eval-source")
+    metrics = evaluate_checkpoint(train_result.checkpoint_path, num_episodes=1)
+
+    assert set(metrics) >= {"eval_return_mean", "eval_return_std", "eval_episodes"}
+
+
+def test_evaluate_checkpoint_returns_metrics_for_naf(tmp_path: Path) -> None:
+    config = TrainConfig(
+        algo="naf",
+        env_id="Pendulum-v1",
+        seed=27,
+        total_timesteps=96,
+        output_dir=tmp_path,
+        eval_episodes=1,
+        algo_kwargs={
+            "buffer_capacity": 512,
+            "batch_size": 32,
+            "learning_starts": 32,
+            "train_frequency": 1,
+            "hidden_sizes": (32, 32),
+            "learning_rate": 3e-4,
+            "gamma": 0.99,
+            "tau": 0.005,
+            "exploration_noise": 0.1,
+        },
+    )
+
+    train_result = train_naf(config, run_suffix="naf-eval-source")
+    metrics = evaluate_checkpoint(train_result.checkpoint_path, num_episodes=1)
+
+    assert set(metrics) >= {"eval_return_mean", "eval_return_std", "eval_episodes"}
+
+
+def test_evaluate_checkpoint_returns_metrics_for_d4pg(tmp_path: Path) -> None:
+    config = TrainConfig(
+        algo="d4pg",
+        env_id="Pendulum-v1",
+        seed=29,
+        total_timesteps=96,
+        output_dir=tmp_path,
+        eval_episodes=1,
+        algo_kwargs={
+            "buffer_capacity": 512,
+            "batch_size": 32,
+            "learning_starts": 32,
+            "train_frequency": 1,
+            "hidden_sizes": (32, 32),
+            "learning_rate": 3e-4,
+            "gamma": 0.99,
+            "tau": 0.005,
+            "exploration_noise": 0.1,
+            "v_min": -50.0,
+            "v_max": 10.0,
+            "num_atoms": 21,
+        },
+    )
+
+    train_result = train_d4pg(config, run_suffix="d4pg-eval-source")
     metrics = evaluate_checkpoint(train_result.checkpoint_path, num_episodes=1)
 
     assert set(metrics) >= {"eval_return_mean", "eval_return_std", "eval_episodes"}
@@ -1416,6 +1477,120 @@ def test_resume_training_advances_global_step_for_redq(tmp_path: Path) -> None:
         train_result.checkpoint_path,
         total_timesteps=160,
         run_suffix="redq-resume-target",
+    )
+
+    assert resumed.checkpoint_path is not None
+    assert resumed.checkpoint_path.exists()
+    assert resumed.metrics["global_step"] >= 160
+
+
+def test_evaluate_checkpoint_returns_metrics_for_ddpg(tmp_path: Path) -> None:
+    config = TrainConfig(
+        algo="ddpg",
+        env_id="Pendulum-v1",
+        seed=61,
+        total_timesteps=96,
+        output_dir=tmp_path,
+        eval_episodes=1,
+        algo_kwargs={
+            "buffer_capacity": 512,
+            "batch_size": 32,
+            "learning_starts": 32,
+            "train_frequency": 1,
+            "hidden_sizes": (32, 32),
+            "tau": 0.005,
+        },
+    )
+
+    train_result = train_ddpg(config, run_suffix="ddpg-eval-source")
+    metrics = evaluate_checkpoint(train_result.checkpoint_path, num_episodes=1)
+
+    assert set(metrics) >= {"eval_return_mean", "eval_return_std", "eval_episodes"}
+
+
+def test_resume_training_advances_global_step_for_ddpg(tmp_path: Path) -> None:
+    config = TrainConfig(
+        algo="ddpg",
+        env_id="Pendulum-v1",
+        seed=67,
+        total_timesteps=96,
+        output_dir=tmp_path,
+        eval_episodes=1,
+        algo_kwargs={
+            "buffer_capacity": 512,
+            "batch_size": 32,
+            "learning_starts": 32,
+            "train_frequency": 1,
+            "hidden_sizes": (32, 32),
+            "tau": 0.005,
+        },
+    )
+
+    train_result = train_ddpg(config, run_suffix="ddpg-resume-source")
+    resumed = resume_training(
+        train_result.checkpoint_path,
+        total_timesteps=160,
+        run_suffix="ddpg-resume-target",
+    )
+
+    assert resumed.checkpoint_path is not None
+    assert resumed.checkpoint_path.exists()
+    assert resumed.metrics["global_step"] >= 160
+
+
+def test_evaluate_checkpoint_returns_metrics_for_td3(tmp_path: Path) -> None:
+    config = TrainConfig(
+        algo="td3",
+        env_id="Pendulum-v1",
+        seed=71,
+        total_timesteps=96,
+        output_dir=tmp_path,
+        eval_episodes=1,
+        algo_kwargs={
+            "buffer_capacity": 512,
+            "batch_size": 32,
+            "learning_starts": 32,
+            "train_frequency": 1,
+            "hidden_sizes": (32, 32),
+            "tau": 0.005,
+            "policy_noise": 0.2,
+            "noise_clip": 0.5,
+            "policy_delay": 2,
+        },
+    )
+
+    train_result = train_td3(config, run_suffix="td3-eval-source")
+    metrics = evaluate_checkpoint(train_result.checkpoint_path, num_episodes=1)
+
+    assert set(metrics) >= {"eval_return_mean", "eval_return_std", "eval_episodes"}
+
+
+def test_resume_training_advances_global_step_for_td3(tmp_path: Path) -> None:
+    config = TrainConfig(
+        algo="td3",
+        env_id="Pendulum-v1",
+        seed=73,
+        total_timesteps=96,
+        output_dir=tmp_path,
+        eval_episodes=1,
+        algo_kwargs={
+            "buffer_capacity": 512,
+            "batch_size": 32,
+            "learning_starts": 32,
+            "train_frequency": 1,
+            "hidden_sizes": (32, 32),
+            "tau": 0.005,
+            "policy_noise": 0.2,
+            "noise_clip": 0.5,
+            "policy_delay": 2,
+        },
+    )
+
+    train_result = train_td3(config, run_suffix="td3-resume-source")
+    resumed = resume_training(
+        train_result.checkpoint_path,
+        total_timesteps=160,
+        run_suffix="td3-resume-target",
     )
 
     assert resumed.checkpoint_path is not None

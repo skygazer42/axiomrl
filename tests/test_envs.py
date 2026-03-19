@@ -132,6 +132,26 @@ def test_make_vector_env_returns_sync_vector_env(tmp_path: Path) -> None:
     envs.close()
 
 
+def test_make_vector_env_returns_async_vector_env_when_requested(tmp_path: Path) -> None:
+    config = TrainConfig(
+        algo="ppo",
+        env_id="CartPole-v1",
+        seed=19,
+        total_timesteps=256,
+        output_dir=tmp_path,
+        execution_backend="local_async",
+        num_envs=2,
+    )
+
+    envs = make_vector_env(config)
+    obs, _ = envs.reset(seed=config.seed)
+
+    assert isinstance(envs, gym.vector.AsyncVectorEnv)
+    assert obs.shape[0] == 2
+
+    envs.close()
+
+
 def test_resolve_mode_env_kwargs_merges_evaluation_overrides_recursively() -> None:
     resolved = resolve_mode_env_kwargs(
         {

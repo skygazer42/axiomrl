@@ -9,14 +9,16 @@ import torch
 
 from rl_training.algorithms.drqv2 import DrQv2
 from rl_training.data.replay_buffer import ReplayBuffer
-from rl_training.envs.factory import build_env, make_vector_env
+from rl_training.envs.factory import make_vector_env
 from rl_training.experiment.checkpointing import CheckpointState
 from rl_training.experiment.config import TrainConfig
 from rl_training.models.cnn.drqv2 import CNNDrQv2Model
-from rl_training.runtime.callbacks import Callback, CallbackList, merge_callbacks
+from rl_training.runtime.callbacks import Callback, CallbackList
 from rl_training.runtime.collector import CollectResult
-from rl_training.runtime.controls import build_control_callbacks, resolve_eval_interval, should_run_evaluation
-from rl_training.runtime.run_utils import create_training_run, resolve_device, save_training_checkpoint
+from rl_training.runtime.controls import resolve_eval_interval, should_run_evaluation
+from rl_training.runtime.evaluation_support import evaluate_continuous_episodes
+from rl_training.runtime.run_utils import save_training_checkpoint
+from rl_training.runtime.session import create_training_session
 from rl_training.runtime.td3_trainer import _action_bounds, _scale_actions
 from rl_training.runtime.trainer import TrainResult, TrainerState
 from rl_training.runtime.types import MetricDict
@@ -45,38 +47,32 @@ def _evaluate_drqv2_policy(
     device: torch.device,
     num_episodes: int,
 ) -> MetricDict:
-    env = build_env(config, 0, evaluation=True)
-    action_space = env.action_space
-    if not isinstance(action_space, gym.spaces.Box):
-        raise TypeError(f"unsupported action space for DrQ-v2 evaluation: {type(action_space)!r}")
+    class _ActionFn:
+        def __init__(self) -> None:
+            self.low: torch.Tensor | None = None
+            self.high: torch.Tensor | None = None
 
-    low, high = _action_bounds(action_space, device=device)
-    returns: list[float] = []
+        def bind_env(self, env: gym.Env) -> None:
+            action_space = env.action_space
+            if not isinstance(action_space, gym.spaces.Box):
+                raise TypeError(f"unsupported action space for DrQ-v2 evaluation: {type(action_space)!r}")
+            self.low = torch.as_tensor(action_space.low, dtype=torch.float32, device=device)
+            self.high = torch.as_tensor(action_space.high, dtype=torch.float32, device=device)
 
-    try:
-        for episode_index in range(num_episodes):
-            obs, _ = env.reset(seed=config.seed + episode_index)
-            done = False
-            truncated = False
-            episode_return = 0.0
+        def __call__(self, obs_tensor: torch.Tensor) -> np.ndarray:
+            if self.low is None or self.high is None:
+                raise RuntimeError("action bounds must be bound before evaluation")
+            with torch.no_grad():
+                normalized_action = model.actor(obs_tensor).squeeze(0)
+                env_action = _scale_actions(normalized_action, low=self.low, high=self.high)
+            return env_action.cpu().numpy()
 
-            while not (done or truncated):
-                obs_tensor = torch.as_tensor(obs, dtype=torch.float32, device=device)
-                with torch.no_grad():
-                    normalized_action = model.actor(obs_tensor).squeeze(0)
-                    env_action = _scale_actions(normalized_action, low=low, high=high)
-                obs, reward, done, truncated, _ = env.step(env_action.cpu().numpy())
-                episode_return += float(reward)
-
-            returns.append(episode_return)
-    finally:
-        env.close()
-
-    return {
-        "eval_return_mean": float(np.mean(returns)) if returns else 0.0,
-        "eval_return_std": float(np.std(returns)) if returns else 0.0,
-        "eval_episodes": float(len(returns)),
-    }
+    return evaluate_continuous_episodes(
+        config,
+        device=device,
+        num_episodes=num_episodes,
+        action_fn=_ActionFn(),
+    )
 
 
 def _restore_training_state(
@@ -177,12 +173,12 @@ def train_drqv2(
     checkpoint_state: CheckpointState | None = None,
     callbacks: Sequence[Callback] | None = None,
 ) -> TrainResult:
-    device = resolve_device(config.device)
-    run_artifacts = create_training_run(config, run_suffix=run_suffix)
-    run_context = run_artifacts.run_context
-    logger = run_artifacts.logger
-    callback_list = CallbackList(merge_callbacks(build_control_callbacks(config), callbacks))
-    trainer_state = TrainerState(algorithm="drqv2", run_dir=run_context.run_dir)
+    session = create_training_session(config, algorithm="drqv2", run_suffix=run_suffix, callbacks=callbacks)
+    device = session.device
+    run_context = session.run_context
+    logger = session.logger
+    callback_list = session.callback_list
+    trainer_state = session.trainer_state
 
     buffer_capacity = int(config.algo_kwargs.get("buffer_capacity", 100000))
     batch_size = int(config.algo_kwargs.get("batch_size", 256))
@@ -203,11 +199,12 @@ def train_drqv2(
     torch.manual_seed(config.seed)
     np.random.seed(config.seed)
 
-    envs = make_vector_env(config)
+    envs = None
     checkpoint_path: Path | None = None
     metrics: MetricDict = {}
 
     try:
+        envs = make_vector_env(config)
         obs_shape, action_dim = _infer_spaces(envs)
         obs_space = envs.single_observation_space
         action_space = envs.single_action_space
@@ -248,9 +245,10 @@ def train_drqv2(
             replay_buffer=replay_buffer,
             checkpoint_state=checkpoint_state,
         )
-        update_count = 0
+        update_count = int(checkpoint_state.trainer_state.get("update_count", 0)) if checkpoint_state is not None else 0
         latest_update_metrics: MetricDict = {}
         trainer_state.global_step = global_step
+        trainer_state.update_count = update_count
         callback_list.on_train_start(trainer_state)
 
         while global_step < config.total_timesteps:
@@ -301,6 +299,7 @@ def train_drqv2(
                 latest_update_metrics=latest_update_metrics,
                 update_count=update_count,
             )
+            trainer_state.update_count = update_count
 
             metrics = {
                 **latest_update_metrics,
@@ -330,14 +329,16 @@ def train_drqv2(
             buffer_state=replay_buffer.state_dict(),
             trainer_state={
                 "global_step": global_step,
+                "update_count": update_count,
                 "should_stop": trainer_state.should_stop,
                 "stop_reason": trainer_state.stop_reason,
             },
             metrics=metrics,
         )
     finally:
-        envs.close()
-        run_artifacts.close()
+        if envs is not None:
+            envs.close()
+        session.close()
 
     result = TrainResult(
         run_dir=run_context.run_dir,

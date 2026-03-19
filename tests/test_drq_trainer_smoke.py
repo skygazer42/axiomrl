@@ -96,3 +96,47 @@ def test_train_drq_writes_checkpoint_and_metrics(tmp_path: Path) -> None:
     assert result.metrics["global_step"] >= 96
     assert "eval_return_mean" in result.metrics
     assert "eval_return_mean" in metrics
+
+
+def test_train_drq_supports_local_async_backend(tmp_path: Path) -> None:
+    config = TrainConfig(
+        algo="drq",
+        env_id=_register_tiny_render_env(),
+        seed=221,
+        total_timesteps=96,
+        output_dir=tmp_path,
+        execution_backend="local_async",
+        num_envs=2,
+        eval_episodes=1,
+        algo_kwargs={
+            "buffer_capacity": 512,
+            "batch_size": 32,
+            "learning_starts": 32,
+            "train_frequency": 1,
+            "features_dim": 64,
+            "actor_hidden_sizes": (32,),
+            "critic_hidden_sizes": (32,),
+            "learning_rate": 1e-4,
+            "gamma": 0.99,
+            "alpha": 0.1,
+            "tau": 0.01,
+            "augmentation_pad": 4,
+        },
+        env_kwargs={
+            "render_mode": "rgb_array",
+            "wrappers": {
+                "pixels": {
+                    "resize_shape": [84, 84],
+                    "frame_stack": 3,
+                    "channel_first": True,
+                }
+            },
+        },
+    )
+
+    result = train_drq(config, run_suffix="async-smoke")
+
+    assert result.checkpoint_path is not None
+    assert result.checkpoint_path.exists()
+    assert result.metrics["global_step"] >= 96
+    assert "eval_return_mean" in result.metrics

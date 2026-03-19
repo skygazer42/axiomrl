@@ -40,7 +40,7 @@ from rl_training.algorithms.spr import SPR
 from rl_training.data.n_step import NStepAccumulator
 from rl_training.data.prioritized_replay_buffer import PrioritizedReplayBuffer
 from rl_training.data.replay_buffer import ReplayBuffer
-from rl_training.envs.factory import build_env, make_vector_env
+from rl_training.envs.factory import make_vector_env
 from rl_training.experiment.checkpointing import CheckpointState
 from rl_training.experiment.config import TrainConfig
 from rl_training.models.cnn import (
@@ -63,15 +63,16 @@ from rl_training.models.mlp_iqn_network import MLPIQNetwork
 from rl_training.models.mlp_noisy_q_network import MLPNoisyQNetwork
 from rl_training.models.mlp_q_network import MLPQNetwork
 from rl_training.models.mlp_qr_q_network import MLPQRQNetwork
-from rl_training.runtime.callbacks import Callback, CallbackList, merge_callbacks
+from rl_training.runtime.callbacks import Callback, CallbackList
 from rl_training.runtime.collector import CollectResult
 from rl_training.runtime.controls import (
-    build_control_callbacks,
     resolve_eval_interval,
     resolve_exploration_epsilon,
     should_run_evaluation,
 )
-from rl_training.runtime.run_utils import create_training_run, resolve_device, save_training_checkpoint
+from rl_training.runtime.evaluation_support import evaluate_discrete_episodes
+from rl_training.runtime.run_utils import save_training_checkpoint
+from rl_training.runtime.session import create_training_session
 from rl_training.runtime.trainer import TrainResult, TrainerState
 from rl_training.runtime.types import MetricDict
 
@@ -84,7 +85,7 @@ class _PrioritizedReplaySettings:
     beta_fraction: float
 
 
-def _infer_spaces(envs: gym.vector.SyncVectorEnv) -> tuple[tuple[int, ...], int]:
+def _infer_spaces(envs: gym.vector.VectorEnv) -> tuple[tuple[int, ...], int]:
     obs_space = envs.single_observation_space
     action_space = envs.single_action_space
 
@@ -874,32 +875,17 @@ def _evaluate_q_policy(
     device: torch.device,
     num_episodes: int,
 ) -> MetricDict:
-    env = build_env(config, 0, evaluation=True)
-    returns: list[float] = []
+    def action_fn(obs_tensor: torch.Tensor) -> int:
+        with torch.no_grad():
+            action = q_network.act(obs_tensor, epsilon=0.0).squeeze(0)
+        return int(action.item())
 
-    try:
-        for episode_index in range(num_episodes):
-            obs, _ = env.reset(seed=config.seed + episode_index)
-            done = False
-            truncated = False
-            episode_return = 0.0
-
-            while not (done or truncated):
-                obs_tensor = torch.as_tensor(obs, dtype=torch.float32, device=device)
-                with torch.no_grad():
-                    action = q_network.act(obs_tensor, epsilon=0.0).squeeze(0)
-                obs, reward, done, truncated, _ = env.step(int(action.item()))
-                episode_return += float(reward)
-
-            returns.append(episode_return)
-    finally:
-        env.close()
-
-    return {
-        "eval_return_mean": float(np.mean(returns)) if returns else 0.0,
-        "eval_return_std": float(np.std(returns)) if returns else 0.0,
-        "eval_episodes": float(len(returns)),
-    }
+    return evaluate_discrete_episodes(
+        config,
+        device=device,
+        num_episodes=num_episodes,
+        action_fn=action_fn,
+    )
 
 
 def train_dqn(
@@ -909,12 +895,12 @@ def train_dqn(
     checkpoint_state: CheckpointState | None = None,
     callbacks: Sequence[Callback] | None = None,
 ) -> TrainResult:
-    device = resolve_device(config.device)
-    run_artifacts = create_training_run(config, run_suffix=run_suffix)
-    run_context = run_artifacts.run_context
-    logger = run_artifacts.logger
-    callback_list = CallbackList(merge_callbacks(build_control_callbacks(config), callbacks))
-    trainer_state = TrainerState(algorithm=config.algo, run_dir=run_context.run_dir)
+    session = create_training_session(config, algorithm=config.algo, run_suffix=run_suffix, callbacks=callbacks)
+    device = session.device
+    run_context = session.run_context
+    logger = session.logger
+    callback_list = session.callback_list
+    trainer_state = session.trainer_state
 
     buffer_capacity = int(config.algo_kwargs.get("buffer_capacity", 10000))
     batch_size = int(config.algo_kwargs.get("batch_size", 64))
@@ -941,11 +927,12 @@ def train_dqn(
     torch.manual_seed(config.seed)
     np.random.seed(config.seed)
 
-    envs = make_vector_env(config)
+    envs = None
     checkpoint_path: Path | None = None
     metrics: MetricDict = {}
 
     try:
+        envs = make_vector_env(config)
         if n_step <= 0:
             raise ValueError(f"n_step must be > 0, got {n_step}")
 
@@ -1091,8 +1078,9 @@ def train_dqn(
             metrics=metrics,
         )
     finally:
-        envs.close()
-        run_artifacts.close()
+        if envs is not None:
+            envs.close()
+        session.close()
     result = TrainResult(
         run_dir=run_context.run_dir,
         checkpoint_path=checkpoint_path,

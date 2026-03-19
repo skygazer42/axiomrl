@@ -9,14 +9,12 @@ import torch
 
 from rl_training.algorithms.decision_transformer import DecisionTransformer
 from rl_training.data.trajectory_windows import TrajectoryWindowDataset
-from rl_training.envs.factory import build_env
 from rl_training.experiment.checkpointing import CheckpointState
 from rl_training.experiment.config import TrainConfig
 from rl_training.models.decision_transformer import DecisionTransformerModel
-from rl_training.runtime.callbacks import Callback, CallbackList, merge_callbacks
+from rl_training.runtime.callbacks import Callback
 from rl_training.runtime.collector import CollectResult
 from rl_training.runtime.controls import (
-    build_control_callbacks,
     resolve_effective_total_updates,
     resolve_eval_interval,
     resolve_max_epochs,
@@ -24,10 +22,12 @@ from rl_training.runtime.controls import (
     should_run_evaluation,
     stop_reason_for_training_limits,
 )
+from rl_training.runtime.evaluation_support import evaluate_continuous_episodes
 from rl_training.runtime.iql_trainer import _build_offline_dataset, _infer_env_spaces, _scale_actions
-from rl_training.runtime.run_utils import create_training_run, resolve_device, save_training_checkpoint
+from rl_training.runtime.run_utils import save_training_checkpoint
 from rl_training.runtime.schedules import apply_learning_rate_scale, resolve_schedule_value
-from rl_training.runtime.trainer import TrainResult, TrainerState
+from rl_training.runtime.session import create_training_session
+from rl_training.runtime.trainer import TrainResult
 from rl_training.runtime.types import MetricDict
 
 
@@ -89,65 +89,77 @@ def _evaluate_decision_transformer_policy(
     max_timestep: int,
     gamma: float,
 ) -> MetricDict:
-    env = build_env(config, 0, evaluation=True)
-    action_space = env.action_space
-    if not isinstance(action_space, gym.spaces.Box):
-        raise TypeError(f"unsupported action space for Decision Transformer evaluation: {type(action_space)!r}")
+    class _ActionFn:
+        def __init__(self) -> None:
+            self.low: torch.Tensor | None = None
+            self.high: torch.Tensor | None = None
+            self.action_dim: int | None = None
+            self.obs_history: list[np.ndarray] = []
+            self.action_history: list[np.ndarray] = []
+            self.return_history: list[float] = []
+            self.pending_action: np.ndarray | None = None
 
-    low = torch.as_tensor(action_space.low, dtype=torch.float32, device=device)
-    high = torch.as_tensor(action_space.high, dtype=torch.float32, device=device)
-    action_dim = int(action_space.shape[0])
-    gamma_value = float(gamma)
-    returns: list[float] = []
-
-    try:
-        for episode_index in range(num_episodes):
-            obs, _ = env.reset(seed=config.seed + episode_index)
-            done = False
-            truncated = False
-            episode_return = 0.0
-            obs_history = [np.asarray(obs, dtype=np.float32)]
-            action_history: list[np.ndarray] = []
-            return_history = [float(target_return)]
-
-            while not (done or truncated):
-                autoregressive_batch = _build_autoregressive_window(
-                    obs_history,
-                    action_history,
-                    return_history,
-                    context_length=context_length,
-                    action_dim=action_dim,
-                    max_timestep=max_timestep,
-                    device=device,
+        def bind_env(self, env: gym.Env) -> None:
+            action_space = env.action_space
+            if not isinstance(action_space, gym.spaces.Box):
+                raise TypeError(
+                    f"unsupported action space for Decision Transformer evaluation: {type(action_space)!r}"
                 )
-                with torch.no_grad():
-                    normalized_action = torch.nan_to_num(
-                        model.predict_last_action(**autoregressive_batch).squeeze(0),
-                        nan=0.0,
-                        posinf=1.0,
-                        neginf=-1.0,
-                    )
-                    env_action = _scale_actions(normalized_action, low=low, high=high)
+            self.low = torch.as_tensor(action_space.low, dtype=torch.float32, device=device)
+            self.high = torch.as_tensor(action_space.high, dtype=torch.float32, device=device)
+            self.action_dim = int(action_space.shape[0])
 
-                next_obs, reward, done, truncated, _ = env.step(env_action.cpu().numpy())
-                reward_value = float(reward)
-                episode_return += reward_value
-                action_history.append(normalized_action.detach().cpu().numpy().astype(np.float32))
+        def reset(self) -> None:
+            self.obs_history = []
+            self.action_history = []
+            self.return_history = [float(target_return)]
+            self.pending_action = None
 
-                if not (done or truncated):
-                    obs_history.append(np.asarray(next_obs, dtype=np.float32))
-                    next_return = 0.0 if gamma_value <= 1e-8 else (return_history[-1] - reward_value) / gamma_value
-                    return_history.append(float(next_return))
+        def __call__(self, obs_tensor: torch.Tensor) -> np.ndarray:
+            if self.low is None or self.high is None or self.action_dim is None:
+                raise RuntimeError("action bounds must be bound before evaluation")
+            obs = obs_tensor.detach().cpu().numpy().astype(np.float32)
+            if not self.obs_history:
+                self.obs_history = [obs]
 
-            returns.append(episode_return)
-    finally:
-        env.close()
+            autoregressive_batch = _build_autoregressive_window(
+                self.obs_history,
+                self.action_history,
+                self.return_history,
+                context_length=context_length,
+                action_dim=self.action_dim,
+                max_timestep=max_timestep,
+                device=device,
+            )
+            with torch.no_grad():
+                normalized_action = torch.nan_to_num(
+                    model.predict_last_action(**autoregressive_batch).squeeze(0),
+                    nan=0.0,
+                    posinf=1.0,
+                    neginf=-1.0,
+                )
+                env_action = _scale_actions(normalized_action, low=self.low, high=self.high)
+            self.pending_action = normalized_action.detach().cpu().numpy().astype(np.float32)
+            return env_action.cpu().numpy()
 
-    return {
-        "eval_return_mean": float(np.mean(returns)) if returns else 0.0,
-        "eval_return_std": float(np.std(returns)) if returns else 0.0,
-        "eval_episodes": float(len(returns)),
-    }
+        def after_step(self, next_obs, reward: float, done: bool, truncated: bool, info) -> None:  # type: ignore[no-untyped-def]
+            del info
+            if self.pending_action is not None:
+                self.action_history.append(self.pending_action)
+                self.pending_action = None
+            if done or truncated:
+                return
+            self.obs_history.append(np.asarray(next_obs, dtype=np.float32))
+            gamma_value = float(gamma)
+            next_return = 0.0 if gamma_value <= 1e-8 else (self.return_history[-1] - float(reward)) / gamma_value
+            self.return_history.append(float(next_return))
+
+    return evaluate_continuous_episodes(
+        config,
+        device=device,
+        num_episodes=num_episodes,
+        action_fn=_ActionFn(),
+    )
 
 
 def train_decision_transformer(
@@ -160,12 +172,17 @@ def train_decision_transformer(
     if config.algo_kwargs.get("dataset_mix") not in (None, False):
         raise ValueError("decision_transformer does not support dataset_mix because it destroys trajectory order")
 
-    device = resolve_device(config.device)
-    run_artifacts = create_training_run(config, run_suffix=run_suffix)
-    run_context = run_artifacts.run_context
-    logger = run_artifacts.logger
-    callback_list = CallbackList(merge_callbacks(build_control_callbacks(config), callbacks))
-    trainer_state = TrainerState(algorithm="decision_transformer", run_dir=run_context.run_dir)
+    session = create_training_session(
+        config,
+        algorithm="decision_transformer",
+        run_suffix=run_suffix,
+        callbacks=callbacks,
+    )
+    device = session.device
+    run_context = session.run_context
+    logger = session.logger
+    callback_list = session.callback_list
+    trainer_state = session.trainer_state
 
     batch_size = int(config.algo_kwargs.get("batch_size", 64))
     context_length = int(config.algo_kwargs.get("context_length", 20))
@@ -327,7 +344,7 @@ def train_decision_transformer(
             metrics=metrics,
         )
     finally:
-        run_artifacts.close()
+        session.close()
 
     result = TrainResult(
         run_dir=run_context.run_dir,

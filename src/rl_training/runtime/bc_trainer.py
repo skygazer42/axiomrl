@@ -8,14 +8,12 @@ import numpy as np
 import torch
 
 from rl_training.algorithms.bc import BC
-from rl_training.envs.factory import build_env
 from rl_training.experiment.checkpointing import CheckpointState
 from rl_training.experiment.config import TrainConfig
 from rl_training.models.mlp_bc import MLPBCModel
-from rl_training.runtime.callbacks import Callback, CallbackList, merge_callbacks
+from rl_training.runtime.callbacks import Callback
 from rl_training.runtime.collector import CollectResult
 from rl_training.runtime.controls import (
-    build_control_callbacks,
     resolve_effective_total_updates,
     resolve_eval_interval,
     resolve_max_epochs,
@@ -23,11 +21,13 @@ from rl_training.runtime.controls import (
     should_run_evaluation,
     stop_reason_for_training_limits,
 )
+from rl_training.runtime.evaluation_support import evaluate_continuous_episodes
 from rl_training.runtime.iql_trainer import _build_offline_dataset, _infer_env_spaces
-from rl_training.runtime.run_utils import create_training_run, resolve_device, save_training_checkpoint
+from rl_training.runtime.run_utils import save_training_checkpoint
 from rl_training.runtime.schedules import apply_learning_rate_scale, resolve_schedule_value
+from rl_training.runtime.session import create_training_session
 from rl_training.runtime.td3_trainer import _scale_actions
-from rl_training.runtime.trainer import TrainResult, TrainerState
+from rl_training.runtime.trainer import TrainResult
 from rl_training.runtime.types import MetricDict
 
 
@@ -38,39 +38,32 @@ def _evaluate_bc_policy(
     device: torch.device,
     num_episodes: int,
 ) -> MetricDict:
-    env = build_env(config, 0, evaluation=True)
-    action_space = env.action_space
-    if not isinstance(action_space, gym.spaces.Box):
-        raise TypeError(f"unsupported action space for BC evaluation: {type(action_space)!r}")
+    class _ActionFn:
+        def __init__(self) -> None:
+            self.low: torch.Tensor | None = None
+            self.high: torch.Tensor | None = None
 
-    low = torch.as_tensor(action_space.low, dtype=torch.float32, device=device)
-    high = torch.as_tensor(action_space.high, dtype=torch.float32, device=device)
-    returns: list[float] = []
+        def bind_env(self, env: gym.Env) -> None:
+            action_space = env.action_space
+            if not isinstance(action_space, gym.spaces.Box):
+                raise TypeError(f"unsupported action space for BC evaluation: {type(action_space)!r}")
+            self.low = torch.as_tensor(action_space.low, dtype=torch.float32, device=device)
+            self.high = torch.as_tensor(action_space.high, dtype=torch.float32, device=device)
 
-    try:
-        for episode_index in range(num_episodes):
-            obs, _ = env.reset(seed=config.seed + episode_index)
-            done = False
-            truncated = False
-            episode_return = 0.0
+        def __call__(self, obs_tensor: torch.Tensor) -> np.ndarray:
+            if self.low is None or self.high is None:
+                raise RuntimeError("action bounds must be bound before evaluation")
+            with torch.no_grad():
+                normalized_action = model.actor(obs_tensor).squeeze(0)
+                env_action = _scale_actions(normalized_action, low=self.low, high=self.high)
+            return env_action.cpu().numpy()
 
-            while not (done or truncated):
-                obs_tensor = torch.as_tensor(obs, dtype=torch.float32, device=device)
-                with torch.no_grad():
-                    normalized_action = model.actor(obs_tensor).squeeze(0)
-                    env_action = _scale_actions(normalized_action, low=low, high=high)
-                obs, reward, done, truncated, _ = env.step(env_action.cpu().numpy())
-                episode_return += float(reward)
-
-            returns.append(episode_return)
-    finally:
-        env.close()
-
-    return {
-        "eval_return_mean": float(np.mean(returns)) if returns else 0.0,
-        "eval_return_std": float(np.std(returns)) if returns else 0.0,
-        "eval_episodes": float(len(returns)),
-    }
+    return evaluate_continuous_episodes(
+        config,
+        device=device,
+        num_episodes=num_episodes,
+        action_fn=_ActionFn(),
+    )
 
 
 def train_bc(
@@ -80,12 +73,12 @@ def train_bc(
     checkpoint_state: CheckpointState | None = None,
     callbacks: Sequence[Callback] | None = None,
 ) -> TrainResult:
-    device = resolve_device(config.device)
-    run_artifacts = create_training_run(config, run_suffix=run_suffix)
-    run_context = run_artifacts.run_context
-    logger = run_artifacts.logger
-    callback_list = CallbackList(merge_callbacks(build_control_callbacks(config), callbacks))
-    trainer_state = TrainerState(algorithm="bc", run_dir=run_context.run_dir)
+    session = create_training_session(config, algorithm="bc", run_suffix=run_suffix, callbacks=callbacks)
+    device = session.device
+    run_context = session.run_context
+    logger = session.logger
+    callback_list = session.callback_list
+    trainer_state = session.trainer_state
 
     batch_size = int(config.algo_kwargs.get("batch_size", 256))
     hidden_sizes = tuple(config.algo_kwargs.get("hidden_sizes", (256, 256)))
@@ -218,7 +211,7 @@ def train_bc(
             metrics=metrics,
         )
     finally:
-        run_artifacts.close()
+        session.close()
 
     result = TrainResult(
         run_dir=run_context.run_dir,

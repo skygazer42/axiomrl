@@ -12,12 +12,14 @@ from rl_training.envs.factory import build_env
 from rl_training.experiment.checkpointing import CheckpointState
 from rl_training.experiment.config import TrainConfig
 from rl_training.models.mlp_ars import MLPARSModel
-from rl_training.runtime.callbacks import Callback, CallbackList, merge_callbacks
+from rl_training.runtime.callbacks import Callback
 from rl_training.runtime.collector import CollectResult
-from rl_training.runtime.controls import build_control_callbacks, resolve_eval_interval, should_run_evaluation
-from rl_training.runtime.run_utils import create_training_run, resolve_device, save_training_checkpoint
+from rl_training.runtime.controls import resolve_eval_interval, should_run_evaluation
+from rl_training.runtime.evaluation_support import evaluate_continuous_episodes
+from rl_training.runtime.run_utils import save_training_checkpoint
+from rl_training.runtime.session import create_training_session
 from rl_training.runtime.td3_trainer import _action_bounds, _scale_actions
-from rl_training.runtime.trainer import TrainResult, TrainerState
+from rl_training.runtime.trainer import TrainResult
 from rl_training.runtime.types import MetricDict
 
 
@@ -44,38 +46,31 @@ def _evaluate_openai_es_policy(
     device: torch.device,
     num_episodes: int,
 ) -> MetricDict:
-    env = build_env(config, 0, evaluation=True)
-    action_space = env.action_space
-    if not isinstance(action_space, gym.spaces.Box):
-        raise TypeError(f"unsupported action space for OpenAI ES evaluation: {type(action_space)!r}")
+    class _ActionFn:
+        def __init__(self) -> None:
+            self.low: torch.Tensor | None = None
+            self.high: torch.Tensor | None = None
 
-    low, high = _action_bounds(action_space, device=device)
-    returns: list[float] = []
+        def bind_env(self, env: gym.Env) -> None:
+            action_space = env.action_space
+            if not isinstance(action_space, gym.spaces.Box):
+                raise TypeError(f"unsupported action space for OpenAI ES evaluation: {type(action_space)!r}")
+            self.low, self.high = _action_bounds(action_space, device=device)
 
-    try:
-        for episode_index in range(num_episodes):
-            obs, _ = env.reset(seed=config.seed + episode_index)
-            done = False
-            truncated = False
-            episode_return = 0.0
+        def __call__(self, obs_tensor: torch.Tensor) -> np.ndarray:
+            if self.low is None or self.high is None:
+                raise RuntimeError("action bounds must be bound before evaluation")
+            with torch.no_grad():
+                normalized_action = model.actor(obs_tensor).squeeze(0)
+                env_action = _scale_actions(normalized_action, low=self.low, high=self.high)
+            return env_action.cpu().numpy()
 
-            while not (done or truncated):
-                obs_tensor = torch.as_tensor(obs, dtype=torch.float32, device=device)
-                with torch.no_grad():
-                    normalized_action = model.actor(obs_tensor).squeeze(0)
-                    env_action = _scale_actions(normalized_action, low=low, high=high)
-                obs, reward, done, truncated, _ = env.step(env_action.cpu().numpy())
-                episode_return += float(reward)
-
-            returns.append(episode_return)
-    finally:
-        env.close()
-
-    return {
-        "eval_return_mean": float(np.mean(returns)) if returns else 0.0,
-        "eval_return_std": float(np.std(returns)) if returns else 0.0,
-        "eval_episodes": float(len(returns)),
-    }
+    return evaluate_continuous_episodes(
+        config,
+        device=device,
+        num_episodes=num_episodes,
+        action_fn=_ActionFn(),
+    )
 
 
 def _run_rollout(
@@ -115,12 +110,12 @@ def train_openai_es(
     if config.num_envs != 1:
         raise ValueError(f"openai_es trainer currently supports num_envs=1 only, got {config.num_envs}")
 
-    device = resolve_device(config.device)
-    run_artifacts = create_training_run(config, run_suffix=run_suffix)
-    run_context = run_artifacts.run_context
-    logger = run_artifacts.logger
-    callback_list = CallbackList(merge_callbacks(build_control_callbacks(config), callbacks))
-    trainer_state = TrainerState(algorithm="openai_es", run_dir=run_context.run_dir)
+    session = create_training_session(config, algorithm="openai_es", run_suffix=run_suffix, callbacks=callbacks)
+    device = session.device
+    run_context = session.run_context
+    logger = session.logger
+    callback_list = session.callback_list
+    trainer_state = session.trainer_state
 
     hidden_sizes = tuple(config.algo_kwargs.get("hidden_sizes", (64, 64)))
     step_size = float(config.algo_kwargs.get("step_size", 0.02))
@@ -132,11 +127,12 @@ def train_openai_es(
     torch.manual_seed(config.seed)
     np.random.seed(config.seed)
 
-    train_env = build_env(config, 0, evaluation=False)
+    train_env = None
     checkpoint_path: Path | None = None
     metrics: MetricDict = {}
 
     try:
+        train_env = build_env(config, 0, evaluation=False)
         obs_dim, action_dim = _infer_spaces(train_env)
         action_space = train_env.action_space
         if not isinstance(action_space, gym.spaces.Box):
@@ -256,8 +252,9 @@ def train_openai_es(
             metrics=metrics,
         )
     finally:
-        train_env.close()
-        run_artifacts.close()
+        if train_env is not None:
+            train_env.close()
+        session.close()
 
     result = TrainResult(
         run_dir=run_context.run_dir,

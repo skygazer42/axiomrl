@@ -14,12 +14,13 @@ from rl_training.experiment.checkpointing import CheckpointState
 from rl_training.experiment.config import TrainConfig
 from rl_training.models.mlp_mopo import MLPMOPOEnsembleModel
 from rl_training.models.mlp_sac import MLPSACModel
-from rl_training.runtime.callbacks import Callback, CallbackList, merge_callbacks
-from rl_training.runtime.controls import build_control_callbacks, resolve_eval_interval, should_run_periodic_eval
+from rl_training.runtime.callbacks import Callback
+from rl_training.runtime.controls import resolve_eval_interval, should_run_periodic_eval
 from rl_training.runtime.off_policy_trainer_utils import emit_collect_event, store_vector_transitions
-from rl_training.runtime.run_utils import create_training_run, resolve_device, save_training_checkpoint
+from rl_training.runtime.run_utils import save_training_checkpoint
 from rl_training.runtime.sac_trainer import _action_bounds, _evaluate_sac_policy, _scale_actions
-from rl_training.runtime.trainer import TrainResult, TrainerState
+from rl_training.runtime.session import create_training_session
+from rl_training.runtime.trainer import TrainResult
 from rl_training.runtime.types import MetricDict
 
 
@@ -136,12 +137,12 @@ def train_mbpo(
     checkpoint_state: CheckpointState | None = None,
     callbacks: Sequence[Callback] | None = None,
 ) -> TrainResult:
-    device = resolve_device(config.device)
-    run_artifacts = create_training_run(config, run_suffix=run_suffix)
-    run_context = run_artifacts.run_context
-    logger = run_artifacts.logger
-    callback_list = CallbackList(merge_callbacks(build_control_callbacks(config), callbacks))
-    trainer_state = TrainerState(algorithm="mbpo", run_dir=run_context.run_dir)
+    session = create_training_session(config, algorithm="mbpo", run_suffix=run_suffix, callbacks=callbacks)
+    device = session.device
+    run_context = session.run_context
+    logger = session.logger
+    callback_list = session.callback_list
+    trainer_state = session.trainer_state
 
     buffer_capacity = int(config.algo_kwargs.get("buffer_capacity", 100000))
     synthetic_buffer_capacity = int(config.algo_kwargs.get("synthetic_buffer_capacity", 100000))
@@ -170,11 +171,12 @@ def train_mbpo(
     torch.manual_seed(config.seed)
     np.random.seed(config.seed)
 
-    envs = make_vector_env(config)
+    envs = None
     checkpoint_path: Path | None = None
     metrics: MetricDict = {}
 
     try:
+        envs = make_vector_env(config)
         obs_dim, action_dim = _infer_spaces(envs)
         action_space = envs.single_action_space
         if not isinstance(action_space, gym.spaces.Box):
@@ -239,6 +241,7 @@ def train_mbpo(
         }
 
         trainer_state.global_step = global_step
+        trainer_state.update_count = update_count + model_update_count
         callback_list.on_train_start(trainer_state)
 
         while global_step < config.total_timesteps:
@@ -283,6 +286,7 @@ def train_mbpo(
                     result = algorithm.update_model(replay_buffer.sample(model_batch_size), global_step=global_step)
                     latest_model_metrics = result.metrics
                     model_update_count += result.num_gradient_steps
+                    trainer_state.update_count = update_count + model_update_count
                     callback_list.on_update_end(trainer_state, result)
 
             if (
@@ -309,6 +313,7 @@ def train_mbpo(
                 result = algorithm.update(batch, global_step=global_step)
                 latest_update_metrics = result.metrics
                 update_count += result.num_gradient_steps
+                trainer_state.update_count = update_count + model_update_count
                 callback_list.on_update_end(trainer_state, result)
 
             metrics = {
@@ -362,8 +367,9 @@ def train_mbpo(
             metrics=metrics,
         )
     finally:
-        envs.close()
-        run_artifacts.close()
+        if envs is not None:
+            envs.close()
+        session.close()
 
     result = TrainResult(
         run_dir=run_context.run_dir,
@@ -372,4 +378,3 @@ def train_mbpo(
     )
     callback_list.on_train_end(trainer_state, result)
     return result
-

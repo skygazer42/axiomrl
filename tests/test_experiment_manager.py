@@ -264,6 +264,32 @@ def test_builtin_algorithm_specs_are_registered() -> None:
     assert callable(td3.predict_fn)
 
 
+def test_default_experiment_manager_setup_runner_executes_training(tmp_path: Path) -> None:
+    config = TrainConfig(
+        algo="ppo",
+        env_id="CartPole-v1",
+        seed=91,
+        total_timesteps=64,
+        output_dir=tmp_path,
+        num_envs=2,
+        eval_episodes=1,
+        algo_kwargs={
+            "num_steps": 32,
+            "update_epochs": 1,
+            "minibatch_size": 32,
+            "hidden_sizes": (16, 16),
+        },
+    )
+
+    manager = DefaultExperimentManager()
+    runner = manager.setup_runner(config)
+
+    result = runner.run()
+
+    assert result.checkpoint_path is not None
+    assert result.checkpoint_path.exists()
+
+
 def test_default_experiment_manager_setup_runs_training(tmp_path: Path) -> None:
     manager = DefaultExperimentManager()
     config = TrainConfig(

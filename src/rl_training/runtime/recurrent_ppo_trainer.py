@@ -9,19 +9,21 @@ import torch
 
 from rl_training.contrib.recurrent_ppo import RecurrentPPOAlgorithm
 from rl_training.data.recurrent_rollout_buffer import RecurrentRolloutBuffer
-from rl_training.envs.factory import build_env, make_vector_env
+from rl_training.envs.factory import make_vector_env
 from rl_training.experiment.checkpointing import CheckpointState
 from rl_training.experiment.config import TrainConfig
 from rl_training.models.recurrent import LSTMActorCritic
-from rl_training.runtime.callbacks import Callback, CallbackList, merge_callbacks
+from rl_training.runtime.callbacks import Callback
 from rl_training.runtime.collector import CollectResult
-from rl_training.runtime.controls import build_control_callbacks, resolve_clip_coefficient, resolve_entropy_coefficient
-from rl_training.runtime.run_utils import create_training_run, resolve_device, save_training_checkpoint
-from rl_training.runtime.trainer import TrainResult, TrainerState
+from rl_training.runtime.controls import resolve_clip_coefficient, resolve_entropy_coefficient
+from rl_training.runtime.evaluation_support import evaluate_discrete_episodes
+from rl_training.runtime.run_utils import save_training_checkpoint
+from rl_training.runtime.session import create_training_session
+from rl_training.runtime.trainer import TrainResult
 from rl_training.runtime.types import MetricDict
 
 
-def _infer_spaces(envs: gym.vector.SyncVectorEnv) -> tuple[tuple[int, ...], int]:
+def _infer_spaces(envs: gym.vector.VectorEnv) -> tuple[tuple[int, ...], int]:
     obs_space = envs.single_observation_space
     action_space = envs.single_action_space
 
@@ -61,35 +63,28 @@ def _evaluate_recurrent_policy(
     device: torch.device,
     num_episodes: int,
 ) -> MetricDict:
-    env = build_env(config, 0, evaluation=True)
-    returns: list[float] = []
+    class _ActionFn:
+        def __init__(self) -> None:
+            self.state: tuple[torch.Tensor, torch.Tensor] | None = None
 
-    try:
-        for episode_index in range(num_episodes):
-            obs, _ = env.reset(seed=config.seed + episode_index)
-            state = policy.initial_state(1, device=device)
-            done = False
-            truncated = False
-            episode_return = 0.0
+        def reset(self) -> None:
+            self.state = policy.initial_state(1, device=device)
 
-            while not (done or truncated):
-                obs_tensor = torch.as_tensor(obs, dtype=torch.float32, device=device)
-                with torch.no_grad():
-                    rollout = policy.act(obs_tensor, state=state, deterministic=True)
-                action = rollout.actions.squeeze(0)
-                state = rollout.state
-                obs, reward, done, truncated, _ = env.step(int(action.item()))
-                episode_return += float(reward)
+        def __call__(self, obs_tensor: torch.Tensor) -> int:
+            if self.state is None:
+                self.reset()
+            with torch.no_grad():
+                rollout = policy.act(obs_tensor, state=self.state, deterministic=True)
+            self.state = rollout.state
+            action = rollout.actions.squeeze(0)
+            return int(action.item())
 
-            returns.append(episode_return)
-    finally:
-        env.close()
-
-    return {
-        "eval_return_mean": float(np.mean(returns)) if returns else 0.0,
-        "eval_return_std": float(np.std(returns)) if returns else 0.0,
-        "eval_episodes": float(len(returns)),
-    }
+    return evaluate_discrete_episodes(
+        config,
+        device=device,
+        num_episodes=num_episodes,
+        action_fn=_ActionFn(),
+    )
 
 
 def train_recurrent_ppo(
@@ -99,12 +94,12 @@ def train_recurrent_ppo(
     checkpoint_state: CheckpointState | None = None,
     callbacks: Sequence[Callback] | None = None,
 ) -> TrainResult:
-    device = resolve_device(config.device)
-    run_artifacts = create_training_run(config, run_suffix=run_suffix)
-    run_context = run_artifacts.run_context
-    logger = run_artifacts.logger
-    callback_list = CallbackList(merge_callbacks(build_control_callbacks(config), callbacks))
-    trainer_state = TrainerState(algorithm="recurrent_ppo", run_dir=run_context.run_dir)
+    session = create_training_session(config, algorithm="recurrent_ppo", run_suffix=run_suffix, callbacks=callbacks)
+    device = session.device
+    run_context = session.run_context
+    logger = session.logger
+    callback_list = session.callback_list
+    trainer_state = session.trainer_state
 
     num_steps = int(config.algo_kwargs.get("num_steps", 128))
     update_epochs = int(config.algo_kwargs.get("update_epochs", 4))
@@ -126,11 +121,12 @@ def train_recurrent_ppo(
     torch.manual_seed(config.seed)
     np.random.seed(config.seed)
 
-    envs = make_vector_env(config)
+    envs = None
     checkpoint_path: Path | None = None
     metrics: MetricDict = {}
 
     try:
+        envs = make_vector_env(config)
         obs_shape, action_dim = _infer_spaces(envs)
         policy = _build_policy(config, obs_shape=obs_shape, action_dim=action_dim).to(device)
         algorithm = RecurrentPPOAlgorithm(
@@ -149,8 +145,9 @@ def train_recurrent_ppo(
         recurrent_state = policy.initial_state(config.num_envs, device=device)
         episode_starts = torch.ones(config.num_envs, dtype=torch.bool, device=device)
         global_step = int(checkpoint_state.trainer_state.get("global_step", 0)) if checkpoint_state is not None else 0
-        update_index = 0
+        update_index = int(checkpoint_state.trainer_state.get("update_index", 0)) if checkpoint_state is not None else 0
         trainer_state.global_step = global_step
+        trainer_state.update_count = update_index
         callback_list.on_train_start(trainer_state)
 
         while global_step < config.total_timesteps:
@@ -249,9 +246,10 @@ def train_recurrent_ppo(
             }
             logger.log_metrics(metrics, step=global_step)
             callback_list.on_eval_end(trainer_state, metrics)
+            update_index += 1
+            trainer_state.update_count = update_index
             if trainer_state.should_stop:
                 break
-            update_index += 1
 
         checkpoint_path = save_training_checkpoint(
             run_context=run_context,
@@ -260,14 +258,16 @@ def train_recurrent_ppo(
             buffer_state=None,
             trainer_state={
                 "global_step": global_step,
+                "update_index": update_index,
                 "should_stop": trainer_state.should_stop,
                 "stop_reason": trainer_state.stop_reason,
             },
             metrics=metrics,
         )
     finally:
-        envs.close()
-        run_artifacts.close()
+        if envs is not None:
+            envs.close()
+        session.close()
 
     result = TrainResult(
         run_dir=run_context.run_dir,

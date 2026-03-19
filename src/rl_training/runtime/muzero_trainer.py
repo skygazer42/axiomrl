@@ -16,17 +16,18 @@ from rl_training.experiment.checkpointing import CheckpointState
 from rl_training.experiment.config import TrainConfig
 from rl_training.models.muzero import MuZeroModel
 from rl_training.models.scalezero import ScaleZeroModel
-from rl_training.runtime.callbacks import Callback, CallbackList, merge_callbacks
+from rl_training.runtime.callbacks import Callback, CallbackList
 from rl_training.runtime.collector import CollectResult
 from rl_training.runtime.controls import (
-    build_control_callbacks,
     resolve_eval_interval,
     resolve_num_simulations,
     resolve_root_exploration_fraction,
     resolve_temperature,
     should_run_evaluation,
 )
-from rl_training.runtime.run_utils import create_training_run, resolve_device, save_training_checkpoint
+from rl_training.runtime.evaluation_support import evaluate_discrete_episodes
+from rl_training.runtime.run_utils import save_training_checkpoint
+from rl_training.runtime.session import create_training_session
 from rl_training.runtime.trainer import TrainResult, TrainerState
 from rl_training.runtime.types import MetricDict
 
@@ -52,32 +53,19 @@ def _evaluate_muzero_policy(
     device: torch.device,
     num_episodes: int,
 ) -> MetricDict:
-    env = build_env(config, 0, evaluation=True)
-    returns: list[float] = []
+    algorithm.set_eval_mode()
 
-    try:
-        algorithm.set_eval_mode()
-        for episode_index in range(num_episodes):
-            obs, _ = env.reset(seed=config.seed + episode_index)
-            done = False
-            truncated = False
-            episode_return = 0.0
+    def action_fn(obs_tensor: torch.Tensor) -> int:
+        with torch.no_grad():
+            action = algorithm.act(obs_tensor, deterministic=True).actions.squeeze(0)
+        return int(action.item())
 
-            while not (done or truncated):
-                with torch.no_grad():
-                    action = int(algorithm.act(obs, deterministic=True).actions.squeeze(0).item())
-                obs, reward, done, truncated, _ = env.step(action)
-                episode_return += float(reward)
-
-            returns.append(episode_return)
-    finally:
-        env.close()
-
-    return {
-        "eval_return_mean": float(np.mean(returns)) if returns else 0.0,
-        "eval_return_std": float(np.std(returns)) if returns else 0.0,
-        "eval_episodes": float(len(returns)),
-    }
+    return evaluate_discrete_episodes(
+        config,
+        device=device,
+        num_episodes=num_episodes,
+        action_fn=action_fn,
+    )
 
 
 def _emit_collect_event(
@@ -137,12 +125,12 @@ def train_muzero(
     if config.num_envs != 1:
         raise ValueError("MuZero MVP currently supports num_envs=1 only")
 
-    device = resolve_device(config.device)
-    run_artifacts = create_training_run(config, run_suffix=run_suffix)
-    run_context = run_artifacts.run_context
-    logger = run_artifacts.logger
-    callback_list = CallbackList(merge_callbacks(build_control_callbacks(config), callbacks))
-    trainer_state = TrainerState(algorithm=config.algo, run_dir=run_context.run_dir)
+    session = create_training_session(config, algorithm=config.algo, run_suffix=run_suffix, callbacks=callbacks)
+    device = session.device
+    run_context = session.run_context
+    logger = session.logger
+    callback_list = session.callback_list
+    trainer_state = session.trainer_state
 
     buffer_capacity = int(config.algo_kwargs.get("buffer_capacity", 50000))
     batch_size = int(config.algo_kwargs.get("batch_size", 32))
@@ -223,9 +211,10 @@ def train_muzero(
 
         obs, _ = env.reset(seed=config.seed)
         global_step = int(checkpoint_state.trainer_state.get("global_step", 0)) if checkpoint_state is not None else 0
-        update_count = 0
+        update_count = int(checkpoint_state.trainer_state.get("update_count", 0)) if checkpoint_state is not None else 0
         latest_update_metrics: MetricDict = {}
         trainer_state.global_step = global_step
+        trainer_state.update_count = update_count
         callback_list.on_train_start(trainer_state)
 
         eval_interval = resolve_eval_interval(config)
@@ -292,6 +281,7 @@ def train_muzero(
                 update_result = algorithm.update(batch, global_step=global_step)
                 latest_update_metrics = update_result.metrics
                 update_count += update_result.num_gradient_steps
+                trainer_state.update_count = update_count
                 callback_list.on_update_end(trainer_state, update_result)
 
             metrics: MetricDict = {
@@ -331,6 +321,7 @@ def train_muzero(
             buffer_state=replay_buffer.state_dict(),
             trainer_state={
                 "global_step": global_step,
+                "update_count": update_count,
                 "should_stop": trainer_state.should_stop,
                 "stop_reason": trainer_state.stop_reason,
             },
@@ -338,7 +329,7 @@ def train_muzero(
         )
     finally:
         env.close()
-        run_artifacts.close()
+        session.close()
 
     result = TrainResult(run_dir=run_context.run_dir, checkpoint_path=checkpoint_path, metrics=metrics)
     callback_list.on_train_end(trainer_state, result)

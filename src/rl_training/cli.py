@@ -80,6 +80,7 @@ def load_config(path: str | Path) -> TrainConfig:
         seed=int(payload["seed"]),
         total_timesteps=int(payload["total_timesteps"]),
         output_dir=Path(payload["output_dir"]),
+        execution_backend=payload.get("execution_backend", "local_sync"),
         device=payload.get("device", "auto"),
         num_envs=int(payload.get("num_envs", 1)),
         eval_episodes=int(payload.get("eval_episodes", 5)),
@@ -97,6 +98,8 @@ def _apply_overrides(config: TrainConfig, args: argparse.Namespace) -> TrainConf
 
     if getattr(args, "output_dir", None) is not None:
         overrides["output_dir"] = Path(args.output_dir)
+    if getattr(args, "execution_backend", None) is not None:
+        overrides["execution_backend"] = str(args.execution_backend)
     if getattr(args, "total_timesteps", None) is not None:
         overrides["total_timesteps"] = int(args.total_timesteps)
     if getattr(args, "num_envs", None) is not None:
@@ -120,6 +123,7 @@ def _build_parser() -> argparse.ArgumentParser:
     train_parser = subparsers.add_parser("train")
     train_parser.add_argument("--config", required=True)
     train_parser.add_argument("--output-dir")
+    train_parser.add_argument("--execution-backend")
     train_parser.add_argument("--total-timesteps", type=int)
     train_parser.add_argument("--num-envs", type=int)
     train_parser.add_argument("--eval-episodes", type=int)
@@ -132,6 +136,7 @@ def _build_parser() -> argparse.ArgumentParser:
     resume_parser.add_argument("--checkpoint", required=True)
     resume_parser.add_argument("--total-timesteps", type=int)
     resume_parser.add_argument("--output-dir")
+    resume_parser.add_argument("--execution-backend")
     resume_parser.add_argument("--eval-episodes", type=int)
 
     zoo_parser = subparsers.add_parser("zoo")
@@ -225,6 +230,7 @@ def main(argv: list[str] | None = None) -> int:
             args.checkpoint,
             total_timesteps=args.total_timesteps,
             output_dir=args.output_dir,
+            execution_backend=args.execution_backend,
             eval_episodes=args.eval_episodes,
         )
         _print_result(result)
