@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping
+from functools import partial
 
 import gymnasium as gym
 
@@ -10,6 +11,7 @@ from rl_training.envs.pixels import apply_pixel_wrappers, resolve_pixel_wrapper_
 from rl_training.envs.rewards import apply_reward_wrappers, resolve_reward_wrapper_config
 from rl_training.envs.video import apply_video_wrapper, resolve_video_wrapper_config
 from rl_training.experiment.config import TrainConfig
+from rl_training.runtime.vector_envs import resolve_worker_backend
 
 
 EnvFactory = Callable[[], gym.Env]
@@ -72,12 +74,10 @@ def build_env(config: TrainConfig, env_index: int, *, evaluation: bool = False) 
 
 
 def make_env(config: TrainConfig, env_index: int, *, evaluation: bool = False) -> EnvFactory:
-    def thunk() -> gym.Env:
-        return build_env(config, env_index, evaluation=evaluation)
-
-    return thunk
+    return partial(build_env, config, env_index, evaluation=evaluation)
 
 
-def make_vector_env(config: TrainConfig, *, evaluation: bool = False) -> gym.vector.SyncVectorEnv:
+def make_vector_env(config: TrainConfig, *, evaluation: bool = False) -> gym.vector.VectorEnv:
     env_fns = [make_env(config, env_index, evaluation=evaluation) for env_index in range(config.num_envs)]
-    return gym.vector.SyncVectorEnv(env_fns)
+    backend = resolve_worker_backend(config.execution_backend)
+    return backend.make_vector_env(env_fns)

@@ -19,10 +19,12 @@ from rl_training.envs.goals import (
 from rl_training.experiment.checkpointing import CheckpointState
 from rl_training.experiment.config import TrainConfig
 from rl_training.models.mlp_ddpg import MLPDDPGModel
-from rl_training.runtime.callbacks import Callback, CallbackList, merge_callbacks
+from rl_training.runtime.callbacks import Callback, CallbackList
 from rl_training.runtime.collector import CollectResult
-from rl_training.runtime.controls import build_control_callbacks, resolve_eval_interval, should_run_evaluation
-from rl_training.runtime.run_utils import create_training_run, resolve_device, save_training_checkpoint
+from rl_training.runtime.controls import resolve_eval_interval, should_run_evaluation
+from rl_training.runtime.evaluation_support import evaluate_continuous_episodes
+from rl_training.runtime.run_utils import save_training_checkpoint
+from rl_training.runtime.session import create_training_session
 from rl_training.runtime.td3_trainer import _action_bounds, _apply_exploration_noise, _scale_actions
 from rl_training.runtime.trainer import TrainResult, TrainerState
 from rl_training.runtime.types import MetricDict
@@ -58,41 +60,46 @@ def _evaluate_her_policy(
     device: torch.device,
     num_episodes: int,
 ) -> MetricDict:
-    env = build_env(config, 0, evaluation=True)
-    action_space = env.action_space
-    if not isinstance(action_space, gym.spaces.Box):
-        raise TypeError(f"unsupported action space for HER evaluation: {type(action_space)!r}")
+    class _ActionFn:
+        def __init__(self) -> None:
+            self.low: torch.Tensor | None = None
+            self.high: torch.Tensor | None = None
+            self.success = 0.0
 
-    low, high = _action_bounds(action_space, device=device)
-    returns: list[float] = []
-    successes: list[float] = []
+        def bind_env(self, env: gym.Env) -> None:
+            action_space = env.action_space
+            if not isinstance(action_space, gym.spaces.Box):
+                raise TypeError(f"unsupported action space for HER evaluation: {type(action_space)!r}")
+            self.low, self.high = _action_bounds(action_space, device=device)
 
-    try:
-        for episode_index in range(num_episodes):
-            obs, _ = env.reset(seed=config.seed + episode_index)
-            done = False
-            truncated = False
-            episode_return = 0.0
+        def reset(self) -> None:
+            self.success = 0.0
 
-            while not (done or truncated):
-                obs_tensor = torch.as_tensor(flatten_goal_observation(obs), dtype=torch.float32, device=device)
-                with torch.no_grad():
-                    normalized_action = model.actor(obs_tensor).squeeze(0)
-                    env_action = _scale_actions(normalized_action, low=low, high=high)
-                obs, reward, done, truncated, _ = env.step(env_action.cpu().numpy())
-                episode_return += float(reward)
+        def prepare_observation(self, obs) -> torch.Tensor:  # type: ignore[no-untyped-def]
+            return torch.as_tensor(flatten_goal_observation(obs), dtype=torch.float32, device=device)
 
-            returns.append(episode_return)
-            successes.append(float(done and not truncated))
-    finally:
-        env.close()
+        def __call__(self, obs_tensor: torch.Tensor) -> np.ndarray:
+            if self.low is None or self.high is None:
+                raise RuntimeError("action bounds must be bound before evaluation")
+            with torch.no_grad():
+                normalized_action = model.actor(obs_tensor).squeeze(0)
+                env_action = _scale_actions(normalized_action, low=self.low, high=self.high)
+            return env_action.cpu().numpy()
 
-    return {
-        "eval_return_mean": float(np.mean(returns)) if returns else 0.0,
-        "eval_return_std": float(np.std(returns)) if returns else 0.0,
-        "eval_success_rate": float(np.mean(successes)) if successes else 0.0,
-        "eval_episodes": float(len(returns)),
-    }
+        def after_step(self, next_obs, reward: float, done: bool, truncated: bool, info) -> None:  # type: ignore[no-untyped-def]
+            del next_obs, reward
+            success = bool(info.get("is_success", done and not truncated))
+            self.success = float(max(self.success, float(success)))
+
+        def episode_metrics(self) -> dict[str, float]:
+            return {"eval_success_rate": self.success}
+
+    return evaluate_continuous_episodes(
+        config,
+        device=device,
+        num_episodes=num_episodes,
+        action_fn=_ActionFn(),
+    )
 
 
 def _restore_training_state(
@@ -203,12 +210,12 @@ def train_her(
     checkpoint_state: CheckpointState | None = None,
     callbacks: Sequence[Callback] | None = None,
 ) -> TrainResult:
-    device = resolve_device(config.device)
-    run_artifacts = create_training_run(config, run_suffix=run_suffix)
-    run_context = run_artifacts.run_context
-    logger = run_artifacts.logger
-    callback_list = CallbackList(merge_callbacks(build_control_callbacks(config), callbacks))
-    trainer_state = TrainerState(algorithm="her", run_dir=run_context.run_dir)
+    session = create_training_session(config, algorithm="her", run_suffix=run_suffix, callbacks=callbacks)
+    device = session.device
+    run_context = session.run_context
+    logger = session.logger
+    callback_list = session.callback_list
+    trainer_state = session.trainer_state
 
     buffer_capacity = int(config.algo_kwargs.get("buffer_capacity", 50000))
     batch_size = int(config.algo_kwargs.get("batch_size", 256))
@@ -226,12 +233,14 @@ def train_her(
     torch.manual_seed(config.seed)
     np.random.seed(config.seed)
 
-    envs = make_vector_env(config)
-    reward_env = build_env(config, 0)
+    envs = None
+    reward_env = None
     checkpoint_path: Path | None = None
     metrics: MetricDict = {}
 
     try:
+        envs = make_vector_env(config)
+        reward_env = build_env(config, 0)
         goal_spec, action_dim = _infer_her_spaces(config)
         action_space = envs.single_action_space
         if not isinstance(action_space, gym.spaces.Box):
@@ -268,9 +277,10 @@ def train_her(
             replay_buffer=replay_buffer,
             checkpoint_state=checkpoint_state,
         )
-        update_count = 0
+        update_count = int(checkpoint_state.trainer_state.get("update_count", 0)) if checkpoint_state is not None else 0
         latest_update_metrics: MetricDict = {}
         trainer_state.global_step = global_step
+        trainer_state.update_count = update_count
         callback_list.on_train_start(trainer_state)
 
         while global_step < config.total_timesteps:
@@ -321,6 +331,7 @@ def train_her(
                 latest_update_metrics=latest_update_metrics,
                 update_count=update_count,
             )
+            trainer_state.update_count = update_count
 
             metrics = {
                 **latest_update_metrics,
@@ -351,15 +362,18 @@ def train_her(
             buffer_state=replay_buffer.state_dict(),
             trainer_state={
                 "global_step": global_step,
+                "update_count": update_count,
                 "should_stop": trainer_state.should_stop,
                 "stop_reason": trainer_state.stop_reason,
             },
             metrics=metrics,
         )
     finally:
-        envs.close()
-        reward_env.close()
-        run_artifacts.close()
+        if envs is not None:
+            envs.close()
+        if reward_env is not None:
+            reward_env.close()
+        session.close()
 
     result = TrainResult(
         run_dir=run_context.run_dir,

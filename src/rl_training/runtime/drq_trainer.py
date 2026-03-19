@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from dataclasses import replace
 from pathlib import Path
 
 import gymnasium as gym
@@ -9,12 +10,13 @@ import torch
 
 from rl_training.algorithms.drq import DrQ
 from rl_training.data.replay_buffer import ReplayBuffer
-from rl_training.envs.factory import build_env, make_vector_env
+from rl_training.envs.factory import make_vector_env
 from rl_training.experiment.checkpointing import CheckpointState
 from rl_training.experiment.config import TrainConfig
 from rl_training.models.cnn.drq import CNNDrQModel
-from rl_training.runtime.callbacks import Callback, CallbackList, merge_callbacks
-from rl_training.runtime.controls import build_control_callbacks, resolve_eval_interval, should_run_periodic_eval
+from rl_training.runtime.callbacks import Callback
+from rl_training.runtime.controls import resolve_eval_interval, should_run_periodic_eval
+from rl_training.runtime.evaluation_support import evaluate_continuous_episodes
 from rl_training.runtime.off_policy_trainer_utils import (
     build_replay_metrics,
     emit_collect_event,
@@ -22,13 +24,14 @@ from rl_training.runtime.off_policy_trainer_utils import (
     maybe_update_algorithm,
     store_vector_transitions,
 )
-from rl_training.runtime.run_utils import create_training_run, resolve_device, save_training_checkpoint
+from rl_training.runtime.run_utils import save_training_checkpoint
+from rl_training.runtime.session import create_training_session
 from rl_training.runtime.td3_trainer import _action_bounds, _scale_actions
-from rl_training.runtime.trainer import TrainResult, TrainerState
+from rl_training.runtime.trainer import TrainResult
 from rl_training.runtime.types import MetricDict
 
 
-def _infer_spaces(envs: gym.vector.SyncVectorEnv) -> tuple[tuple[int, ...], int]:
+def _infer_spaces(envs: gym.vector.VectorEnv) -> tuple[tuple[int, ...], int]:
     obs_space = envs.single_observation_space
     action_space = envs.single_action_space
 
@@ -51,38 +54,27 @@ def _evaluate_drq_policy(
     device: torch.device,
     num_episodes: int,
 ) -> MetricDict:
-    env = build_env(config, 0, evaluation=True)
-    action_space = env.action_space
+    eval_env = make_vector_env(replace(config, num_envs=1, execution_backend="local_sync"))
+    action_space = eval_env.single_action_space
     if not isinstance(action_space, gym.spaces.Box):
         raise TypeError(f"unsupported action space for DrQ evaluation: {type(action_space)!r}")
 
     low, high = _action_bounds(action_space, device=device)
-    returns: list[float] = []
-
     try:
-        for episode_index in range(num_episodes):
-            obs, _ = env.reset(seed=config.seed + episode_index)
-            done = False
-            truncated = False
-            episode_return = 0.0
+        def action_fn(obs_tensor: torch.Tensor) -> np.ndarray:
+            with torch.no_grad():
+                normalized_action = model.actor(obs_tensor).squeeze(0)
+                env_action = _scale_actions(normalized_action, low=low, high=high)
+            return env_action.cpu().numpy()
 
-            while not (done or truncated):
-                obs_tensor = torch.as_tensor(obs, dtype=torch.float32, device=device)
-                with torch.no_grad():
-                    normalized_action = model.actor(obs_tensor).squeeze(0)
-                    env_action = _scale_actions(normalized_action, low=low, high=high)
-                obs, reward, done, truncated, _ = env.step(env_action.cpu().numpy())
-                episode_return += float(reward)
-
-            returns.append(episode_return)
+        return evaluate_continuous_episodes(
+            config,
+            device=device,
+            num_episodes=num_episodes,
+            action_fn=action_fn,
+        )
     finally:
-        env.close()
-
-    return {
-        "eval_return_mean": float(np.mean(returns)) if returns else 0.0,
-        "eval_return_std": float(np.std(returns)) if returns else 0.0,
-        "eval_episodes": float(len(returns)),
-    }
+        eval_env.close()
 
 
 def train_drq(
@@ -92,12 +84,12 @@ def train_drq(
     checkpoint_state: CheckpointState | None = None,
     callbacks: Sequence[Callback] | None = None,
 ) -> TrainResult:
-    device = resolve_device(config.device)
-    run_artifacts = create_training_run(config, run_suffix=run_suffix)
-    run_context = run_artifacts.run_context
-    logger = run_artifacts.logger
-    callback_list = CallbackList(merge_callbacks(build_control_callbacks(config), callbacks))
-    trainer_state = TrainerState(algorithm="drq", run_dir=run_context.run_dir)
+    session = create_training_session(config, algorithm="drq", run_suffix=run_suffix, callbacks=callbacks)
+    device = session.device
+    run_context = session.run_context
+    logger = session.logger
+    callback_list = session.callback_list
+    trainer_state = session.trainer_state
 
     buffer_capacity = int(config.algo_kwargs.get("buffer_capacity", 100000))
     batch_size = int(config.algo_kwargs.get("batch_size", 256))
@@ -116,11 +108,12 @@ def train_drq(
     torch.manual_seed(config.seed)
     np.random.seed(config.seed)
 
-    envs = make_vector_env(config)
+    envs = None
     checkpoint_path: Path | None = None
     metrics: MetricDict = {}
 
     try:
+        envs = make_vector_env(config)
         obs_shape, action_dim = _infer_spaces(envs)
         obs_space = envs.single_observation_space
         action_space = envs.single_action_space
@@ -253,8 +246,9 @@ def train_drq(
             metrics=metrics,
         )
     finally:
-        envs.close()
-        run_artifacts.close()
+        if envs is not None:
+            envs.close()
+        session.close()
 
     result = TrainResult(
         run_dir=run_context.run_dir,

@@ -36,3 +36,35 @@ def test_train_recurrent_ppo_writes_checkpoint_and_metrics(tmp_path: Path) -> No
     assert result.checkpoint_path.exists()
     assert result.metrics["global_step"] >= 64
     assert "eval_return_mean" in metrics
+
+
+def test_train_recurrent_ppo_supports_local_async_backend(tmp_path: Path) -> None:
+    config = TrainConfig(
+        algo="recurrent_ppo",
+        env_id="CartPole-v1",
+        seed=72,
+        total_timesteps=64,
+        output_dir=tmp_path,
+        execution_backend="local_async",
+        num_envs=2,
+        eval_episodes=1,
+        algo_kwargs={
+            "num_steps": 32,
+            "update_epochs": 1,
+            "minibatch_size": 32,
+            "sequence_length": 8,
+            "sequences_per_batch": 4,
+            "encoder_hidden_sizes": (16,),
+            "head_hidden_sizes": (16,),
+            "features_dim": 32,
+            "recurrent_hidden_size": 32,
+            "recurrent_num_layers": 1,
+        },
+    )
+
+    result = train_recurrent_ppo(config, run_suffix="async-smoke")
+
+    assert result.checkpoint_path is not None
+    assert result.checkpoint_path.exists()
+    assert result.metrics["global_step"] >= 64
+    assert "eval_return_mean" in result.metrics

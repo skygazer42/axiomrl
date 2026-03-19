@@ -67,6 +67,32 @@ def test_train_dqn_supports_configurable_epsilon_schedule(tmp_path: Path) -> Non
     assert result.metrics["epsilon"] == pytest.approx(0.2, rel=1e-6)
 
 
+def test_train_dqn_supports_local_async_execution_backend(tmp_path: Path) -> None:
+    config = TrainConfig(
+        algo="dqn",
+        env_id="CartPole-v1",
+        seed=15,
+        total_timesteps=128,
+        output_dir=tmp_path,
+        execution_backend="local_async",
+        eval_episodes=1,
+        algo_kwargs={
+            "buffer_capacity": 256,
+            "batch_size": 32,
+            "learning_starts": 32,
+            "train_frequency": 1,
+            "target_update_interval": 16,
+            "hidden_sizes": (32, 32),
+        },
+    )
+
+    result = train_dqn(config, run_suffix="async-smoke")
+
+    assert result.checkpoint_path is not None
+    assert result.checkpoint_path.exists()
+    assert result.metrics["global_step"] >= 128
+
+
 def test_train_double_dqn_writes_checkpoint_and_metrics(tmp_path: Path) -> None:
     config = TrainConfig(
         algo="double_dqn",

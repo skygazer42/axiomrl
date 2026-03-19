@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Protocol
 
 from rl_training.experiment.config import TrainConfig
+from rl_training.runtime.runner import Runner
 from rl_training.runtime.trainer import Trainer
 
 
@@ -12,4 +13,10 @@ class ExperimentManager(Protocol):
         ...
 
     def resume(self, checkpoint_path: str | Path) -> Trainer:
+        ...
+
+    def setup_runner(self, config: TrainConfig) -> Runner:
+        ...
+
+    def resume_runner(self, checkpoint_path: str | Path) -> Runner:
         ...

@@ -12,6 +12,7 @@ class TrainConfig:
     seed: int
     total_timesteps: int
     output_dir: Path
+    execution_backend: str = "local_sync"
     device: str = "auto"
     num_envs: int = 1
     eval_episodes: int = 5

@@ -13,9 +13,8 @@ from rl_training.envs.factory import build_env
 from rl_training.experiment.checkpointing import CheckpointState
 from rl_training.experiment.config import TrainConfig
 from rl_training.models.muzero import MuZeroModel
-from rl_training.runtime.callbacks import Callback, CallbackList, merge_callbacks
+from rl_training.runtime.callbacks import Callback
 from rl_training.runtime.controls import (
-    build_control_callbacks,
     resolve_eval_interval,
     resolve_num_simulations,
     resolve_root_exploration_fraction,
@@ -28,8 +27,9 @@ from rl_training.runtime.muzero_trainer import (
     _infer_spaces,
     _maybe_run_muzero_evaluation,
 )
-from rl_training.runtime.run_utils import create_training_run, resolve_device, save_training_checkpoint
-from rl_training.runtime.trainer import TrainResult, TrainerState
+from rl_training.runtime.run_utils import save_training_checkpoint
+from rl_training.runtime.session import create_training_session
+from rl_training.runtime.trainer import TrainResult
 from rl_training.runtime.types import MetricDict
 
 
@@ -43,12 +43,12 @@ def train_efficientzero(
     if config.num_envs != 1:
         raise ValueError("EfficientZero MVP currently supports num_envs=1 only")
 
-    device = resolve_device(config.device)
-    run_artifacts = create_training_run(config, run_suffix=run_suffix)
-    run_context = run_artifacts.run_context
-    logger = run_artifacts.logger
-    callback_list = CallbackList(merge_callbacks(build_control_callbacks(config), callbacks))
-    trainer_state = TrainerState(algorithm=config.algo, run_dir=run_context.run_dir)
+    session = create_training_session(config, algorithm=config.algo, run_suffix=run_suffix, callbacks=callbacks)
+    device = session.device
+    run_context = session.run_context
+    logger = session.logger
+    callback_list = session.callback_list
+    trainer_state = session.trainer_state
 
     buffer_capacity = int(config.algo_kwargs.get("buffer_capacity", 50000))
     batch_size = int(config.algo_kwargs.get("batch_size", 32))
@@ -117,9 +117,10 @@ def train_efficientzero(
 
         obs, _ = env.reset(seed=config.seed)
         global_step = int(checkpoint_state.trainer_state.get("global_step", 0)) if checkpoint_state is not None else 0
-        update_count = 0
+        update_count = int(checkpoint_state.trainer_state.get("update_count", 0)) if checkpoint_state is not None else 0
         latest_update_metrics: MetricDict = {}
         trainer_state.global_step = global_step
+        trainer_state.update_count = update_count
         callback_list.on_train_start(trainer_state)
 
         eval_interval = resolve_eval_interval(config)
@@ -186,6 +187,7 @@ def train_efficientzero(
                 update_result = algorithm.update(batch, global_step=global_step)
                 latest_update_metrics = update_result.metrics
                 update_count += update_result.num_gradient_steps
+                trainer_state.update_count = update_count
                 callback_list.on_update_end(trainer_state, update_result)
 
             metrics: MetricDict = {
@@ -223,6 +225,7 @@ def train_efficientzero(
             buffer_state=replay_buffer.state_dict(),
             trainer_state={
                 "global_step": global_step,
+                "update_count": update_count,
                 "should_stop": trainer_state.should_stop,
                 "stop_reason": trainer_state.stop_reason,
             },
@@ -230,7 +233,7 @@ def train_efficientzero(
         )
     finally:
         env.close()
-        run_artifacts.close()
+        session.close()
 
     result = TrainResult(run_dir=run_context.run_dir, checkpoint_path=checkpoint_path, metrics=metrics)
     callback_list.on_train_end(trainer_state, result)

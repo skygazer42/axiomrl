@@ -23,6 +23,7 @@ def test_load_config_reads_yaml(tmp_path: Path) -> None:
                 "seed: 1",
                 "total_timesteps: 128",
                 f"output_dir: {tmp_path}",
+                "execution_backend: local_async",
                 "num_envs: 2",
                 "algo_kwargs:",
                 "  num_steps: 32",
@@ -37,6 +38,7 @@ def test_load_config_reads_yaml(tmp_path: Path) -> None:
     assert config.env_id == "CartPole-v1"
     assert config.seed == 1
     assert config.output_dir == tmp_path
+    assert config.execution_backend == "local_async"
     assert config.algo_kwargs["num_steps"] == 32
 
 
@@ -2384,6 +2386,47 @@ def test_train_command_runs_with_overrides(tmp_path: Path) -> None:
 
     assert exit_code == 0
     assert any(override_dir.iterdir())
+
+
+def test_train_command_overrides_execution_backend(tmp_path: Path) -> None:
+    config_file = tmp_path / "ppo-config.yaml"
+    run_root = tmp_path / "runs"
+    config_file.write_text(
+        "\n".join(
+            [
+                "algo: ppo",
+                "env_id: CartPole-v1",
+                "seed: 17",
+                "total_timesteps: 64",
+                f"output_dir: {run_root}",
+                "execution_backend: local_sync",
+                "num_envs: 2",
+                "eval_episodes: 1",
+                "algo_kwargs:",
+                "  num_steps: 32",
+                "  update_epochs: 1",
+                "  minibatch_size: 32",
+                "  hidden_sizes: [16, 16]",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    exit_code = main(
+        [
+            "train",
+            "--config",
+            str(config_file),
+            "--execution-backend",
+            "local_async",
+        ]
+    )
+
+    run_dir = next(path for path in run_root.iterdir() if path.is_dir())
+    config_payload = json.loads((run_dir / "config.yaml").read_text(encoding="utf-8"))
+
+    assert exit_code == 0
+    assert config_payload["execution_backend"] == "local_async"
 
 
 def test_eval_command_runs_from_checkpoint(tmp_path: Path) -> None:

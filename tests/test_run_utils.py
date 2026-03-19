@@ -21,12 +21,14 @@ def test_serialize_train_config_normalizes_paths_and_tags(tmp_path: Path) -> Non
         seed=5,
         total_timesteps=128,
         output_dir=tmp_path,
+        execution_backend="local_async",
         tags=("baseline", "phase1"),
     )
 
     payload = serialize_train_config(config)
 
     assert payload["output_dir"] == str(tmp_path)
+    assert payload["execution_backend"] == "local_async"
     assert payload["tags"] == ["baseline", "phase1"]
 
 

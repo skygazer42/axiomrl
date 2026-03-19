@@ -86,3 +86,28 @@ def test_train_ppo_supports_clip_coefficient_schedule(tmp_path: Path) -> None:
 
     assert result.checkpoint_path is not None
     assert result.metrics["clip_coef"] == pytest.approx(0.05, rel=1e-6)
+
+
+def test_train_ppo_supports_local_async_execution_backend(tmp_path: Path) -> None:
+    config = TrainConfig(
+        algo="ppo",
+        env_id="CartPole-v1",
+        seed=31,
+        total_timesteps=128,
+        output_dir=tmp_path,
+        execution_backend="local_async",
+        num_envs=2,
+        eval_episodes=1,
+        algo_kwargs={
+            "num_steps": 32,
+            "update_epochs": 1,
+            "minibatch_size": 32,
+            "hidden_sizes": (32, 32),
+        },
+    )
+
+    result = train_ppo(config, run_suffix="async-smoke")
+
+    assert result.checkpoint_path is not None
+    assert result.checkpoint_path.exists()
+    assert result.metrics["global_step"] >= 128

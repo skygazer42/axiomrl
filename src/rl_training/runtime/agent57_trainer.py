@@ -14,9 +14,8 @@ from rl_training.envs.factory import make_vector_env
 from rl_training.experiment.checkpointing import CheckpointState
 from rl_training.experiment.config import TrainConfig
 from rl_training.models.rnd import RNDModel
-from rl_training.runtime.callbacks import Callback, CallbackList, merge_callbacks
+from rl_training.runtime.callbacks import Callback, CallbackList
 from rl_training.runtime.controls import (
-    build_control_callbacks,
     resolve_eval_interval,
     resolve_exploration_epsilon,
     should_run_evaluation,
@@ -32,7 +31,8 @@ from rl_training.runtime.r2d2_trainer import (
     _infer_spaces,
     _maybe_run_r2d2_evaluation,
 )
-from rl_training.runtime.run_utils import create_training_run, resolve_device, save_training_checkpoint
+from rl_training.runtime.run_utils import save_training_checkpoint
+from rl_training.runtime.session import create_training_session
 from rl_training.runtime.trainer import TrainResult, TrainerState
 from rl_training.runtime.types import MetricDict
 
@@ -88,12 +88,12 @@ def train_agent57(
     checkpoint_state: CheckpointState | None = None,
     callbacks: Sequence[Callback] | None = None,
 ) -> TrainResult:
-    device = resolve_device(config.device)
-    run_artifacts = create_training_run(config, run_suffix=run_suffix)
-    run_context = run_artifacts.run_context
-    logger = run_artifacts.logger
-    callback_list = CallbackList(merge_callbacks(build_control_callbacks(config), callbacks))
-    trainer_state = TrainerState(algorithm="agent57", run_dir=run_context.run_dir)
+    session = create_training_session(config, algorithm="agent57", run_suffix=run_suffix, callbacks=callbacks)
+    device = session.device
+    run_context = session.run_context
+    logger = session.logger
+    callback_list = session.callback_list
+    trainer_state = session.trainer_state
 
     buffer_capacity = int(config.algo_kwargs.get("buffer_capacity", 10000))
     batch_size = int(config.algo_kwargs.get("batch_size", 32))
@@ -172,7 +172,7 @@ def train_agent57(
         recurrent_state = q_network.initial_state(config.num_envs, device=device)
         episode_starts = torch.ones(config.num_envs, dtype=torch.bool, device=device)
         global_step = int(checkpoint_state.trainer_state.get("global_step", 0)) if checkpoint_state is not None else 0
-        update_count = 0
+        update_count = int(checkpoint_state.trainer_state.get("update_count", 0)) if checkpoint_state is not None else 0
         latest_update_metrics: MetricDict = {}
         latest_collect_metrics: MetricDict = {
             "extrinsic_reward_mean": 0.0,
@@ -180,6 +180,7 @@ def train_agent57(
             "combined_reward_mean": 0.0,
         }
         trainer_state.global_step = global_step
+        trainer_state.update_count = update_count
         callback_list.on_train_start(trainer_state)
 
         while global_step < config.total_timesteps:
@@ -244,6 +245,7 @@ def train_agent57(
                 latest_update_metrics=latest_update_metrics,
                 update_count=update_count,
             )
+            trainer_state.update_count = update_count
 
             metrics = {
                 **_build_r2d2_metrics(
@@ -291,7 +293,7 @@ def train_agent57(
     finally:
         if envs is not None:
             envs.close()
-        run_artifacts.close()
+        session.close()
 
     result = TrainResult(
         run_dir=run_context.run_dir,

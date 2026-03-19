@@ -15,10 +15,9 @@ from rl_training.experiment.checkpointing import CheckpointState
 from rl_training.experiment.config import TrainConfig
 from rl_training.models.mlp_mopo import MLPMOPOEnsembleModel
 from rl_training.models.mlp_sac import MLPSACModel
-from rl_training.runtime.callbacks import Callback, CallbackList, merge_callbacks
+from rl_training.runtime.callbacks import Callback, CallbackList
 from rl_training.runtime.collector import CollectResult
 from rl_training.runtime.controls import (
-    build_control_callbacks,
     resolve_eval_interval,
     resolve_max_epochs,
     resolve_max_updates,
@@ -27,9 +26,10 @@ from rl_training.runtime.controls import (
 )
 from rl_training.runtime.iql_trainer import _build_offline_dataset, _infer_env_spaces
 from rl_training.runtime.off_policy_trainer_utils import maybe_run_evaluation
-from rl_training.runtime.run_utils import create_training_run, resolve_device, save_training_checkpoint
+from rl_training.runtime.run_utils import save_training_checkpoint
 from rl_training.runtime.sac_trainer import _evaluate_sac_policy
 from rl_training.runtime.schedules import apply_learning_rate_scale, resolve_schedule_value
+from rl_training.runtime.session import create_training_session
 from rl_training.runtime.trainer import TrainResult, TrainerState
 from rl_training.runtime.types import MetricDict
 
@@ -485,12 +485,12 @@ def train_mopo(
     checkpoint_state: CheckpointState | None = None,
     callbacks: Sequence[Callback] | None = None,
 ) -> TrainResult:
-    device = resolve_device(config.device)
-    run_artifacts = create_training_run(config, run_suffix=run_suffix)
-    run_context = run_artifacts.run_context
-    logger = run_artifacts.logger
-    callback_list = CallbackList(merge_callbacks(build_control_callbacks(config), callbacks))
-    trainer_state = TrainerState(algorithm="mopo", run_dir=run_context.run_dir)
+    session = create_training_session(config, algorithm="mopo", run_suffix=run_suffix, callbacks=callbacks)
+    device = session.device
+    run_context = session.run_context
+    logger = session.logger
+    callback_list = session.callback_list
+    trainer_state = session.trainer_state
 
     batch_size = int(config.algo_kwargs.get("batch_size", 256))
     hidden_sizes = tuple(config.algo_kwargs.get("hidden_sizes", (256, 256)))
@@ -695,7 +695,7 @@ def train_mopo(
             metrics=metrics,
         )
     finally:
-        run_artifacts.close()
+        session.close()
 
     result = TrainResult(
         run_dir=run_context.run_dir,

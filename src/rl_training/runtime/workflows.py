@@ -26,6 +26,7 @@ def _config_from_payload(payload: dict[str, Any]) -> TrainConfig:
         seed=int(payload["seed"]),
         total_timesteps=int(payload["total_timesteps"]),
         output_dir=Path(payload["output_dir"]),
+        execution_backend=payload.get("execution_backend", "local_sync"),
         device=payload.get("device", "auto"),
         num_envs=int(payload.get("num_envs", 1)),
         eval_episodes=int(payload.get("eval_episodes", 5)),
@@ -80,6 +81,7 @@ def resume_training(
     *,
     total_timesteps: int | None = None,
     output_dir: str | Path | None = None,
+    execution_backend: str | None = None,
     eval_episodes: int | None = None,
     run_suffix: str | None = None,
     callbacks: Sequence[Callback] | None = None,
@@ -95,6 +97,8 @@ def resume_training(
         overrides["total_timesteps"] = int(total_timesteps)
     if output_dir is not None:
         overrides["output_dir"] = Path(output_dir)
+    if execution_backend is not None:
+        overrides["execution_backend"] = str(execution_backend)
     if eval_episodes is not None:
         overrides["eval_episodes"] = int(eval_episodes)
     if overrides:

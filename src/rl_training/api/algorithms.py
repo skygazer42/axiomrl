@@ -22,6 +22,7 @@ def _config_from_payload(payload: dict) -> TrainConfig:
         seed=int(payload["seed"]),
         total_timesteps=int(payload["total_timesteps"]),
         output_dir=Path(payload["output_dir"]),
+        execution_backend=payload.get("execution_backend", "local_sync"),
         device=payload.get("device", "auto"),
         num_envs=int(payload.get("num_envs", 1)),
         eval_episodes=int(payload.get("eval_episodes", 5)),

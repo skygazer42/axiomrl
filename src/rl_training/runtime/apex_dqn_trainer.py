@@ -16,11 +16,12 @@ from rl_training.experiment.checkpointing import CheckpointState
 from rl_training.experiment.config import TrainConfig
 from rl_training.models.cnn import CNNQNetwork
 from rl_training.models.mlp_q_network import MLPQNetwork
-from rl_training.runtime.callbacks import Callback, CallbackList, merge_callbacks
+from rl_training.runtime.callbacks import Callback, CallbackList
 from rl_training.runtime.collector import CollectResult
-from rl_training.runtime.controls import build_control_callbacks, resolve_eval_interval, should_run_evaluation
+from rl_training.runtime.controls import resolve_eval_interval, should_run_evaluation
 from rl_training.runtime.dqn_trainer import _evaluate_q_policy
-from rl_training.runtime.run_utils import create_training_run, resolve_device, save_training_checkpoint
+from rl_training.runtime.run_utils import save_training_checkpoint
+from rl_training.runtime.session import create_training_session
 from rl_training.runtime.trainer import TrainResult, TrainerState
 from rl_training.runtime.types import MetricDict
 
@@ -228,12 +229,12 @@ def train_apex_dqn(
     checkpoint_state: CheckpointState | None = None,
     callbacks: Sequence[Callback] | None = None,
 ) -> TrainResult:
-    device = resolve_device(config.device)
-    run_artifacts = create_training_run(config, run_suffix=run_suffix)
-    run_context = run_artifacts.run_context
-    logger = run_artifacts.logger
-    callback_list = CallbackList(merge_callbacks(build_control_callbacks(config), callbacks))
-    trainer_state = TrainerState(algorithm="apex_dqn", run_dir=run_context.run_dir)
+    session = create_training_session(config, algorithm="apex_dqn", run_suffix=run_suffix, callbacks=callbacks)
+    device = session.device
+    run_context = session.run_context
+    logger = session.logger
+    callback_list = session.callback_list
+    trainer_state = session.trainer_state
 
     buffer_capacity = int(config.algo_kwargs.get("buffer_capacity", 100000))
     batch_size = int(config.algo_kwargs.get("batch_size", 512))
@@ -263,11 +264,12 @@ def train_apex_dqn(
     torch.manual_seed(config.seed)
     np.random.seed(config.seed)
 
-    envs = make_vector_env(config)
+    envs = None
     checkpoint_path: Path | None = None
     metrics: MetricDict = {}
 
     try:
+        envs = make_vector_env(config)
         if n_step <= 0:
             raise ValueError(f"n_step must be > 0, got {n_step}")
         if updates_per_collect <= 0:
@@ -305,9 +307,10 @@ def train_apex_dqn(
 
         obs, _ = envs.reset(seed=config.seed)
         global_step = int(checkpoint_state.trainer_state.get("global_step", 0)) if checkpoint_state is not None else 0
-        update_count = 0
+        update_count = int(checkpoint_state.trainer_state.get("update_count", 0)) if checkpoint_state is not None else 0
         latest_update_metrics: MetricDict = {}
         trainer_state.global_step = global_step
+        trainer_state.update_count = update_count
         callback_list.on_train_start(trainer_state)
 
         beta = _beta_at_step(
@@ -366,6 +369,7 @@ def train_apex_dqn(
                     latest_update_metrics=latest_update_metrics,
                     update_count=update_count,
                 )
+                trainer_state.update_count = update_count
             metrics = {
                 **latest_update_metrics,
                 "global_step": float(global_step),
@@ -403,14 +407,16 @@ def train_apex_dqn(
             buffer_state=replay_buffer.state_dict(),
             trainer_state={
                 "global_step": global_step,
+                "update_count": update_count,
                 "should_stop": trainer_state.should_stop,
                 "stop_reason": trainer_state.stop_reason,
             },
             metrics=metrics,
         )
     finally:
-        envs.close()
-        run_artifacts.close()
+        if envs is not None:
+            envs.close()
+        session.close()
 
     result = TrainResult(
         run_dir=run_context.run_dir,
@@ -449,4 +455,3 @@ def _maybe_run_apex_dqn_evaluation(
     logger.log_metrics(evaluated_metrics, step=global_step)
     callback_list.on_eval_end(trainer_state, evaluated_metrics)
     return evaluated_metrics, trainer_state.should_stop
-
