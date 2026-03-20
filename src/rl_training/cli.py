@@ -254,6 +254,35 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     zoo_parser.add_argument("--output")
 
+    report_parser = subparsers.add_parser("report")
+    report_parser.add_argument("--manifest", default="zoo/atari/benchmark.yaml")
+    report_parser.add_argument("--runs-dir", default="runs")
+    report_parser.add_argument(
+        "--report-output",
+        choices=("text", "json", "csv"),
+        default="text",
+    )
+    report_parser.add_argument("--algo")
+    report_parser.add_argument("--env-id")
+    report_parser.add_argument(
+        "--group-by",
+        choices=("algo-env", "preset"),
+        default="algo-env",
+    )
+    report_parser.add_argument("--min-seeds", type=int)
+    report_parser.add_argument("--top-k", type=int)
+    report_parser.add_argument("--baseline-preset")
+    report_parser.add_argument("--sort-by")
+    report_parser.add_argument("--descending", action="store_true")
+    report_parser.add_argument("--fail-on-manifest-drift", action="store_true")
+    report_parser.add_argument("--fail-on-manifest-drift-severity", choices=("warning", "error"))
+    report_parser.add_argument(
+        "--fail-on-manifest-drift-type",
+        action="append",
+        choices=("unknown-preset", "protocol-mismatch"),
+    )
+    report_parser.add_argument("--output")
+
     subparsers.add_parser("doctor")
     return parser
 
@@ -272,6 +301,85 @@ def _normalize_seed_argument_tokens(argv: list[str]) -> list[str]:
         normalized.append(token)
         index += 1
     return normalized
+
+
+def _build_zoo_forward_argv(args: argparse.Namespace, *, format_override: str | None = None) -> list[str]:
+    manifest = str(getattr(args, "manifest", "zoo/atari/benchmark.yaml"))
+    runs_dir = str(getattr(args, "runs_dir", "runs"))
+    report_output = str(getattr(args, "report_output", "text"))
+    format_value = format_override or str(getattr(args, "format", "table"))
+
+    zoo_argv = [
+        "--manifest",
+        manifest,
+        "--format",
+        format_value,
+        "--runs-dir",
+        runs_dir,
+        "--report-output",
+        report_output,
+    ]
+
+    output = getattr(args, "output", None)
+    if output is not None:
+        zoo_argv.extend(["--output", str(output)])
+
+    algo = getattr(args, "algo", None)
+    if algo is not None:
+        zoo_argv.extend(["--algo", str(algo)])
+
+    env_id = getattr(args, "env_id", None)
+    if env_id is not None:
+        zoo_argv.extend(["--env-id", str(env_id)])
+
+    group_by = getattr(args, "group_by", None)
+    if group_by is not None:
+        zoo_argv.extend(["--group-by", str(group_by)])
+
+    min_seeds = getattr(args, "min_seeds", None)
+    if min_seeds is not None:
+        zoo_argv.extend(["--min-seeds", str(min_seeds)])
+
+    top_k = getattr(args, "top_k", None)
+    if top_k is not None:
+        zoo_argv.extend(["--top-k", str(top_k)])
+
+    baseline_preset = getattr(args, "baseline_preset", None)
+    if baseline_preset is not None:
+        zoo_argv.extend(["--baseline-preset", str(baseline_preset)])
+
+    leaderboard_metric = getattr(args, "leaderboard_metric", None)
+    if leaderboard_metric is not None:
+        zoo_argv.extend(["--leaderboard-metric", str(leaderboard_metric)])
+
+    compare_to = getattr(args, "compare_to", None)
+    if compare_to is not None:
+        zoo_argv.extend(["--compare-to", str(compare_to)])
+
+    score_view = getattr(args, "score_view", None)
+    if score_view is not None:
+        zoo_argv.extend(["--score-view", str(score_view)])
+
+    sort_by = getattr(args, "sort_by", None)
+    if sort_by is not None:
+        zoo_argv.extend(["--sort-by", str(sort_by)])
+
+    if getattr(args, "descending", False):
+        zoo_argv.append("--descending")
+
+    if getattr(args, "fail_on_manifest_drift", False):
+        zoo_argv.append("--fail-on-manifest-drift")
+
+    fail_on_manifest_drift_severity = getattr(args, "fail_on_manifest_drift_severity", None)
+    if fail_on_manifest_drift_severity is not None:
+        zoo_argv.extend(["--fail-on-manifest-drift-severity", str(fail_on_manifest_drift_severity)])
+
+    fail_on_manifest_drift_type = getattr(args, "fail_on_manifest_drift_type", None)
+    if fail_on_manifest_drift_type is not None:
+        for drift_type in fail_on_manifest_drift_type:
+            zoo_argv.extend(["--fail-on-manifest-drift-type", str(drift_type)])
+
+    return zoo_argv
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -316,49 +424,11 @@ def main(argv: list[str] | None = None) -> int:
         _print_result(result)
         return 0
 
+    if args.command == "report":
+        return zoo_main(_build_zoo_forward_argv(args, format_override="report"))
+
     if args.command == "zoo":
-        zoo_argv = [
-            "--manifest",
-            args.manifest,
-            "--format",
-            args.format,
-            "--runs-dir",
-            args.runs_dir,
-            "--report-output",
-            args.report_output,
-        ]
-        if args.output is not None:
-            zoo_argv.extend(["--output", args.output])
-        if args.algo is not None:
-            zoo_argv.extend(["--algo", args.algo])
-        if args.env_id is not None:
-            zoo_argv.extend(["--env-id", args.env_id])
-        if args.group_by is not None:
-            zoo_argv.extend(["--group-by", args.group_by])
-        if args.min_seeds is not None:
-            zoo_argv.extend(["--min-seeds", str(args.min_seeds)])
-        if args.top_k is not None:
-            zoo_argv.extend(["--top-k", str(args.top_k)])
-        if args.baseline_preset is not None:
-            zoo_argv.extend(["--baseline-preset", args.baseline_preset])
-        if args.leaderboard_metric is not None:
-            zoo_argv.extend(["--leaderboard-metric", args.leaderboard_metric])
-        if args.compare_to is not None:
-            zoo_argv.extend(["--compare-to", args.compare_to])
-        if args.score_view is not None:
-            zoo_argv.extend(["--score-view", args.score_view])
-        if args.sort_by is not None:
-            zoo_argv.extend(["--sort-by", args.sort_by])
-        if args.descending:
-            zoo_argv.append("--descending")
-        if args.fail_on_manifest_drift:
-            zoo_argv.append("--fail-on-manifest-drift")
-        if args.fail_on_manifest_drift_severity is not None:
-            zoo_argv.extend(["--fail-on-manifest-drift-severity", args.fail_on_manifest_drift_severity])
-        if args.fail_on_manifest_drift_type is not None:
-            for drift_type in args.fail_on_manifest_drift_type:
-                zoo_argv.extend(["--fail-on-manifest-drift-type", drift_type])
-        return zoo_main(zoo_argv)
+        return zoo_main(_build_zoo_forward_argv(args))
 
     parser.error(f"unknown command: {args.command}")
     return 2
