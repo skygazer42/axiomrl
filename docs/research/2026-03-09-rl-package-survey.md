@@ -2,6 +2,8 @@
 
 Date: 2026-03-09
 
+Updated: 2026-03-20 (refresh pinned commits; add TorchRL and d3rlpy)
+
 Foundation follow-up:
 
 - `docs/plans/2026-03-09-rl-package-foundation-design.md`
@@ -23,12 +25,14 @@ All repositories below were cloned locally under `references/`.
 
 | Repository | Local path | Latest local commit | Approx size | Why it matters |
 | --- | --- | --- | --- | --- |
-| Stable-Baselines3 | `references/stable-baselines3` | `cc20f5a` on `2026-02-21` | `4.6M` | Stable, well-scoped algorithm core |
-| RL Baselines3 Zoo | `references/rl-baselines3-zoo` | `d42f915` on `2026-02-16` | `9.5M` | Training CLI, tuning, experiment layout |
+| Stable-Baselines3 | `references/stable-baselines3` | `a72be40` on `2026-03-18` | `4.6M` | Stable, well-scoped algorithm core |
+| RL Baselines3 Zoo | `references/rl-baselines3-zoo` | `bb4bdf1` on `2026-03-13` | `9.5M` | Training CLI, tuning, experiment layout |
 | CleanRL | `references/cleanrl` | `004f8a0` on `2025-07-08` | `179M` | Single-file, research-friendly reference implementations |
 | Tianshou | `references/tianshou` | `1bbe05b` on `2025-12-01` | `12M` | Strong modular abstractions for data, algorithms, and trainers |
 | Sample Factory | `references/sample-factory` | `8b35494` on `2026-01-29` | `35M` | Throughput-focused runner and async/sync training architecture |
-| Ray / RLlib | `references/ray` | `16ea23e` on `2026-03-08` | `243M` | Distributed training platform with learner/module separation |
+| Ray / RLlib | `references/ray` | `70e34a3` on `2026-03-19` | `243M` | Distributed training platform with learner/module separation |
+| TorchRL | `references/torchrl` | `4e2e787` on `2026-03-20` | (varies) | PyTorch-native collectors, replay buffers, transforms |
+| d3rlpy | `references/d3rlpy` | `38c34b6` on `2025-09-11` | (varies) | Offline-RL ergonomics, evaluation + CLI tooling |
 
 ## Official References
 
@@ -38,6 +42,8 @@ All repositories below were cloned locally under `references/`.
 - Tianshou: <https://github.com/thu-ml/tianshou> and <https://tianshou.org/en/stable/>
 - Sample Factory: <https://github.com/alex-petrenko/sample-factory> and <https://samplefactory.dev>
 - RLlib: <https://github.com/ray-project/ray/tree/master/rllib> and <https://docs.ray.io/en/latest/rllib/index.html>
+- TorchRL: <https://github.com/pytorch/rl>
+- d3rlpy: <https://github.com/takuseno/d3rlpy>
 
 ## What Each Repository Teaches
 
@@ -167,6 +173,37 @@ Patterns to avoid copying literally:
 - RLlib is a distributed platform, not just an RL package.
 - Multi-agent, offline RL, actor orchestration, and legacy compatibility should stay out of v1.
 
+### 7. TorchRL: PyTorch-native collectors and replay buffers are composable building blocks
+
+Key files:
+
+- `references/torchrl/torchrl/collectors/collectors.py`
+- `references/torchrl/torchrl/data/replay_buffers/`
+
+Patterns worth borrowing:
+
+- Reusable, composable collector and replay-buffer interfaces are a strong foundation for both performance and testability.
+- Distributed or async execution layers can be optional, layered on top of the same interfaces.
+
+Patterns to avoid copying literally:
+
+- Hydra-heavy examples and distributed infrastructure are great for large stacks, but should not be the starting point for a compact single-node library.
+
+### 8. d3rlpy: offline-RL ergonomics and tool-first workflows
+
+Key files:
+
+- `references/d3rlpy/d3rlpy/cli.py`
+
+Patterns worth borrowing:
+
+- CLI tools for evaluation, plotting, and model export reduce “glue code” for users.
+- Offline-first assumptions encourage clean dataset contracts and repeatable evaluation.
+
+Patterns to avoid copying literally:
+
+- d3rlpy’s center of gravity is offline RL; adopt patterns where AxiomRL’s workflows align, but don’t force the same abstractions onto online-first training.
+
 ## Recommended Direction
 
 Use a hybrid architecture:
@@ -220,3 +257,9 @@ That means:
 ## Clone Notes
 
 The reference repositories are intentionally ignored via `.gitignore` so they can stay in the workspace for study without polluting this repository's future commits.
+
+## Actionable takeaways for AxiomRL
+
+Follow-up roadmap document (created 2026-03-20):
+
+- `docs/plans/2026-03-20-axiomrl-training-engineering-optimization.md`
