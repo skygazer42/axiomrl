@@ -46,6 +46,38 @@ def test_cli_module_does_not_import_torch_on_import() -> None:
     assert proc.stdout.strip() == "False"
 
 
+def test_config_subcommand_prints_resolved_train_config(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    config_file = tmp_path / "config.yaml"
+    config_file.write_text(
+        "\n".join(
+            [
+                "algo: ppo",
+                "env_id: CartPole-v1",
+                "seed: 1",
+                "total_timesteps: 128",
+                f"output_dir: {tmp_path}",
+                "tags:",
+                "  - demo",
+                "algo_kwargs:",
+                "  num_steps: 32",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    exit_code = main(["config", "--config", str(config_file)])
+
+    assert exit_code == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["algo"] == "ppo"
+    assert payload["env_id"] == "CartPole-v1"
+    assert payload["seed"] == 1
+    assert payload["total_timesteps"] == 128
+    assert payload["output_dir"] == str(tmp_path)
+    assert payload["tags"] == ["demo"]
+    assert payload["algo_kwargs"]["num_steps"] == 32
+
+
 def test_load_config_reads_yaml(tmp_path: Path) -> None:
     config_file = tmp_path / "config.yaml"
     config_file.write_text(

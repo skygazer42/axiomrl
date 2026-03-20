@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 from collections.abc import Mapping, Sequence
 from dataclasses import replace
+import json
 from pathlib import Path
 import platform
 import sys
@@ -262,6 +263,34 @@ def _print_result(result: Any) -> None:
     print(f"metrics={result.metrics}")
 
 
+def _emit_output(content: str, *, output_path: str | Path | None = None) -> None:
+    if output_path is not None:
+        destination = Path(output_path)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_text(content, encoding="utf-8")
+    print(content, end="")
+
+
+def _serialize_train_config(config: TrainConfig) -> dict[str, Any]:
+    return {
+        "algo": config.algo,
+        "env_id": config.env_id,
+        "seed": config.seed,
+        "total_timesteps": config.total_timesteps,
+        "output_dir": str(config.output_dir),
+        "execution_backend": config.execution_backend,
+        "device": config.device,
+        "num_envs": config.num_envs,
+        "eval_episodes": config.eval_episodes,
+        "log_interval": config.log_interval,
+        "checkpoint_interval": config.checkpoint_interval,
+        "tags": list(config.tags),
+        "benchmark": dict(config.benchmark),
+        "algo_kwargs": dict(config.algo_kwargs),
+        "env_kwargs": dict(config.env_kwargs),
+    }
+
+
 def _print_doctor() -> None:
     try:
         from importlib import metadata
@@ -499,6 +528,17 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     leaderboard_parser.add_argument("--output")
 
+    config_parser = subparsers.add_parser("config")
+    config_parser.add_argument("--config", required=True)
+    config_parser.add_argument("--output-dir")
+    config_parser.add_argument("--execution-backend")
+    config_parser.add_argument("--total-timesteps", type=int)
+    config_parser.add_argument("--num-envs", type=int)
+    config_parser.add_argument("--eval-episodes", type=int)
+    config_parser.add_argument("--seeds")
+    config_parser.add_argument("--format", choices=("json", "yaml"), default="json")
+    config_parser.add_argument("--output")
+
     subparsers.add_parser("doctor")
     return parser
 
@@ -605,6 +645,19 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "doctor":
         _print_doctor()
+        return 0
+
+    if args.command == "config":
+        try:
+            config = _apply_overrides(load_config(args.config), args)
+        except (TypeError, ValueError) as exc:
+            parser.error(str(exc))
+        payload = _serialize_train_config(config)
+        if args.format == "yaml":
+            rendered = yaml.safe_dump(payload, sort_keys=False)
+        else:
+            rendered = json.dumps(payload, indent=2, ensure_ascii=False) + "\n"
+        _emit_output(rendered, output_path=args.output)
         return 0
 
     if args.command == "train":

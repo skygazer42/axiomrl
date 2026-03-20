@@ -95,3 +95,8 @@ Common keys used by the runtime include:
 - `--eval-episodes <int>` overrides `eval_episodes`
 - `--seeds 1,2,3` runs a benchmark sweep by setting `benchmark.seeds`
 
+## Inspect resolved config
+
+Use `axiomrl config --config <path>` to print the resolved `TrainConfig` payload
+(including linked preset and manifest defaults). Add `--format yaml` if you
+prefer YAML output.

@@ -412,6 +412,8 @@ AxiomRL uses YAML files for experiment configuration. Every training parameter i
 
 See [docs/config-schema.md](docs/config-schema.md) for the core `TrainConfig` key schema and linked preset rules.
 
+Use `axiomrl config --config <path>` to print the resolved `TrainConfig` payload (JSON by default) before running.
+
 ```yaml
 algo: ppo
 env_id: CartPole-v1
