@@ -31,7 +31,3 @@ __all__ = [
     "main",
     "resolve_manifest_source",
 ]
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
