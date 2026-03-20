@@ -410,6 +410,8 @@ artifact layout and the `metadata.json` schema.
 
 AxiomRL uses YAML files for experiment configuration. Every training parameter is declarative and reproducible:
 
+See [docs/config-schema.md](docs/config-schema.md) for the core `TrainConfig` key schema and linked preset rules.
+
 ```yaml
 algo: ppo
 env_id: CartPole-v1

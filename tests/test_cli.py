@@ -2621,6 +2621,64 @@ def test_train_command_runs_seed_sweep_and_writes_benchmark_summary(
     assert "metrics=" in captured
 
 
+def test_train_command_rejects_missing_algo_with_cli_error(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    config_file = tmp_path / "missing-algo.yaml"
+    config_file.write_text(
+        "\n".join(
+            [
+                "env_id: CartPole-v1",
+                "seed: 31",
+                "total_timesteps: 64",
+                f"output_dir: {tmp_path / 'runs'}",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(SystemExit) as exc:
+        main(["train", "--config", str(config_file)])
+
+    assert exc.value.code == 2
+    stderr = capsys.readouterr().err
+    assert "error: config file" in stderr
+    assert "must define 'algo' or reference another config via 'config'" in stderr
+
+
+def test_train_command_rejects_missing_env_id_with_cli_error(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    config_file = tmp_path / "missing-env-id.yaml"
+    config_file.write_text(
+        "\n".join(
+            [
+                "algo: ppo",
+                "seed: 31",
+                "total_timesteps: 64",
+                f"output_dir: {tmp_path / 'runs'}",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(SystemExit) as exc:
+        main(["train", "--config", str(config_file)])
+
+    assert exc.value.code == 2
+    stderr = capsys.readouterr().err
+    assert "error: config file" in stderr
+    assert "missing required key 'env_id'" in stderr
+
+
+def test_train_command_rejects_missing_config_file_with_cli_error(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    config_file = tmp_path / "does-not-exist.yaml"
+
+    with pytest.raises(SystemExit) as exc:
+        main(["train", "--config", str(config_file)])
+
+    assert exc.value.code == 2
+    stderr = capsys.readouterr().err
+    assert "error: config file" in stderr
+    assert "does not exist" in stderr
+
+
 def test_train_command_rejects_malformed_seed_list_with_cli_error(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
