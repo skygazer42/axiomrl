@@ -24,6 +24,9 @@ def test_pyproject_declares_cli_entrypoints_and_package_assets() -> None:
     assert 'axiomrl-zoo = "rl_training.zoo_cli:main"' in pyproject_text
     assert 'offline = [' in pyproject_text
     assert '"minari"' in pyproject_text
+    assert 'dev = [' in pyproject_text
+    assert '"opencv-python"' in pyproject_text
+    assert '"pygame"' in pyproject_text
     assert 'assets/configs/*/*.yaml' in pyproject_text
     assert 'assets/zoo/*/*.yaml' in pyproject_text
     assert 'assets/zoo/README.md' in pyproject_text

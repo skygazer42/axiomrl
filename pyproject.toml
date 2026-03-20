@@ -47,6 +47,8 @@ dev = [
   "pytest",
   "pytest-cov",
   "twine",
+  "opencv-python",
+  "pygame",
 ]
 
 [project.scripts]
