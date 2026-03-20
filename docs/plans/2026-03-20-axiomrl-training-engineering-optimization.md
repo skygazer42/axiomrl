@@ -14,6 +14,7 @@
 - [x] Run artifacts: `docs/run-artifacts.md` describes artifact layout and `metadata.json` schema.
 - [x] Config schema + validation: `docs/config-schema.md` and stricter `axiomrl train` config errors.
 - [x] First-class report + leaderboard commands: `axiomrl report` / `axiomrl leaderboard` aliases.
+- [x] CLI startup hygiene: lazy exports + lazy imports to keep `axiomrl --version|doctor|report|leaderboard` fast.
 
 ---
 
