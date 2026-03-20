@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from unittest.mock import patch
 
@@ -46,6 +47,35 @@ def test_create_training_run_writes_config_and_metadata(tmp_path: Path) -> None:
         assert artifacts.run_context.config_path.exists()
         assert artifacts.run_context.metadata_path.exists()
         assert artifacts.run_context.run_dir.exists()
+        metadata_payload = json.loads(artifacts.run_context.metadata_path.read_text(encoding="utf-8"))
+        assert metadata_payload["algo"] == "dqn"
+        assert metadata_payload["env_id"] == "CartPole-v1"
+        assert metadata_payload["seed"] == 7
+        assert metadata_payload["output_dir"] == str(artifacts.run_context.run_dir)
+        assert isinstance(metadata_payload.get("benchmark"), dict)
+
+        assert isinstance(metadata_payload.get("created_at_utc"), str)
+
+        command = metadata_payload.get("command")
+        assert isinstance(command, list)
+        assert all(isinstance(token, str) for token in command)
+        assert command
+
+        system_payload = metadata_payload.get("system")
+        assert isinstance(system_payload, dict)
+        assert isinstance(system_payload.get("python_version"), str)
+        assert isinstance(system_payload.get("platform"), str)
+
+        versions_payload = metadata_payload.get("versions")
+        assert isinstance(versions_payload, dict)
+        assert isinstance(versions_payload.get("torch"), str)
+        assert isinstance(versions_payload.get("gymnasium"), str)
+        assert isinstance(versions_payload.get("numpy"), str)
+
+        git_payload = metadata_payload.get("git")
+        assert isinstance(git_payload, dict)
+        assert "commit" in git_payload
+        assert "is_dirty" in git_payload
     finally:
         artifacts.close()
 

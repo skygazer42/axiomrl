@@ -1,9 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+from datetime import datetime, timezone
+from importlib import metadata
 import json
 from pathlib import Path
+import platform
 import shutil
+import subprocess
+import sys
 from typing import Any
 
 import torch
@@ -45,18 +50,64 @@ def serialize_train_config(config: TrainConfig) -> dict[str, Any]:
     return payload
 
 
+def _resolve_distribution_version(distribution: str) -> str:
+    try:
+        return metadata.version(distribution)
+    except metadata.PackageNotFoundError:
+        return "missing"
+
+
+def _resolve_git_context() -> dict[str, object]:
+    context: dict[str, object] = {"commit": None, "is_dirty": None}
+    try:
+        commit = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        status = subprocess.run(
+            ["git", "status", "--porcelain"],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        return context
+
+    context["commit"] = commit or None
+    context["is_dirty"] = bool(status)
+    return context
+
+
+def _resolve_run_metadata_payload(config: TrainConfig, *, run_context: RunContext) -> dict[str, Any]:
+    return {
+        "algo": config.algo,
+        "env_id": config.env_id,
+        "seed": config.seed,
+        "output_dir": str(run_context.run_dir),
+        "benchmark": config.benchmark,
+        "created_at_utc": datetime.now(timezone.utc).isoformat(),
+        "command": list(sys.argv),
+        "system": {
+            "python_version": platform.python_version(),
+            "platform": platform.platform(),
+        },
+        "versions": {
+            "torch": _resolve_distribution_version("torch"),
+            "gymnasium": _resolve_distribution_version("gymnasium"),
+            "numpy": _resolve_distribution_version("numpy"),
+        },
+        "git": _resolve_git_context(),
+    }
+
+
 def _write_run_files(config: TrainConfig, *, run_context: RunContext) -> None:
     config_payload = serialize_train_config(config)
     run_context.config_path.write_text(json.dumps(config_payload, indent=2), encoding="utf-8")
     run_context.metadata_path.write_text(
         json.dumps(
-            {
-                "algo": config.algo,
-                "env_id": config.env_id,
-                "seed": config.seed,
-                "output_dir": str(run_context.run_dir),
-                "benchmark": config.benchmark,
-            },
+            _resolve_run_metadata_payload(config, run_context=run_context),
             indent=2,
         ),
         encoding="utf-8",
