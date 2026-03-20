@@ -76,6 +76,9 @@ result = algo.learn()
 Or use the CLI:
 
 ```bash
+# Sanity-check your environment (prints versions + CUDA availability)
+axiomrl doctor
+
 axiomrl train --config configs/ppo/cartpole.yaml
 axiomrl eval  --checkpoint runs/<run-id>/checkpoints/step_<n>.pt
 ```
@@ -196,6 +199,9 @@ pip install -e .
 ```bash
 pip install -e ".[dev]"
 ```
+
+`.[dev]` includes optional dependencies used by pixel-observation wrappers and
+render-based test coverage (for example `opencv-python` and `pygame`).
 
 **With Atari support:**
 
@@ -890,6 +896,9 @@ Contributions are welcome! The codebase follows a layered approach:
 3. **Presets and recipes** go into `zoo/` or `configs/`
 
 ```bash
+# Install development dependencies (includes pixel/render test deps)
+pip install -e ".[dev]"
+
 # Run tests
 python -m pytest tests/ -v
 
