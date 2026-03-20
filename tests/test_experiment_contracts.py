@@ -27,6 +27,22 @@ def test_create_run_context_creates_expected_paths(tmp_path: Path) -> None:
     assert context.metadata_path == context.run_dir / "metadata.json"
 
 
+def test_create_run_context_sanitizes_env_id_for_filesystem_paths(tmp_path: Path) -> None:
+    config = TrainConfig(
+        algo="ppo",
+        env_id="ALE/Breakout-v5",
+        seed=7,
+        total_timesteps=1024,
+        output_dir=tmp_path,
+    )
+
+    context = create_run_context(config, run_suffix="manual")
+
+    assert context.run_id == "ppo__ALE-Breakout-v5__seed7__manual"
+    assert context.run_dir == tmp_path / context.run_id
+    assert context.run_dir.exists()
+
+
 def test_create_run_context_auto_suffixes_are_unique(tmp_path: Path) -> None:
     config = TrainConfig(
         algo="ppo",

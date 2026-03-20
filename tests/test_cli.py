@@ -522,6 +522,72 @@ def test_report_subcommand_supports_report_format(tmp_path: Path, capsys: pytest
     assert "best_eval_return_mean_max=35.0" in captured.out
 
 
+def test_report_subcommand_supports_nested_run_directories(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    runs_dir = tmp_path / "runs"
+    nested_parent = runs_dir / "ppo__ALE"
+
+    first_run_dir = nested_parent / "Breakout-v5__seed9__demo"
+    first_run_dir.mkdir(parents=True)
+    (first_run_dir / "metadata.json").write_text(
+        json.dumps(
+            {
+                "algo": "ppo",
+                "env_id": "ALE/Breakout-v5",
+                "seed": 9,
+                "latest_metrics": {
+                    "eval_return_mean": 21.0,
+                    "eval_human_normalized_score": 12.5,
+                },
+                "best_checkpoint": {
+                    "path": str(first_run_dir / "checkpoints" / "best.pt"),
+                    "metric_name": "eval_return_mean",
+                    "metric_value": 30.0,
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    second_run_dir = nested_parent / "Breakout-v5__seed11__demo"
+    second_run_dir.mkdir(parents=True)
+    (second_run_dir / "metadata.json").write_text(
+        json.dumps(
+            {
+                "algo": "ppo",
+                "env_id": "ALE/Breakout-v5",
+                "seed": 11,
+                "latest_metrics": {
+                    "eval_return_mean": 27.0,
+                    "eval_human_normalized_score": 18.5,
+                },
+                "best_checkpoint": {
+                    "path": str(second_run_dir / "checkpoints" / "best.pt"),
+                    "metric_name": "eval_return_mean",
+                    "metric_value": 35.0,
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    exit_code = main(
+        [
+            "report",
+            "--manifest",
+            "zoo/atari/benchmark.yaml",
+            "--runs-dir",
+            str(runs_dir),
+        ]
+    )
+
+    captured = capsys.readouterr()
+
+    assert exit_code == 0
+    assert "ppo__ALE/Breakout-v5__seed9__demo" in captured.out
+    assert "ppo__ALE/Breakout-v5__seed11__demo" in captured.out
+    assert "aggregate algo=ppo env_id=ALE/Breakout-v5 runs=2 seeds=9,11" in captured.out
+
+
 def test_leaderboard_subcommand_uses_packaged_manifest_outside_repo_root(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.chdir(tmp_path)
 

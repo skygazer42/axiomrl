@@ -33,11 +33,23 @@ def _iter_run_reports(runs_dir: Path) -> list[dict[str, Any]]:
     if not runs_dir.exists():
         return []
 
-    reports: list[dict[str, Any]] = []
-    for run_dir in sorted(path for path in runs_dir.iterdir() if path.is_dir()):
-        metadata_path = run_dir / "metadata.json"
-        if not metadata_path.exists():
+    metadata_paths: list[Path] = []
+    for child_dir in sorted(path for path in runs_dir.iterdir() if path.is_dir()):
+        direct_metadata = child_dir / "metadata.json"
+        if direct_metadata.exists():
+            metadata_paths.append(direct_metadata)
             continue
+        metadata_paths.extend(sorted(child_dir.glob("*/metadata.json")))
+
+    reports: list[dict[str, Any]] = []
+    for metadata_path in metadata_paths:
+        run_dir = metadata_path.parent
+        try:
+            relative_run_dir = run_dir.relative_to(runs_dir)
+            run_id = "/".join(relative_run_dir.parts)
+        except ValueError:
+            run_id = run_dir.name
+
         payload = _load_run_metadata(metadata_path)
         latest_metrics = payload.get("latest_metrics", {})
         best_checkpoint = payload.get("best_checkpoint", {})
@@ -50,7 +62,7 @@ def _iter_run_reports(runs_dir: Path) -> list[dict[str, Any]]:
             benchmark = {}
         reports.append(
             {
-                "run_id": run_dir.name,
+                "run_id": run_id,
                 "algo": payload.get("algo", "unknown"),
                 "env_id": payload.get("env_id", "unknown"),
                 "seed": payload.get("seed", "unknown"),

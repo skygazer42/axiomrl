@@ -12,6 +12,10 @@ an id like:
 <algo>__<env_id>__seed<seed>__<timestamp>
 ```
 
+`env_id` is sanitized for filesystem safety (for example, `ALE/Breakout-v5`
+becomes `ALE-Breakout-v5` in the directory name), while `metadata.json` still
+records the original `env_id`.
+
 Example:
 
 ```
@@ -100,4 +104,3 @@ with:
 ```bash
 tensorboard --logdir <run_dir>/tensorboard
 ```
-
