@@ -1,4 +1,5 @@
 from rl_training.cli import main
+from rl_training.version import __version__
 
 
 def test_doctor_command_prints_environment_info(capsys) -> None:
@@ -7,6 +8,7 @@ def test_doctor_command_prints_environment_info(capsys) -> None:
     captured = capsys.readouterr()
 
     assert exit_code == 0
+    assert f"axiomrl_version={__version__}" in captured.out
     assert "python_version=" in captured.out
     assert "torch_version=" in captured.out
     assert "cuda_available=" in captured.out

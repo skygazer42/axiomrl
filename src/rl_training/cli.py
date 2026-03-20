@@ -16,6 +16,7 @@ from rl_training.experiment.sweeps import resolve_benchmark_seeds
 from rl_training.resources import find_packaged_asset
 from rl_training.runtime.trainer import TrainResult
 from rl_training.runtime.workflows import evaluate_checkpoint, resume_training
+from rl_training.version import __version__
 from rl_training.zoo_cli import apply_manifest_defaults_to_config_payload, main as zoo_main
 
 
@@ -283,6 +284,7 @@ def _print_doctor() -> None:
     except ImportError:  # pragma: no cover
         torch = None  # type: ignore[assignment]
 
+    print(f"axiomrl_version={__version__}")
     print(f"python_version={platform.python_version()}")
     print(f"platform={platform.platform()}")
     print(f"torch_version={resolve_version('torch')}")
@@ -296,6 +298,7 @@ def _print_doctor() -> None:
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="axiomrl")
+    parser.add_argument("--version", "-V", action="version", version=f"%(prog)s {__version__}")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     train_parser = subparsers.add_parser("train")

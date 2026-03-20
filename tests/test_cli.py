@@ -11,6 +11,15 @@ from rl_training.cli import load_config, main
 from rl_training.experiment.config import TrainConfig
 from rl_training.runtime.dqn_trainer import train_dqn
 from rl_training.runtime.ppo_trainer import train_ppo
+from rl_training.version import __version__
+
+
+def test_version_flag_prints_cli_version(capsys: pytest.CaptureFixture[str]) -> None:
+    with pytest.raises(SystemExit) as exc:
+        main(["--version"])
+
+    assert exc.value.code == 0
+    assert __version__ in capsys.readouterr().out
 
 
 def test_load_config_reads_yaml(tmp_path: Path) -> None:
