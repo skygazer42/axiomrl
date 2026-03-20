@@ -3,6 +3,9 @@ import json
 import csv
 import hashlib
 import io
+import os
+import subprocess
+import sys
 
 import pytest
 import yaml
@@ -20,6 +23,27 @@ def test_version_flag_prints_cli_version(capsys: pytest.CaptureFixture[str]) -> 
 
     assert exc.value.code == 0
     assert __version__ in capsys.readouterr().out
+
+
+def test_cli_module_does_not_import_torch_on_import() -> None:
+    project_root = Path(__file__).resolve().parents[1]
+    src_root = project_root / "src"
+    env = dict(os.environ)
+    env["PYTHONPATH"] = f"{src_root}{os.pathsep}{env.get('PYTHONPATH', '')}"
+    proc = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "import sys; import rl_training.cli; print('torch' in sys.modules)",
+        ],
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stdout.strip() == "False"
 
 
 def test_load_config_reads_yaml(tmp_path: Path) -> None:

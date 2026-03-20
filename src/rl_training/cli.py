@@ -11,13 +11,8 @@ from typing import Any, cast
 import yaml
 
 from rl_training.experiment.config import TrainConfig
-from rl_training.experiment.default_manager import DefaultExperimentManager
-from rl_training.experiment.sweeps import resolve_benchmark_seeds
 from rl_training.resources import find_packaged_asset
-from rl_training.runtime.trainer import TrainResult
-from rl_training.runtime.workflows import evaluate_checkpoint, resume_training
 from rl_training.version import __version__
-from rl_training.zoo_cli import apply_manifest_defaults_to_config_payload, main as zoo_main
 
 
 def _load_yaml_mapping(path: Path) -> dict[str, Any]:
@@ -65,6 +60,8 @@ def _load_config_payload(path: Path, *, visited: set[Path] | None = None) -> dic
 
     linked_config = payload.get("config")
     if isinstance(linked_config, str):
+        from rl_training.zoo.manifests import apply_manifest_defaults_to_config_payload
+
         linked_path = _resolve_linked_config_path(resolved_path, linked_config)
         linked_payload = _load_config_payload(linked_path, visited=seen)
         return apply_manifest_defaults_to_config_payload(linked_payload, preset_path=resolved_path, preset_payload=payload)
@@ -257,7 +254,7 @@ def _apply_overrides(config: TrainConfig, args: argparse.Namespace) -> TrainConf
     return cast(TrainConfig, replace(config, **overrides))
 
 
-def _print_result(result: TrainResult) -> None:
+def _print_result(result: Any) -> None:
     print(f"run_dir={result.run_dir}")
     print(f"checkpoint_path={result.checkpoint_path}")
     if result.benchmark_summary_path is not None:
@@ -586,9 +583,14 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "train":
         try:
             config = _apply_overrides(load_config(args.config), args)
+            from rl_training.experiment.sweeps import resolve_benchmark_seeds
+
             resolve_benchmark_seeds(config)
         except (TypeError, ValueError) as exc:
             parser.error(str(exc))
+
+        from rl_training.experiment.default_manager import DefaultExperimentManager
+
         manager = DefaultExperimentManager()
         try:
             result = manager.setup(config).train()
@@ -598,6 +600,8 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.command == "eval":
+        from rl_training.runtime.workflows import evaluate_checkpoint
+
         metrics = evaluate_checkpoint(
             args.checkpoint,
             num_episodes=args.num_episodes,
@@ -606,6 +610,8 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.command == "resume":
+        from rl_training.runtime.workflows import resume_training
+
         result = resume_training(
             args.checkpoint,
             total_timesteps=args.total_timesteps,
@@ -617,12 +623,18 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.command == "report":
+        from rl_training.zoo_cli import main as zoo_main
+
         return zoo_main(_build_zoo_forward_argv(args, format_override="report"))
 
     if args.command == "leaderboard":
+        from rl_training.zoo_cli import main as zoo_main
+
         return zoo_main(_build_zoo_forward_argv(args, format_override="leaderboard"))
 
     if args.command == "zoo":
+        from rl_training.zoo_cli import main as zoo_main
+
         return zoo_main(_build_zoo_forward_argv(args))
 
     parser.error(f"unknown command: {args.command}")
