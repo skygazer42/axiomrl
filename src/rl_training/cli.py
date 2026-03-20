@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 from dataclasses import replace
 from pathlib import Path
+import platform
 import sys
 from typing import Any, cast
 
@@ -134,6 +135,36 @@ def _print_result(result: TrainResult) -> None:
     print(f"metrics={result.metrics}")
 
 
+def _print_doctor() -> None:
+    try:
+        from importlib import metadata
+    except ImportError:  # pragma: no cover
+        metadata = None  # type: ignore[assignment]
+
+    def resolve_version(distribution: str) -> str:
+        if metadata is None:
+            return "unknown"
+        try:
+            return metadata.version(distribution)
+        except metadata.PackageNotFoundError:
+            return "missing"
+
+    try:
+        import torch
+    except ImportError:  # pragma: no cover
+        torch = None  # type: ignore[assignment]
+
+    print(f"python_version={platform.python_version()}")
+    print(f"platform={platform.platform()}")
+    print(f"torch_version={resolve_version('torch')}")
+    print(f"gymnasium_version={resolve_version('gymnasium')}")
+    print(f"numpy_version={resolve_version('numpy')}")
+    if torch is None:
+        print("cuda_available=unknown")
+    else:
+        print(f"cuda_available={torch.cuda.is_available()}")
+
+
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="axiomrl")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -222,6 +253,8 @@ def _build_parser() -> argparse.ArgumentParser:
         choices=("unknown-preset", "protocol-mismatch"),
     )
     zoo_parser.add_argument("--output")
+
+    subparsers.add_parser("doctor")
     return parser
 
 
@@ -245,6 +278,10 @@ def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args_argv = list(sys.argv[1:] if argv is None else argv)
     args = parser.parse_args(_normalize_seed_argument_tokens(args_argv))
+
+    if args.command == "doctor":
+        _print_doctor()
+        return 0
 
     if args.command == "train":
         try:
