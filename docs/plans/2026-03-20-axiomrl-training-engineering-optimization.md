@@ -12,6 +12,8 @@
 - [x] PoC 2: `axiomrl doctor` CLI environment self-check.
 - [x] Dev/test deps: optional `.[dev]` extras updated and documented.
 - [x] Run artifacts: `docs/run-artifacts.md` describes artifact layout and `metadata.json` schema.
+- [x] Config schema + validation: `docs/config-schema.md` and stricter `axiomrl train` config errors.
+- [x] First-class report + leaderboard commands: `axiomrl report` / `axiomrl leaderboard` aliases.
 
 ---
 
@@ -250,12 +252,18 @@ Avoid copying:
 
 ### P1 (bigger surface area)
 
-1. **Config validation + schema documentation**
-   - Candidate: Hydra/OmegaConf or a thin Pydantic validation layer over the YAML payload.
-2. **CLI UX upgrade**
-   - Candidate: Typer/Rich for better help text, tables, and progress output while preserving the existing argparse command surface.
-3. **A first-class report command outside zoo**
-   - Candidate: `axiomrl report --runs-dir ... --output json/csv` as a stable alias for common report usage.
+- [x] **Config validation + schema documentation** (Done: 2026-03-21)
+  - CLI validation: `src/rl_training/cli.py`
+  - Docs: `docs/config-schema.md`
+  - Tests: `tests/test_cli.py`
+
+- [ ] **CLI UX upgrade**
+  - Candidate: Typer/Rich for better help text, tables, and progress output while preserving the existing argparse command surface.
+
+- [x] **First-class report/leaderboard commands outside zoo** (Done: 2026-03-21)
+  - Commands: `axiomrl report`, `axiomrl leaderboard` (aliases to `axiomrl zoo --format report|leaderboard`)
+  - Docs: `README.md`
+  - Tests: `tests/test_cli.py`
 
 ### P2 (defer unless needed)
 
