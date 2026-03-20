@@ -457,6 +457,73 @@ def test_report_subcommand_supports_report_format(tmp_path: Path, capsys: pytest
     assert "best_eval_return_mean_max=35.0" in captured.out
 
 
+def test_leaderboard_subcommand_uses_packaged_manifest_outside_repo_root(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    exit_code = main(["leaderboard", "--manifest", "zoo/atari/benchmark.yaml"])
+
+    assert exit_code == 0
+
+
+def test_leaderboard_subcommand_supports_leaderboard_format(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    runs_dir = tmp_path / "runs"
+    for run_id, algo, preset_name, seed, best_return in [
+        ("ppo__ALE-Breakout-v5__seed9__demo", "ppo", "ppo_breakout", 9, 30.0),
+        ("ppo__ALE-Breakout-v5__seed11__demo", "ppo", "ppo_breakout", 11, 35.0),
+        ("dqn__ALE-Breakout-v5__seed7__demo", "dqn", "dqn_breakout", 7, 80.0),
+    ]:
+        run_dir = runs_dir / run_id
+        run_dir.mkdir(parents=True)
+        (run_dir / "metadata.json").write_text(
+            json.dumps(
+                {
+                    "algo": algo,
+                    "env_id": "ALE/Breakout-v5",
+                    "seed": seed,
+                    "benchmark": {
+                        "suite": "atari",
+                        "preset_name": preset_name,
+                        "protocol_name": "atari_default_v1",
+                    },
+                    "latest_metrics": {
+                        "eval_return_mean": best_return - 5.0,
+                        "eval_human_normalized_score": best_return / 2.0,
+                        "best_eval_return_mean": best_return,
+                    },
+                    "best_checkpoint": {
+                        "path": str(run_dir / "checkpoints" / "best.pt"),
+                        "metric_name": "eval_return_mean",
+                        "metric_value": best_return,
+                    },
+                }
+            ),
+            encoding="utf-8",
+        )
+
+    exit_code = main(
+        [
+            "leaderboard",
+            "--manifest",
+            "zoo/atari/benchmark.yaml",
+            "--runs-dir",
+            str(runs_dir),
+            "--group-by",
+            "preset",
+            "--top-k",
+            "1",
+        ]
+    )
+
+    captured = capsys.readouterr()
+
+    assert exit_code == 0
+    assert "leaderboard" in captured.out
+    assert "rank=1" in captured.out
+    assert "preset_name=dqn_breakout" in captured.out
+    assert "best_eval_return_mean_max=80.0" in captured.out
+    assert "ppo_breakout" not in captured.out
+
+
 def test_load_config_resolves_benchmark_aware_zoo_preset(tmp_path: Path) -> None:
     config_dir = tmp_path / "configs"
     config_dir.mkdir()

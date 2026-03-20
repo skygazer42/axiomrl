@@ -283,6 +283,66 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     report_parser.add_argument("--output")
 
+    leaderboard_parser = subparsers.add_parser("leaderboard")
+    leaderboard_parser.add_argument("--manifest", default="zoo/atari/benchmark.yaml")
+    leaderboard_parser.add_argument("--runs-dir", default="runs")
+    leaderboard_parser.add_argument(
+        "--report-output",
+        choices=("text", "json", "csv"),
+        default="text",
+    )
+    leaderboard_parser.add_argument("--algo")
+    leaderboard_parser.add_argument("--env-id")
+    leaderboard_parser.add_argument(
+        "--group-by",
+        choices=("algo-env", "preset"),
+        default="algo-env",
+    )
+    leaderboard_parser.add_argument("--min-seeds", type=int)
+    leaderboard_parser.add_argument("--top-k", type=int)
+    leaderboard_parser.add_argument("--baseline-preset")
+    leaderboard_parser.add_argument(
+        "--leaderboard-metric",
+        choices=(
+            "best-return",
+            "latest-return",
+            "gap-return",
+            "stability-return",
+            "confidence-return",
+            "median-return",
+            "iqr-return",
+            "delta-vs-baseline-return",
+            "ratio-vs-baseline-return",
+            "best-normalized",
+            "latest-normalized",
+            "gap-normalized",
+            "stability-normalized",
+            "confidence-normalized",
+            "median-normalized",
+            "iqr-normalized",
+            "delta-vs-baseline-normalized",
+            "ratio-vs-baseline-normalized",
+        ),
+    )
+    leaderboard_parser.add_argument(
+        "--compare-to",
+        choices=("best", "latest"),
+    )
+    leaderboard_parser.add_argument(
+        "--score-view",
+        choices=("return", "normalized"),
+    )
+    leaderboard_parser.add_argument("--sort-by")
+    leaderboard_parser.add_argument("--descending", action="store_true")
+    leaderboard_parser.add_argument("--fail-on-manifest-drift", action="store_true")
+    leaderboard_parser.add_argument("--fail-on-manifest-drift-severity", choices=("warning", "error"))
+    leaderboard_parser.add_argument(
+        "--fail-on-manifest-drift-type",
+        action="append",
+        choices=("unknown-preset", "protocol-mismatch"),
+    )
+    leaderboard_parser.add_argument("--output")
+
     subparsers.add_parser("doctor")
     return parser
 
@@ -426,6 +486,9 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "report":
         return zoo_main(_build_zoo_forward_argv(args, format_override="report"))
+
+    if args.command == "leaderboard":
+        return zoo_main(_build_zoo_forward_argv(args, format_override="leaderboard"))
 
     if args.command == "zoo":
         return zoo_main(_build_zoo_forward_argv(args))

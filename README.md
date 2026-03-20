@@ -134,6 +134,7 @@ axiomrl train --config configs/mopo/pendulum.yaml
 # Zoo presets
 axiomrl zoo --format commands
 axiomrl report --runs-dir runs
+axiomrl leaderboard --runs-dir runs --group-by preset --top-k 10
 axiomrl zoo --format report --runs-dir runs
 axiomrl zoo --format report --runs-dir runs --report-output json --algo dqn
 axiomrl zoo --format report --runs-dir runs --report-output json --output reports/benchmark_report.json
@@ -820,6 +821,7 @@ The Zoo layer provides curated presets and benchmark recipes on top of the core 
 # List all available zoo commands
 axiomrl zoo --format commands
 axiomrl report --runs-dir runs
+axiomrl leaderboard --runs-dir runs --group-by preset --top-k 10
 axiomrl zoo --format report --runs-dir runs
 axiomrl zoo --format report --runs-dir runs --report-output json --algo dqn
 axiomrl zoo --format report --runs-dir runs --report-output csv --env-id ALE/Breakout-v5 --sort-by best_eval_return_mean --descending
