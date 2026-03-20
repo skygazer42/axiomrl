@@ -400,6 +400,10 @@ graph LR
     J --> L[axiomrl resume]
 ```
 
+Training runs write a run directory containing `metadata.json`, checkpoints, and
+TensorBoard logs. See [docs/run-artifacts.md](docs/run-artifacts.md) for the
+artifact layout and the `metadata.json` schema.
+
 ## Configuration
 
 AxiomRL uses YAML files for experiment configuration. Every training parameter is declarative and reproducible:

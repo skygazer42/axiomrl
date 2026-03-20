@@ -1,8 +1,17 @@
 # AxiomRL Training/Engineering Optimization Roadmap (Benchmarking Mature RL Packages)
 
-> **Goal:** Use a consistent scorecard across mature RL libraries to identify high-leverage training/engineering improvements for AxiomRL, then turn those findings into an implementable backlog with acceptance criteria and 1–2 verified PoCs.
+> **Goal:** Use a consistent scorecard across mature RL libraries to identify high-leverage training/engineering improvements for AxiomRL, then turn those findings into an implementable backlog with acceptance criteria and 1-2 verified PoCs.
 
 > **Primary target:** single-node training (1 GPU / a few GPUs), production-leaning users, CLI-first workflows.
+
+---
+
+## Status (as of 2026-03-21)
+
+- [x] PoC 1: metadata enrichment for run `metadata.json` (`created_at_utc`, command, versions, git context).
+- [x] PoC 2: `axiomrl doctor` CLI environment self-check.
+- [x] Dev/test deps: optional `.[dev]` extras updated and documented.
+- [x] Run artifacts: `docs/run-artifacts.md` describes artifact layout and `metadata.json` schema.
 
 ---
 
@@ -222,12 +231,22 @@ Avoid copying:
 
 ### P0 (high leverage, low risk)
 
-1. **Enrich `metadata.json` with environment + git context**
-   - Acceptance: `metadata.json` records `created_at_utc`, command/argv, python/OS, and pinned versions for key deps; git commit + dirty flag when available; no failures when git is absent.
-2. **Add `axiomrl doctor` for environment self-check**
-   - Acceptance: `axiomrl doctor` returns exit code 0 and prints python/torch/cuda/gymnasium versions and key capabilities in a stable, greppable format.
-3. **Document "dev/test dependencies" for pixel and render tests**
-   - Acceptance: `pip install -e ".[dev]"` documents extra optional packages needed to run the full suite; tests that require them either skip cleanly or install guidance is explicit.
+- [x] **Enrich `metadata.json` with environment + git context** (Done: 2026-03-21)
+  - Acceptance (met): `metadata.json` records `created_at_utc`, command/argv, python/OS, and pinned versions for key deps; git commit + dirty flag when available; no failures when git is absent.
+  - Implementation: `src/rl_training/runtime/run_utils.py`
+  - Tests: `tests/test_run_utils.py`
+  - Docs: `docs/run-artifacts.md` (schema + run dir layout)
+
+- [x] **Add `axiomrl doctor` for environment self-check** (Done: 2026-03-21)
+  - Acceptance (met): `axiomrl doctor` returns exit code 0 and prints python/torch/cuda/gymnasium versions and key capabilities in a stable, greppable format.
+  - Implementation: `src/rl_training/cli.py`
+  - Tests: `tests/test_doctor_cli.py`
+
+- [x] **Document "dev/test dependencies" for pixel and render tests** (Done: 2026-03-21)
+  - Acceptance (met): `pip install -e ".[dev]"` documents extra optional packages needed to run the full suite; tests that require them either skip cleanly or install guidance is explicit.
+  - Packaging: `pyproject.toml` optional deps `dev` (includes `opencv-python`, `pygame`)
+  - Docs: `README.md`
+  - Tests: `tests/test_package_smoke.py`
 
 ### P1 (bigger surface area)
 
@@ -249,5 +268,5 @@ Avoid copying:
 
 Record PoC outcomes here (measured time/cost, risk notes, follow-ups).
 
-- PoC 1: metadata enrichment (TDD, tests updated)
-- PoC 2: `axiomrl doctor` (TDD, new tests)
+- PoC 1: metadata enrichment (TDD; `src/rl_training/runtime/run_utils.py`, `tests/test_run_utils.py`)
+- PoC 2: `axiomrl doctor` (TDD; `src/rl_training/cli.py`, `tests/test_doctor_cli.py`)
