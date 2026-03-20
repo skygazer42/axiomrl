@@ -4,6 +4,11 @@ from rl_training.data.offline_dataset import compute_discounted_returns_to_go
 from rl_training.data.her_replay_buffer import HERReplayBuffer
 from rl_training.data.n_step import NStepAccumulator
 from rl_training.data.offline_dataset import TransitionDataset
+from rl_training.data.rollout_export import (
+    collect_random_transition_dataset,
+    export_random_transition_dataset,
+    save_transition_dataset_npz,
+)
 from rl_training.data.trajectory_windows import TrajectoryWindowDataset
 from rl_training.data.prioritized_replay_buffer import PrioritizedReplayBuffer
 from rl_training.data.prioritized_recurrent_replay_buffer import PrioritizedRecurrentReplayBuffer
@@ -25,7 +30,10 @@ __all__ = [
     "RunningMeanStd",
     "TransitionDataset",
     "TrajectoryWindowDataset",
+    "collect_random_transition_dataset",
     "compute_discounted_returns_to_go",
+    "export_random_transition_dataset",
     "load_transition_dataset",
     "mix_transition_datasets",
+    "save_transition_dataset_npz",
 ]

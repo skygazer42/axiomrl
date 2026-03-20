@@ -710,6 +710,14 @@ result = algo.learn()
 
 ```python
 from rl_training import IQL, TrainConfig
+from rl_training.data import export_random_transition_dataset
+
+dataset_path = export_random_transition_dataset(
+    "Pendulum-v1",
+    "data/pendulum_rollout.npz",
+    num_steps=5_000,
+    seed=7,
+)
 
 algo = IQL(TrainConfig(
     algo="iql",
