@@ -1,258 +1,17 @@
 from __future__ import annotations
 
 import argparse
-from collections.abc import Mapping, Sequence
-from dataclasses import replace
 import json
-from pathlib import Path
-import platform
 import sys
-from typing import Any, cast
+from pathlib import Path
+from typing import Any
 
 import yaml
 
-from rl_training.experiment.config import TrainConfig
-from rl_training.resources import find_packaged_asset
+from rl_training.cli_config import apply_overrides, load_config, serialize_train_config
+from rl_training.cli_doctor import print_doctor
+from rl_training.cli_zoo import build_zoo_forward_argv
 from rl_training.version import __version__
-
-
-def _load_yaml_mapping(path: Path) -> dict[str, Any]:
-    try:
-        text = path.read_text(encoding="utf-8")
-    except OSError as exc:
-        raise ValueError(f"unable to read YAML config at {path}: {exc}") from exc
-
-    try:
-        payload = yaml.safe_load(text) or {}
-    except yaml.YAMLError as exc:  # pragma: no cover
-        raise ValueError(f"invalid YAML in {path}: {exc}") from exc
-    if not isinstance(payload, dict):
-        raise TypeError(f"expected YAML mapping in {path}, got {type(payload)!r}")
-    return payload
-
-
-def _resolve_linked_config_path(config_path: Path, linked_path: str) -> Path:
-    candidate = Path(linked_path)
-    if candidate.is_absolute():
-        return candidate
-
-    for base_dir in config_path.parents:
-        parent_candidate = (base_dir / candidate).resolve()
-        if parent_candidate.exists():
-            return parent_candidate
-
-    cwd_candidate = (Path.cwd() / candidate).resolve()
-    if cwd_candidate.exists():
-        return cwd_candidate
-
-    return (config_path.parent / candidate).resolve()
-
-
-def _load_config_payload(path: Path, *, visited: set[Path] | None = None) -> dict[str, Any]:
-    resolved_path = path.resolve()
-    seen = set() if visited is None else set(visited)
-    if resolved_path in seen:
-        raise ValueError(f"detected config include cycle at {resolved_path}")
-
-    seen.add(resolved_path)
-    payload = _load_yaml_mapping(resolved_path)
-    if "algo" in payload:
-        return payload
-
-    linked_config = payload.get("config")
-    if isinstance(linked_config, str):
-        from rl_training.zoo.manifests import apply_manifest_defaults_to_config_payload
-
-        linked_path = _resolve_linked_config_path(resolved_path, linked_config)
-        linked_payload = _load_config_payload(linked_path, visited=seen)
-        return apply_manifest_defaults_to_config_payload(linked_payload, preset_path=resolved_path, preset_payload=payload)
-
-    raise ValueError(f"config file {resolved_path} must define 'algo' or reference another config via 'config'")
-
-
-def _resolve_input_config_path(path: str | Path) -> Path:
-    candidate = Path(path)
-    if candidate.exists():
-        return candidate
-
-    packaged = find_packaged_asset(candidate)
-    if packaged is not None:
-        return packaged
-    return candidate
-
-
-def _require_payload_field(payload: Mapping[str, Any], field: str, *, config_path: Path) -> object:
-    if field not in payload:
-        raise ValueError(f"config file {config_path} missing required key '{field}'")
-    return payload[field]
-
-
-def _coerce_required_str(value: object, field: str, *, config_path: Path) -> str:
-    if value is None:
-        raise ValueError(f"config file {config_path} missing required key '{field}'")
-    if not isinstance(value, str):
-        raise TypeError(f"config file {config_path} field '{field}' must be a string, got {type(value)!r}")
-    normalized = value.strip()
-    if not normalized:
-        raise ValueError(f"config file {config_path} field '{field}' must not be empty")
-    return normalized
-
-
-def _coerce_optional_str(payload: Mapping[str, Any], field: str, default: str, *, config_path: Path) -> str:
-    value = payload.get(field)
-    if value is None:
-        return default
-    if not isinstance(value, str):
-        raise TypeError(f"config file {config_path} field '{field}' must be a string, got {type(value)!r}")
-    normalized = value.strip()
-    if not normalized:
-        raise ValueError(f"config file {config_path} field '{field}' must not be empty")
-    return normalized
-
-
-def _coerce_int(value: object, field: str, *, config_path: Path) -> int:
-    if isinstance(value, bool):
-        raise TypeError(f"config file {config_path} field '{field}' must be an integer, got {type(value)!r}")
-    try:
-        return int(value)  # type: ignore[arg-type]
-    except (TypeError, ValueError) as exc:
-        raise TypeError(f"config file {config_path} field '{field}' must be an integer, got {type(value)!r}") from exc
-
-
-def _coerce_required_int(payload: Mapping[str, Any], field: str, *, config_path: Path, min_value: int | None = None) -> int:
-    value = _require_payload_field(payload, field, config_path=config_path)
-    int_value = _coerce_int(value, field, config_path=config_path)
-    if min_value is not None and int_value < min_value:
-        raise ValueError(f"config file {config_path} field '{field}' must be >= {min_value}, got {int_value}")
-    return int_value
-
-
-def _coerce_optional_int(
-    payload: Mapping[str, Any],
-    field: str,
-    default: int,
-    *,
-    config_path: Path,
-    min_value: int | None = None,
-) -> int:
-    value = payload.get(field)
-    if value is None:
-        return default
-    int_value = _coerce_int(value, field, config_path=config_path)
-    if min_value is not None and int_value < min_value:
-        raise ValueError(f"config file {config_path} field '{field}' must be >= {min_value}, got {int_value}")
-    return int_value
-
-
-def _coerce_required_path(value: object, field: str, *, config_path: Path) -> Path:
-    if value is None:
-        raise ValueError(f"config file {config_path} missing required key '{field}'")
-    if isinstance(value, Path):
-        return value
-    if not isinstance(value, str):
-        raise TypeError(f"config file {config_path} field '{field}' must be a string path, got {type(value)!r}")
-    normalized = value.strip()
-    if not normalized:
-        raise ValueError(f"config file {config_path} field '{field}' must not be empty")
-    return Path(normalized)
-
-
-def _coerce_optional_mapping(
-    payload: Mapping[str, Any],
-    field: str,
-    *,
-    config_path: Path,
-) -> dict[str, Any]:
-    value = payload.get(field)
-    if value is None:
-        return {}
-    if not isinstance(value, Mapping):
-        raise TypeError(f"config file {config_path} field '{field}' must be a mapping, got {type(value)!r}")
-    return dict(value)
-
-
-def _coerce_optional_tags(payload: Mapping[str, Any], *, config_path: Path) -> tuple[str, ...]:
-    value = payload.get("tags")
-    if value is None:
-        return ()
-    if isinstance(value, (str, bytes)):
-        raise TypeError(f"config file {config_path} field 'tags' must be a sequence of strings, got {type(value)!r}")
-    if not isinstance(value, Sequence):
-        raise TypeError(f"config file {config_path} field 'tags' must be a sequence of strings, got {type(value)!r}")
-    normalized: list[str] = []
-    for entry in value:
-        if not isinstance(entry, str):
-            raise TypeError(
-                f"config file {config_path} field 'tags' entries must be strings, got {type(entry)!r}"
-            )
-        tag = entry.strip()
-        if tag:
-            normalized.append(tag)
-    return tuple(normalized)
-
-
-def load_config(path: str | Path) -> TrainConfig:
-    config_path = _resolve_input_config_path(path)
-    if not config_path.exists():
-        raise ValueError(f"config file {config_path} does not exist")
-    payload = _load_config_payload(config_path)
-
-    return TrainConfig(
-        algo=_coerce_required_str(_require_payload_field(payload, "algo", config_path=config_path), "algo", config_path=config_path),
-        env_id=_coerce_required_str(
-            _require_payload_field(payload, "env_id", config_path=config_path),
-            "env_id",
-            config_path=config_path,
-        ),
-        seed=_coerce_required_int(payload, "seed", config_path=config_path, min_value=0),
-        total_timesteps=_coerce_required_int(payload, "total_timesteps", config_path=config_path, min_value=1),
-        output_dir=_coerce_required_path(
-            _require_payload_field(payload, "output_dir", config_path=config_path),
-            "output_dir",
-            config_path=config_path,
-        ),
-        execution_backend=_coerce_optional_str(payload, "execution_backend", "local_sync", config_path=config_path),
-        device=_coerce_optional_str(payload, "device", "auto", config_path=config_path),
-        num_envs=_coerce_optional_int(payload, "num_envs", 1, config_path=config_path, min_value=1),
-        eval_episodes=_coerce_optional_int(payload, "eval_episodes", 5, config_path=config_path, min_value=1),
-        log_interval=_coerce_optional_int(payload, "log_interval", 1, config_path=config_path, min_value=1),
-        checkpoint_interval=_coerce_optional_int(payload, "checkpoint_interval", 1, config_path=config_path, min_value=1),
-        tags=_coerce_optional_tags(payload, config_path=config_path),
-        benchmark=_coerce_optional_mapping(payload, "benchmark", config_path=config_path),
-        algo_kwargs=_coerce_optional_mapping(payload, "algo_kwargs", config_path=config_path),
-        env_kwargs=_coerce_optional_mapping(payload, "env_kwargs", config_path=config_path),
-    )
-
-
-def _apply_overrides(config: TrainConfig, args: argparse.Namespace) -> TrainConfig:
-    overrides: dict[str, Any] = {}
-
-    if getattr(args, "output_dir", None) is not None:
-        overrides["output_dir"] = Path(args.output_dir)
-    if getattr(args, "execution_backend", None) is not None:
-        overrides["execution_backend"] = str(args.execution_backend)
-    if getattr(args, "total_timesteps", None) is not None:
-        overrides["total_timesteps"] = int(args.total_timesteps)
-    if getattr(args, "num_envs", None) is not None:
-        overrides["num_envs"] = int(args.num_envs)
-    if getattr(args, "eval_episodes", None) is not None:
-        overrides["eval_episodes"] = int(args.eval_episodes)
-    if getattr(args, "seeds", None) is not None:
-        raw_value = str(args.seeds)
-        tokens = [token.strip() for token in raw_value.split(",")]
-        if any(token == "" for token in tokens):
-            raise ValueError("--seeds expects a comma-separated list of integers, for example: 1,2,3")
-        try:
-            seed_values = [int(token) for token in tokens]
-        except ValueError as exc:
-            raise ValueError("--seeds expects a comma-separated list of integers, for example: 1,2,3") from exc
-        if any(seed < 0 for seed in seed_values):
-            raise ValueError("--seeds expects a comma-separated list of non-negative integers, for example: 1,2,3")
-        benchmark = dict(config.benchmark)
-        benchmark["seeds"] = seed_values
-        overrides["benchmark"] = benchmark
-
-    return cast(TrainConfig, replace(config, **overrides))
 
 
 def _print_result(result: Any) -> None:
@@ -269,84 +28,6 @@ def _emit_output(content: str, *, output_path: str | Path | None = None) -> None
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_text(content, encoding="utf-8")
     print(content, end="")
-
-
-def _serialize_train_config(config: TrainConfig) -> dict[str, Any]:
-    return {
-        "algo": config.algo,
-        "env_id": config.env_id,
-        "seed": config.seed,
-        "total_timesteps": config.total_timesteps,
-        "output_dir": str(config.output_dir),
-        "execution_backend": config.execution_backend,
-        "device": config.device,
-        "num_envs": config.num_envs,
-        "eval_episodes": config.eval_episodes,
-        "log_interval": config.log_interval,
-        "checkpoint_interval": config.checkpoint_interval,
-        "tags": list(config.tags),
-        "benchmark": dict(config.benchmark),
-        "algo_kwargs": dict(config.algo_kwargs),
-        "env_kwargs": dict(config.env_kwargs),
-    }
-
-
-def _print_doctor() -> None:
-    try:
-        from importlib import metadata
-    except ImportError:  # pragma: no cover
-        metadata = None  # type: ignore[assignment]
-
-    def resolve_version(distribution: str) -> str:
-        if metadata is None:
-            return "unknown"
-        try:
-            return metadata.version(distribution)
-        except metadata.PackageNotFoundError:
-            return "missing"
-
-    try:
-        import torch
-    except ImportError:  # pragma: no cover
-        torch = None  # type: ignore[assignment]
-
-    print(f"axiomrl_version={__version__}")
-    print(f"python_executable={sys.executable}")
-    print(f"python_version={platform.python_version()}")
-    print(f"platform={platform.platform()}")
-    print(f"torch_version={resolve_version('torch')}")
-    print(f"gymnasium_version={resolve_version('gymnasium')}")
-    print(f"numpy_version={resolve_version('numpy')}")
-    print(f"opencv_python_version={resolve_version('opencv-python')}")
-    print(f"pygame_version={resolve_version('pygame')}")
-    print(f"minari_version={resolve_version('minari')}")
-    if torch is None:
-        print("cuda_available=unknown")
-        print("cuda_device_count=unknown")
-        print("cuda_device_name=unknown")
-        print("torch_cuda_version=unknown")
-    else:
-        cuda_available = torch.cuda.is_available()
-        print(f"cuda_available={cuda_available}")
-        if not cuda_available:
-            print("cuda_device_count=0")
-            print("cuda_device_name=none")
-        else:
-            device_count = torch.cuda.device_count()
-            print(f"cuda_device_count={device_count}")
-            if device_count < 1:
-                print("cuda_device_name=none")
-            else:
-                try:
-                    device_name = str(torch.cuda.get_device_name(0))
-                except Exception:  # pragma: no cover
-                    device_name = "unknown"
-                print(f"cuda_device_name={device_name}")
-        torch_cuda_version = getattr(torch.version, "cuda", None)
-        if torch_cuda_version is None:
-            print("torch_cuda_version=unknown")
-        else:
-            print(f"torch_cuda_version={torch_cuda_version}")
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -559,100 +240,21 @@ def _normalize_seed_argument_tokens(argv: list[str]) -> list[str]:
     return normalized
 
 
-def _build_zoo_forward_argv(args: argparse.Namespace, *, format_override: str | None = None) -> list[str]:
-    manifest = str(getattr(args, "manifest", "zoo/atari/benchmark.yaml"))
-    runs_dir = str(getattr(args, "runs_dir", "runs"))
-    report_output = str(getattr(args, "report_output", "text"))
-    format_value = format_override or str(getattr(args, "format", "table"))
-
-    zoo_argv = [
-        "--manifest",
-        manifest,
-        "--format",
-        format_value,
-        "--runs-dir",
-        runs_dir,
-        "--report-output",
-        report_output,
-    ]
-
-    output = getattr(args, "output", None)
-    if output is not None:
-        zoo_argv.extend(["--output", str(output)])
-
-    algo = getattr(args, "algo", None)
-    if algo is not None:
-        zoo_argv.extend(["--algo", str(algo)])
-
-    env_id = getattr(args, "env_id", None)
-    if env_id is not None:
-        zoo_argv.extend(["--env-id", str(env_id)])
-
-    group_by = getattr(args, "group_by", None)
-    if group_by is not None:
-        zoo_argv.extend(["--group-by", str(group_by)])
-
-    min_seeds = getattr(args, "min_seeds", None)
-    if min_seeds is not None:
-        zoo_argv.extend(["--min-seeds", str(min_seeds)])
-
-    top_k = getattr(args, "top_k", None)
-    if top_k is not None:
-        zoo_argv.extend(["--top-k", str(top_k)])
-
-    baseline_preset = getattr(args, "baseline_preset", None)
-    if baseline_preset is not None:
-        zoo_argv.extend(["--baseline-preset", str(baseline_preset)])
-
-    leaderboard_metric = getattr(args, "leaderboard_metric", None)
-    if leaderboard_metric is not None:
-        zoo_argv.extend(["--leaderboard-metric", str(leaderboard_metric)])
-
-    compare_to = getattr(args, "compare_to", None)
-    if compare_to is not None:
-        zoo_argv.extend(["--compare-to", str(compare_to)])
-
-    score_view = getattr(args, "score_view", None)
-    if score_view is not None:
-        zoo_argv.extend(["--score-view", str(score_view)])
-
-    sort_by = getattr(args, "sort_by", None)
-    if sort_by is not None:
-        zoo_argv.extend(["--sort-by", str(sort_by)])
-
-    if getattr(args, "descending", False):
-        zoo_argv.append("--descending")
-
-    if getattr(args, "fail_on_manifest_drift", False):
-        zoo_argv.append("--fail-on-manifest-drift")
-
-    fail_on_manifest_drift_severity = getattr(args, "fail_on_manifest_drift_severity", None)
-    if fail_on_manifest_drift_severity is not None:
-        zoo_argv.extend(["--fail-on-manifest-drift-severity", str(fail_on_manifest_drift_severity)])
-
-    fail_on_manifest_drift_type = getattr(args, "fail_on_manifest_drift_type", None)
-    if fail_on_manifest_drift_type is not None:
-        for drift_type in fail_on_manifest_drift_type:
-            zoo_argv.extend(["--fail-on-manifest-drift-type", str(drift_type)])
-
-    return zoo_argv
-
-
 def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args_argv = list(sys.argv[1:] if argv is None else argv)
     args = parser.parse_args(_normalize_seed_argument_tokens(args_argv))
 
     if args.command == "doctor":
-        _print_doctor()
+        print_doctor()
         return 0
 
     if args.command == "config":
         try:
-            config = _apply_overrides(load_config(args.config), args)
+            config = apply_overrides(load_config(args.config), args)
         except (TypeError, ValueError) as exc:
             parser.error(str(exc))
-        payload = _serialize_train_config(config)
+        payload = serialize_train_config(config)
         if args.format == "yaml":
             rendered = yaml.safe_dump(payload, sort_keys=False)
         else:
@@ -662,7 +264,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "train":
         try:
-            config = _apply_overrides(load_config(args.config), args)
+            config = apply_overrides(load_config(args.config), args)
             from rl_training.experiment.sweeps import resolve_benchmark_seeds
 
             resolve_benchmark_seeds(config)
@@ -705,17 +307,17 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "report":
         from rl_training.zoo_cli import main as zoo_main
 
-        return zoo_main(_build_zoo_forward_argv(args, format_override="report"))
+        return zoo_main(build_zoo_forward_argv(args, format_override="report"))
 
     if args.command == "leaderboard":
         from rl_training.zoo_cli import main as zoo_main
 
-        return zoo_main(_build_zoo_forward_argv(args, format_override="leaderboard"))
+        return zoo_main(build_zoo_forward_argv(args, format_override="leaderboard"))
 
     if args.command == "zoo":
         from rl_training.zoo_cli import main as zoo_main
 
-        return zoo_main(_build_zoo_forward_argv(args))
+        return zoo_main(build_zoo_forward_argv(args))
 
     parser.error(f"unknown command: {args.command}")
     return 2

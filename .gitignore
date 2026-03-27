@@ -4,11 +4,16 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.nox/
+.tox/
+.hypothesis/
 .scannerwork/
 .coverage
+.coverage.*
 coverage.xml
 dist/
 build/
 *.egg-info/
 runs/
+.wheel-smoke/
 .worktrees/

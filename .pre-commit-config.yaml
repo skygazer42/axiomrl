@@ -1,0 +1,28 @@
+repos:
+  - repo: local
+    hooks:
+      - id: check-yaml
+        name: check yaml
+        entry: python -c "from pathlib import Path; import sys, yaml; [yaml.safe_load(Path(path).read_text(encoding='utf-8')) for path in sys.argv[1:]]"
+        language: system
+        files: \.(yaml|yml)$
+      - id: check-toml
+        name: check toml
+        entry: python -c "import importlib.util, pathlib, sys; module = 'tomllib' if importlib.util.find_spec('tomllib') else 'tomli'; tomllib = __import__(module); [tomllib.loads(pathlib.Path(path).read_text(encoding='utf-8')) for path in sys.argv[1:]]"
+        language: system
+        files: \.toml$
+      - id: ruff-check
+        name: ruff check
+        entry: python -m ruff check src/rl_training/cli.py src/rl_training/cli_config.py src/rl_training/cli_doctor.py src/rl_training/cli_zoo.py src/rl_training/zoo/reporting.py src/rl_training/zoo/reporting_render.py src/rl_training/zoo/reporting_runs.py src/rl_training/zoo/reporting_stats.py src/rl_training/experiment/registry_actor_critic_specs.py src/rl_training/experiment/registry_core.py src/rl_training/experiment/registry_continuous_loaders.py src/rl_training/experiment/registry_dqn_loaders.py src/rl_training/experiment/registry_evaluators.py src/rl_training/experiment/registry_offline_loaders.py src/rl_training/experiment/registry_offline_specs.py src/rl_training/experiment/registry_on_policy_specs.py src/rl_training/experiment/registry_policy_loaders.py src/rl_training/experiment/registry_predictors.py src/rl_training/experiment/registry_recurrent_loaders.py src/rl_training/experiment/registry_specialized_loaders.py src/rl_training/experiment/registry_value_based_specs.py src/rl_training/experiment/registry_world_model_specs.py tests/conftest.py tests/support/checkpoint_workflows.py tests/support/markers.py tests/support/public_api.py tests/support/runtime_foundation.py tests/test_algorithm_registry_contracts.py tests/test_checkpoint_evaluate.py tests/test_checkpoint_resume.py tests/test_cli_config.py tests/test_cli_workflows.py tests/test_cli_zoo_leaderboard.py tests/test_cli_zoo_report.py tests/test_experiment_manager_workflows.py tests/test_public_api_continuous_control.py tests/test_public_api_off_policy_suite.py tests/test_public_api_policy_gradient.py tests/test_public_api_visual_control.py tests/test_registry_internal_split.py tests/test_registry_providers.py tests/test_release_contracts.py tests/test_runtime_evaluation_support_integration.py tests/test_runtime_training_session_integration.py tests/test_test_markers.py tests/test_zoo_modules.py tests/test_zoo_reporting_split.py
+        language: system
+        pass_filenames: false
+      - id: ruff-format
+        name: ruff format
+        entry: python -m ruff format --check src/rl_training/cli.py src/rl_training/cli_config.py src/rl_training/cli_doctor.py src/rl_training/cli_zoo.py src/rl_training/zoo/reporting.py src/rl_training/zoo/reporting_render.py src/rl_training/zoo/reporting_runs.py src/rl_training/zoo/reporting_stats.py src/rl_training/experiment/registry_actor_critic_specs.py src/rl_training/experiment/registry_core.py src/rl_training/experiment/registry_continuous_loaders.py src/rl_training/experiment/registry_dqn_loaders.py src/rl_training/experiment/registry_evaluators.py src/rl_training/experiment/registry_offline_loaders.py src/rl_training/experiment/registry_offline_specs.py src/rl_training/experiment/registry_on_policy_specs.py src/rl_training/experiment/registry_policy_loaders.py src/rl_training/experiment/registry_predictors.py src/rl_training/experiment/registry_recurrent_loaders.py src/rl_training/experiment/registry_specialized_loaders.py src/rl_training/experiment/registry_value_based_specs.py src/rl_training/experiment/registry_world_model_specs.py tests/conftest.py tests/support/checkpoint_workflows.py tests/support/markers.py tests/support/public_api.py tests/support/runtime_foundation.py tests/test_algorithm_registry_contracts.py tests/test_checkpoint_evaluate.py tests/test_checkpoint_resume.py tests/test_cli_config.py tests/test_cli_workflows.py tests/test_cli_zoo_leaderboard.py tests/test_cli_zoo_report.py tests/test_experiment_manager_workflows.py tests/test_public_api_continuous_control.py tests/test_public_api_off_policy_suite.py tests/test_public_api_policy_gradient.py tests/test_public_api_visual_control.py tests/test_registry_internal_split.py tests/test_registry_providers.py tests/test_release_contracts.py tests/test_runtime_evaluation_support_integration.py tests/test_runtime_training_session_integration.py tests/test_test_markers.py tests/test_zoo_modules.py tests/test_zoo_reporting_split.py
+        language: system
+        pass_filenames: false
+      - id: repo-contracts
+        name: repo contracts
+        entry: python -m pytest -q tests/test_algorithm_registry_contracts.py tests/test_checkpoint_evaluate.py tests/test_checkpoint_resume.py tests/test_cli_config.py tests/test_cli_zoo_report.py tests/test_cli_zoo_leaderboard.py tests/test_cli_workflows.py tests/test_experiment_manager_workflows.py tests/test_public_api_continuous_control.py tests/test_public_api_off_policy_suite.py tests/test_public_api_policy_gradient.py tests/test_public_api_visual_control.py tests/test_registry_internal_split.py tests/test_registry_providers.py tests/test_release_contracts.py tests/test_runtime_evaluation_support_integration.py tests/test_runtime_training_session_integration.py tests/test_test_markers.py tests/test_zoo_modules.py tests/test_zoo_reporting_split.py
+        language: system
+        pass_filenames: false

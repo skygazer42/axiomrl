@@ -911,12 +911,21 @@ Contributions are welcome! The codebase follows a layered approach:
 # Install development dependencies (includes pixel/render test deps)
 pip install -e ".[dev]"
 
-# Run tests
-python -m pytest tests/ -v
+# Install local git hooks
+pre-commit install
 
-# Run a specific test
-python -m pytest tests/test_ppo.py -v
+# Run layered quality checks
+make lint
+make typecheck
+make test-fast
+make test-integration
+make test-smoke
+make build
 ```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the contribution checklist and
+[docs/development.md](docs/development.md) for the dependency matrix, marker
+strategy, and verification commands.
 
 ## License
 

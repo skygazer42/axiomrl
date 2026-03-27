@@ -1,4 +1,5 @@
 from rl_training.experiment.registry import get_algorithm_spec, list_algorithm_specs
+from rl_training.experiment.registry_core import AlgorithmSpec
 from rl_training.experiment.registry_providers import (
     ACTOR_CRITIC_SPECS,
     ALL_SPEC_GROUPS,
@@ -12,7 +13,7 @@ from rl_training.experiment.registry_providers import (
 
 
 def test_registry_provider_groups_cover_public_registry_without_duplicates() -> None:
-    grouped_specs = {}
+    grouped_specs: dict[str, AlgorithmSpec] = {}
 
     for group in ALL_SPEC_GROUPS.values():
         duplicate_names = set(grouped_specs).intersection(group)
