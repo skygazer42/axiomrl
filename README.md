@@ -1,8 +1,4 @@
 <p align="center">
-  <img src="docs/assets/banner.svg" alt="AxiomRL Banner" width="100%">
-</p>
-
-<p align="center">
   <a href="#installation"><img src="https://img.shields.io/badge/python-3.10+-blue?logo=python&logoColor=white" alt="Python 3.10+"></a>
   <a href="#installation"><img src="https://img.shields.io/badge/PyTorch-2.0+-ee4c2c?logo=pytorch&logoColor=white" alt="PyTorch"></a>
   <a href="#installation"><img src="https://img.shields.io/badge/Gymnasium-compatible-4c1?logo=openaigym&logoColor=white" alt="Gymnasium"></a>
@@ -193,10 +189,28 @@ Packaged config paths also include `configs/awac/pendulum.yaml`, `configs/bear/p
 **Core package:**
 
 ```bash
-pip install -e .
+pip install axiomrl
 ```
 
-**With development tooling:**
+**With Atari support:**
+
+```bash
+pip install "axiomrl[atari]"
+```
+
+**With offline dataset support (Minari):**
+
+```bash
+pip install "axiomrl[offline]"
+```
+
+**With the experimental namespace enabled:**
+
+```bash
+pip install "axiomrl[experimental]"
+```
+
+**With development tooling from a local checkout:**
 
 ```bash
 pip install -e ".[dev]"
@@ -205,33 +219,11 @@ pip install -e ".[dev]"
 `.[dev]` includes optional dependencies used by pixel-observation wrappers and
 render-based test coverage (for example `opencv-python` and `pygame`).
 
-**With Atari support:**
-
-```bash
-pip install -e ".[atari]"
-```
-
-**With offline dataset support (Minari):**
-
-```bash
-pip install -e ".[offline]"
-```
-
-**With the experimental namespace enabled:**
-
-```bash
-pip install -e ".[experimental]"
-```
-
 > **Requirements:** Python 3.10+ · PyTorch · Gymnasium · NumPy · PyYAML · TensorBoard
 
 ## Architecture
 
 AxiomRL uses a deliberate three-layer architecture that lets the project scale without becoming a collection of disconnected scripts:
-
-<p align="center">
-  <img src="docs/assets/architecture.svg" alt="AxiomRL Architecture" width="100%">
-</p>
 
 | Layer | Purpose | Examples |
 |-------|---------|----------|
@@ -250,10 +242,6 @@ from rl_training.contrib import RecurrentPPO
 ## Algorithms
 
 AxiomRL implements **80+ algorithms** across six major categories:
-
-<p align="center">
-  <img src="docs/assets/algorithms.svg" alt="Algorithm Taxonomy" width="100%">
-</p>
 
 ### Full Algorithm Table
 

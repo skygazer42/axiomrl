@@ -6,6 +6,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 def test_pyproject_declares_release_metadata_and_optional_installs() -> None:
     pyproject_text = (REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8")
 
+    assert 'setuptools>=77.0.3' in pyproject_text
     assert 'version = "1.0.0"' in pyproject_text
     assert "Development Status :: 4 - Beta" in pyproject_text
     assert "Intended Audience :: Developers" in pyproject_text
@@ -40,6 +41,11 @@ def test_repository_declares_ci_and_publish_workflows() -> None:
     assert "import rl_training" in ci_text
     assert "axiomrl --help" in ci_text
     assert "workflow_dispatch" in publish_text
+    assert "testpypi" in publish_text
+    assert "repository-url: https://test.pypi.org/legacy/" in publish_text
+    assert "environment: testpypi" in publish_text
+    assert "environment: pypi" in publish_text
+    assert "id-token: write" in publish_text
     assert "gh-action-pypi-publish" in publish_text
 
 
@@ -51,6 +57,20 @@ def test_readme_documents_stable_core_and_version_policy() -> None:
     assert "rl_training.experimental" in readme_text
     assert "Semantic Versioning" in readme_text
     assert "deprecated" in readme_text.lower()
+    assert "docs/assets/" not in readme_text
+    assert "pip install axiomrl" in readme_text
+    assert 'pip install -e ".[dev]"' in readme_text
+    assert 'pip install -e ".[experimental]"' not in readme_text
+
+
+def test_repository_declares_license_file_and_metadata() -> None:
+    pyproject_text = (REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    license_text = (REPO_ROOT / "LICENSE").read_text(encoding="utf-8")
+
+    assert 'license = "MIT"' in pyproject_text
+    assert 'license-files = ["LICENSE"]' in pyproject_text
+    assert "License :: OSI Approved :: MIT License" not in pyproject_text
+    assert "MIT License" in license_text
 
 
 def test_repository_includes_compatibility_policy_and_changelog() -> None:

@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=77.0.3", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,6 +7,8 @@ name = "axiomrl"
 version = "1.0.0"
 description = "A stable-core reinforcement learning package with semver-governed APIs, experimental extensions, and benchmark workflows."
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.10"
 keywords = ["reinforcement-learning", "deep-learning", "pytorch", "gymnasium", "atari"]
 classifiers = [
