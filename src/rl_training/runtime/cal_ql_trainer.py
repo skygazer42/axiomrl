@@ -3,6 +3,9 @@ from __future__ import annotations
 from collections.abc import Sequence
 from pathlib import Path
 
+import numpy as np
+import torch
+
 from rl_training.algorithms.cal_ql import CalQL
 from rl_training.experiment.checkpointing import CheckpointState
 from rl_training.experiment.config import TrainConfig
@@ -18,6 +21,7 @@ from rl_training.runtime.controls import (
     stop_reason_for_training_limits,
 )
 from rl_training.runtime.iql_trainer import _build_offline_dataset, _infer_env_spaces
+from rl_training.runtime.resume_state import capture_global_random_state, restore_global_random_state
 from rl_training.runtime.run_utils import save_training_checkpoint
 from rl_training.runtime.sac_trainer import _evaluate_sac_policy
 from rl_training.runtime.schedules import apply_learning_rate_scale, resolve_schedule_value
@@ -55,6 +59,9 @@ def train_cal_ql(
     warmup_steps = int(config.algo_kwargs.get("warmup_steps", 0))
     learning_rate_schedule = config.algo_kwargs.get("learning_rate_schedule")
 
+    torch.manual_seed(config.seed)
+    np.random.seed(config.seed)
+
     checkpoint_path: Path | None = None
     metrics: MetricDict = {}
 
@@ -80,6 +87,11 @@ def train_cal_ql(
         )
         if checkpoint_state is not None:
             algorithm.load_state_dict(checkpoint_state.algorithm_state)
+            resume_context = checkpoint_state.trainer_state.get("resume_context")
+            if isinstance(resume_context, dict):
+                random_state = resume_context.get("random_state")
+                if isinstance(random_state, dict):
+                    restore_global_random_state(random_state)
 
         global_step = int(checkpoint_state.trainer_state.get("global_step", 0)) if checkpoint_state is not None else 0
         epoch = int(checkpoint_state.trainer_state.get("epoch", global_step)) if checkpoint_state is not None else 0
@@ -179,6 +191,9 @@ def train_cal_ql(
                 "update_count": update_count,
                 "should_stop": trainer_state.should_stop,
                 "stop_reason": trainer_state.stop_reason,
+                "resume_context": {
+                    "random_state": capture_global_random_state(),
+                },
             },
             metrics=metrics,
         )

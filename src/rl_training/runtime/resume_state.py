@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import deque
 from copy import deepcopy
 
 import gymnasium as gym
@@ -132,6 +133,13 @@ def _capture_env_snapshot(env: gym.Env) -> list[dict[str, object]]:
         if hasattr(current, "_elapsed_steps"):
             elapsed_steps = getattr(current, "_elapsed_steps")
             snapshot["elapsed_steps"] = None if elapsed_steps is None else int(elapsed_steps)
+        if hasattr(current, "obs_queue"):
+            obs_queue = getattr(current, "obs_queue")
+            snapshot["obs_queue"] = [_to_checkpoint_value(item) for item in list(obs_queue)]
+        if hasattr(current, "stacked_obs"):
+            snapshot["stacked_obs"] = _to_checkpoint_value(getattr(current, "stacked_obs"))
+        if hasattr(current, "padding_value"):
+            snapshot["padding_value"] = _to_checkpoint_value(getattr(current, "padding_value"))
         if current is env.unwrapped:
             state = getattr(current, "state", None)
             if state is not None:
@@ -150,9 +158,6 @@ def _capture_env_snapshot(env: gym.Env) -> list[dict[str, object]]:
                 )
             snapshot["env_rng_state"] = _capture_rng_state(getattr(current, "np_random", None))
             snapshot["action_space_rng_state"] = _capture_rng_state(getattr(current.action_space, "np_random", None))
-            snapshot["observation_space_rng_state"] = _capture_rng_state(
-                getattr(current.observation_space, "np_random", None)
-            )
         snapshots.append(snapshot)
     return snapshots
 
@@ -161,6 +166,14 @@ def _restore_env_snapshot(env: gym.Env, snapshots: list[dict[str, object]]) -> N
     for current, snapshot in zip(_iter_env_chain(env), snapshots):
         if "elapsed_steps" in snapshot and hasattr(current, "_elapsed_steps"):
             setattr(current, "_elapsed_steps", snapshot["elapsed_steps"])
+        if "obs_queue" in snapshot and hasattr(current, "obs_queue"):
+            restored_obs_queue = [_from_checkpoint_value(item) for item in snapshot["obs_queue"]]
+            maxlen = getattr(getattr(current, "obs_queue"), "maxlen", None)
+            setattr(current, "obs_queue", deque(restored_obs_queue, maxlen=maxlen))
+        if "stacked_obs" in snapshot and hasattr(current, "stacked_obs"):
+            setattr(current, "stacked_obs", _from_checkpoint_value(snapshot["stacked_obs"]))
+        if "padding_value" in snapshot and hasattr(current, "padding_value"):
+            setattr(current, "padding_value", _from_checkpoint_value(snapshot["padding_value"]))
         if current is env.unwrapped:
             if "state" in snapshot:
                 restored_state = np.asarray(_from_checkpoint_value(snapshot["state"]), dtype=np.float64)
@@ -175,10 +188,6 @@ def _restore_env_snapshot(env: gym.Env, snapshots: list[dict[str, object]]) -> N
                 setattr(current, "steps_beyond_terminated", snapshot["steps_beyond_terminated"])
             _restore_rng_state(getattr(current, "np_random", None), snapshot.get("env_rng_state"))
             _restore_rng_state(getattr(current.action_space, "np_random", None), snapshot.get("action_space_rng_state"))
-            _restore_rng_state(
-                getattr(current.observation_space, "np_random", None),
-                snapshot.get("observation_space_rng_state"),
-            )
 
 
 class ResumeStateWrapper(gym.Wrapper):

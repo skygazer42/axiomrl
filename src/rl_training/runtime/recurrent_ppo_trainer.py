@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from pathlib import Path
 from collections.abc import Sequence
+from pathlib import Path
 
 import gymnasium as gym
 import numpy as np
@@ -17,6 +17,15 @@ from rl_training.runtime.callbacks import Callback
 from rl_training.runtime.collector import CollectResult
 from rl_training.runtime.controls import resolve_clip_coefficient, resolve_entropy_coefficient
 from rl_training.runtime.evaluation_support import evaluate_discrete_episodes
+from rl_training.runtime.resume_state import (
+    capture_global_random_state,
+    capture_resume_value,
+    capture_vector_env_resume_state,
+    move_resume_value_to_device,
+    restore_global_random_state,
+    restore_resume_value,
+    restore_vector_env_resume_state,
+)
 from rl_training.runtime.run_utils import save_training_checkpoint
 from rl_training.runtime.session import create_training_session
 from rl_training.runtime.trainer import TrainResult
@@ -87,6 +96,56 @@ def _evaluate_recurrent_policy(
     )
 
 
+def _capture_rollout_state(
+    recurrent_state: tuple[torch.Tensor, torch.Tensor],
+    episode_starts: torch.Tensor,
+) -> dict[str, object]:
+    return {
+        "recurrent_state": capture_resume_value(recurrent_state),
+        "episode_starts": capture_resume_value(episode_starts),
+    }
+
+
+def _restore_rollout_state(
+    *,
+    payload: object,
+    initial_recurrent_state: tuple[torch.Tensor, torch.Tensor],
+    num_envs: int,
+    device: torch.device,
+) -> tuple[tuple[torch.Tensor, torch.Tensor], torch.Tensor]:
+    recurrent_state = initial_recurrent_state
+    episode_starts = torch.ones(num_envs, dtype=torch.bool, device=device)
+    if not isinstance(payload, dict):
+        return recurrent_state, episode_starts
+
+    restored_state = payload.get("recurrent_state")
+    if restored_state is not None:
+        restored_recurrent_state = move_resume_value_to_device(
+            restore_resume_value(restored_state),
+            device=device,
+        )
+        if (
+            isinstance(restored_recurrent_state, tuple)
+            and len(restored_recurrent_state) == 2
+            and torch.is_tensor(restored_recurrent_state[0])
+            and torch.is_tensor(restored_recurrent_state[1])
+        ):
+            recurrent_state = (
+                restored_recurrent_state[0].to(device=device),
+                restored_recurrent_state[1].to(device=device),
+            )
+
+    restored_episode_starts = payload.get("episode_starts")
+    if restored_episode_starts is not None:
+        episode_start_tensor = move_resume_value_to_device(
+            restore_resume_value(restored_episode_starts),
+            device=device,
+        )
+        if torch.is_tensor(episode_start_tensor):
+            episode_starts = episode_start_tensor.to(device=device, dtype=torch.bool)
+    return recurrent_state, episode_starts
+
+
 def train_recurrent_ppo(
     config: TrainConfig,
     *,
@@ -144,6 +203,23 @@ def train_recurrent_ppo(
         obs, _ = envs.reset(seed=config.seed)
         recurrent_state = policy.initial_state(config.num_envs, device=device)
         episode_starts = torch.ones(config.num_envs, dtype=torch.bool, device=device)
+        if checkpoint_state is not None:
+            resume_context = checkpoint_state.trainer_state.get("resume_context")
+            if isinstance(resume_context, dict):
+                env_resume_state = resume_context.get("env_state")
+                if isinstance(env_resume_state, dict):
+                    restored_obs = restore_vector_env_resume_state(envs, env_resume_state)
+                    if restored_obs is not None:
+                        obs = np.asarray(restored_obs)
+                random_state = resume_context.get("random_state")
+                if isinstance(random_state, dict):
+                    restore_global_random_state(random_state)
+                recurrent_state, episode_starts = _restore_rollout_state(
+                    payload=resume_context.get("rollout_state"),
+                    initial_recurrent_state=recurrent_state,
+                    num_envs=config.num_envs,
+                    device=device,
+                )
         global_step = int(checkpoint_state.trainer_state.get("global_step", 0)) if checkpoint_state is not None else 0
         update_index = int(checkpoint_state.trainer_state.get("update_index", 0)) if checkpoint_state is not None else 0
         trainer_state.global_step = global_step
@@ -261,6 +337,11 @@ def train_recurrent_ppo(
                 "update_index": update_index,
                 "should_stop": trainer_state.should_stop,
                 "stop_reason": trainer_state.stop_reason,
+                "resume_context": {
+                    "env_state": capture_vector_env_resume_state(envs),
+                    "random_state": capture_global_random_state(),
+                    "rollout_state": _capture_rollout_state(recurrent_state, episode_starts),
+                },
             },
             metrics=metrics,
         )

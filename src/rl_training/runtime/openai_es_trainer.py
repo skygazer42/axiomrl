@@ -16,6 +16,7 @@ from rl_training.runtime.callbacks import Callback
 from rl_training.runtime.collector import CollectResult
 from rl_training.runtime.controls import resolve_eval_interval, should_run_evaluation
 from rl_training.runtime.evaluation_support import evaluate_continuous_episodes
+from rl_training.runtime.resume_state import capture_global_random_state, restore_global_random_state
 from rl_training.runtime.run_utils import save_training_checkpoint
 from rl_training.runtime.session import create_training_session
 from rl_training.runtime.td3_trainer import _action_bounds, _scale_actions
@@ -148,6 +149,11 @@ def train_openai_es(
         )
         if checkpoint_state is not None:
             algorithm.load_state_dict(checkpoint_state.algorithm_state)
+            resume_context = checkpoint_state.trainer_state.get("resume_context")
+            if isinstance(resume_context, dict):
+                random_state = resume_context.get("random_state")
+                if isinstance(random_state, dict):
+                    restore_global_random_state(random_state)
 
         global_step = int(checkpoint_state.trainer_state.get("global_step", 0)) if checkpoint_state is not None else 0
         update_index = int(checkpoint_state.trainer_state.get("update_index", 0)) if checkpoint_state is not None else 0
@@ -248,6 +254,9 @@ def train_openai_es(
                 "rollout_index": rollout_index,
                 "should_stop": trainer_state.should_stop,
                 "stop_reason": trainer_state.stop_reason,
+                "resume_context": {
+                    "random_state": capture_global_random_state(),
+                },
             },
             metrics=metrics,
         )

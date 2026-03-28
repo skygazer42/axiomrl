@@ -24,6 +24,7 @@ from rl_training.runtime.controls import (
 )
 from rl_training.runtime.evaluation_support import evaluate_continuous_episodes
 from rl_training.runtime.iql_trainer import _build_offline_dataset, _infer_env_spaces, _scale_actions
+from rl_training.runtime.resume_state import capture_global_random_state, restore_global_random_state
 from rl_training.runtime.run_utils import save_training_checkpoint
 from rl_training.runtime.schedules import apply_learning_rate_scale, resolve_schedule_value
 from rl_training.runtime.session import create_training_session
@@ -235,6 +236,11 @@ def train_decision_transformer(
         )
         if checkpoint_state is not None:
             algorithm.load_state_dict(checkpoint_state.algorithm_state)
+            resume_context = checkpoint_state.trainer_state.get("resume_context")
+            if isinstance(resume_context, dict):
+                random_state = resume_context.get("random_state")
+                if isinstance(random_state, dict):
+                    restore_global_random_state(random_state)
 
         global_step = int(checkpoint_state.trainer_state.get("global_step", 0)) if checkpoint_state is not None else 0
         epoch = int(checkpoint_state.trainer_state.get("epoch", global_step)) if checkpoint_state is not None else 0
@@ -340,6 +346,9 @@ def train_decision_transformer(
                 "update_count": update_count,
                 "should_stop": trainer_state.should_stop,
                 "stop_reason": trainer_state.stop_reason,
+                "resume_context": {
+                    "random_state": capture_global_random_state(),
+                },
             },
             metrics=metrics,
         )

@@ -6,12 +6,14 @@ import torch
 from rl_training.envs import POINT_GOAL_ENV_ID
 from rl_training.experiment.checkpointing import load_checkpoint
 from rl_training.experiment.config import TrainConfig
+from rl_training.runtime.a2c_trainer import train_a2c
 from rl_training.runtime.agent57_trainer import train_agent57
 from rl_training.runtime.apex_dqn_trainer import train_apex_dqn
 from rl_training.runtime.appo_trainer import train_appo
 from rl_training.runtime.ars_trainer import train_ars
 from rl_training.runtime.awac_trainer import train_awac
 from rl_training.runtime.awr_trainer import train_awr
+from rl_training.runtime.bc_trainer import train_bc
 from rl_training.runtime.bcq_trainer import train_bcq
 from rl_training.runtime.bear_trainer import train_bear
 from rl_training.runtime.cal_ql_trainer import train_cal_ql
@@ -31,6 +33,7 @@ from rl_training.runtime.drqn_trainer import train_drqn
 from rl_training.runtime.drqv2_trainer import train_drqv2
 from rl_training.runtime.edac_trainer import train_edac
 from rl_training.runtime.efficientzero_trainer import train_efficientzero
+from rl_training.runtime.gail_trainer import train_gail
 from rl_training.runtime.her_trainer import train_her
 from rl_training.runtime.impala_trainer import train_impala
 from rl_training.runtime.iql_trainer import train_iql
@@ -42,6 +45,7 @@ from rl_training.runtime.naf_trainer import train_naf
 from rl_training.runtime.openai_es_trainer import train_openai_es
 from rl_training.runtime.pets_trainer import train_pets
 from rl_training.runtime.ppg_trainer import train_ppg
+from rl_training.runtime.ppo_trainer import train_ppo
 from rl_training.runtime.r2d2_trainer import train_r2d2
 from rl_training.runtime.rebrac_trainer import train_rebrac
 from rl_training.runtime.recurrent_ppo_trainer import train_recurrent_ppo
@@ -139,6 +143,1539 @@ def test_resume_training_advances_global_step_for_dqn(tmp_path: Path) -> None:
     assert resumed.checkpoint_path is not None
     assert resumed.checkpoint_path.exists()
     assert resumed.metrics["global_step"] >= 160
+
+
+def test_resume_training_reproduces_continuous_a2c_checkpoint_state(tmp_path: Path) -> None:
+    algo_kwargs = {
+        "num_steps": 16,
+        "hidden_sizes": (16, 16),
+        "learning_rate": 1e-3,
+        "ent_coef": 0.01,
+        "vf_coef": 0.5,
+        "gamma": 0.99,
+        "gae_lambda": 0.95,
+    }
+    source_config = TrainConfig(
+        algo="a2c",
+        env_id="CartPole-v1",
+        seed=11,
+        total_timesteps=64,
+        output_dir=tmp_path / "source-a2c",
+        num_envs=2,
+        eval_episodes=1,
+        device="cpu",
+        algo_kwargs=algo_kwargs,
+    )
+
+    source = train_a2c(source_config, run_suffix="resume-source", callbacks=[_StopAtGlobalStep(32)])
+    resumed = resume_training(
+        source.checkpoint_path,
+        total_timesteps=64,
+        output_dir=tmp_path / "resumed-a2c",
+        eval_episodes=1,
+        run_suffix="resume-target",
+    )
+    continuous = train_a2c(source_config, run_suffix="continuous-target")
+
+    _assert_checkpoint_states_match(resumed.checkpoint_path, continuous.checkpoint_path)
+
+
+def test_resume_training_reproduces_continuous_bc_checkpoint_state(tmp_path: Path) -> None:
+    algo_kwargs = {
+        "dataset_kind": "random",
+        "dataset_size": 64,
+        "dataset_seed": 17,
+        "batch_size": 8,
+        "hidden_sizes": (16, 16),
+        "learning_rate": 3e-4,
+        "eval_interval": 1,
+    }
+    source_config = TrainConfig(
+        algo="bc",
+        env_id=_register_tiny_render_env(),
+        seed=13,
+        total_timesteps=12,
+        output_dir=tmp_path / "source-bc",
+        eval_episodes=1,
+        device="cpu",
+        algo_kwargs=algo_kwargs,
+    )
+
+    source = train_bc(source_config, run_suffix="resume-source", callbacks=[_StopAtGlobalStep(7)])
+    resumed = resume_training(
+        source.checkpoint_path,
+        total_timesteps=12,
+        output_dir=tmp_path / "resumed-bc",
+        eval_episodes=1,
+        run_suffix="resume-target",
+    )
+    continuous = train_bc(source_config, run_suffix="continuous-target")
+
+    _assert_checkpoint_states_match(resumed.checkpoint_path, continuous.checkpoint_path)
+
+
+def test_resume_training_reproduces_continuous_ppo_checkpoint_state(tmp_path: Path) -> None:
+    algo_kwargs = {
+        "num_steps": 16,
+        "update_epochs": 2,
+        "minibatch_size": 8,
+        "hidden_sizes": (16, 16),
+        "learning_rate": 1e-3,
+        "clip_coef": 0.2,
+        "ent_coef": 0.01,
+        "vf_coef": 0.5,
+        "gamma": 0.99,
+        "gae_lambda": 0.95,
+    }
+    source_config = TrainConfig(
+        algo="ppo",
+        env_id="CartPole-v1",
+        seed=15,
+        total_timesteps=64,
+        output_dir=tmp_path / "source-ppo",
+        num_envs=2,
+        eval_episodes=1,
+        device="cpu",
+        algo_kwargs=algo_kwargs,
+    )
+
+    source = train_ppo(source_config, run_suffix="resume-source", callbacks=[_StopAtGlobalStep(32)])
+    resumed = resume_training(
+        source.checkpoint_path,
+        total_timesteps=64,
+        output_dir=tmp_path / "resumed-ppo",
+        eval_episodes=1,
+        run_suffix="resume-target",
+    )
+    continuous = train_ppo(source_config, run_suffix="continuous-target")
+
+    _assert_checkpoint_states_match(resumed.checkpoint_path, continuous.checkpoint_path)
+
+
+def test_resume_training_reproduces_continuous_gail_checkpoint_state(tmp_path: Path) -> None:
+    algo_kwargs = {
+        "num_steps": 8,
+        "update_epochs": 2,
+        "minibatch_size": 8,
+        "hidden_sizes": (16, 16),
+        "learning_rate": 1e-3,
+        "clip_coef": 0.2,
+        "ent_coef": 0.01,
+        "vf_coef": 0.5,
+        "gamma": 0.99,
+        "gae_lambda": 0.95,
+        "discriminator_learning_rate": 1e-3,
+        "discriminator_updates": 2,
+        "discriminator_batch_size": 8,
+        "expert_dataset_kind": "random",
+        "expert_dataset_size": 64,
+        "expert_dataset_seed": 21,
+    }
+    source_config = TrainConfig(
+        algo="gail",
+        env_id="CartPole-v1",
+        seed=17,
+        total_timesteps=16,
+        output_dir=tmp_path / "source-gail",
+        num_envs=1,
+        eval_episodes=1,
+        device="cpu",
+        algo_kwargs=algo_kwargs,
+    )
+
+    source = train_gail(source_config, run_suffix="resume-source", callbacks=[_StopAtGlobalStep(8)])
+    resumed = resume_training(
+        source.checkpoint_path,
+        total_timesteps=16,
+        output_dir=tmp_path / "resumed-gail",
+        eval_episodes=1,
+        run_suffix="resume-target",
+    )
+    continuous = train_gail(source_config, run_suffix="continuous-target")
+
+    _assert_checkpoint_states_match(resumed.checkpoint_path, continuous.checkpoint_path)
+
+
+def test_resume_training_reproduces_continuous_recurrent_ppo_checkpoint_state(tmp_path: Path) -> None:
+    algo_kwargs = {
+        "num_steps": 8,
+        "update_epochs": 2,
+        "minibatch_size": 4,
+        "sequence_length": 4,
+        "features_dim": 32,
+        "encoder_hidden_sizes": (16,),
+        "head_hidden_sizes": (16,),
+        "learning_rate": 1e-3,
+        "clip_coef": 0.2,
+        "ent_coef": 0.01,
+        "vf_coef": 0.5,
+        "gamma": 0.99,
+        "gae_lambda": 0.95,
+        "recurrent_hidden_size": 32,
+        "recurrent_num_layers": 1,
+    }
+    source_config = TrainConfig(
+        algo="recurrent_ppo",
+        env_id="CartPole-v1",
+        seed=19,
+        total_timesteps=16,
+        output_dir=tmp_path / "source-recurrent-ppo",
+        num_envs=1,
+        eval_episodes=1,
+        device="cpu",
+        algo_kwargs=algo_kwargs,
+    )
+
+    source = train_recurrent_ppo(source_config, run_suffix="resume-source", callbacks=[_StopAtGlobalStep(8)])
+    resumed = resume_training(
+        source.checkpoint_path,
+        total_timesteps=16,
+        output_dir=tmp_path / "resumed-recurrent-ppo",
+        eval_episodes=1,
+        run_suffix="resume-target",
+    )
+    continuous = train_recurrent_ppo(source_config, run_suffix="continuous-target")
+
+    _assert_checkpoint_states_match(resumed.checkpoint_path, continuous.checkpoint_path)
+
+
+def test_resume_training_reproduces_continuous_impala_checkpoint_state(tmp_path: Path) -> None:
+    algo_kwargs = {
+        "num_steps": 16,
+        "hidden_sizes": (16, 16),
+        "learning_rate": 1e-3,
+        "ent_coef": 0.01,
+        "vf_coef": 0.5,
+        "gamma": 0.99,
+        "rho_clip": 1.0,
+        "c_clip": 1.0,
+        "pg_rho_clip": 1.0,
+    }
+    source_config = TrainConfig(
+        algo="impala",
+        env_id="CartPole-v1",
+        seed=21,
+        total_timesteps=64,
+        output_dir=tmp_path / "source-impala",
+        num_envs=2,
+        eval_episodes=1,
+        device="cpu",
+        algo_kwargs=algo_kwargs,
+    )
+
+    source = train_impala(source_config, run_suffix="resume-source", callbacks=[_StopAtGlobalStep(32)])
+    resumed = resume_training(
+        source.checkpoint_path,
+        total_timesteps=64,
+        output_dir=tmp_path / "resumed-impala",
+        eval_episodes=1,
+        run_suffix="resume-target",
+    )
+    continuous = train_impala(source_config, run_suffix="continuous-target")
+
+    _assert_checkpoint_states_match(resumed.checkpoint_path, continuous.checkpoint_path)
+
+
+def test_resume_training_reproduces_continuous_appo_checkpoint_state(tmp_path: Path) -> None:
+    algo_kwargs = {
+        "num_steps": 16,
+        "hidden_sizes": (16, 16),
+        "learning_rate": 1e-3,
+        "clip_coef": 0.2,
+        "ent_coef": 0.01,
+        "vf_coef": 0.5,
+        "gamma": 0.99,
+        "rho_clip": 1.0,
+        "c_clip": 1.0,
+        "pg_rho_clip": 1.0,
+    }
+    source_config = TrainConfig(
+        algo="appo",
+        env_id="CartPole-v1",
+        seed=23,
+        total_timesteps=64,
+        output_dir=tmp_path / "source-appo",
+        num_envs=2,
+        eval_episodes=1,
+        device="cpu",
+        algo_kwargs=algo_kwargs,
+    )
+
+    source = train_appo(source_config, run_suffix="resume-source", callbacks=[_StopAtGlobalStep(32)])
+    resumed = resume_training(
+        source.checkpoint_path,
+        total_timesteps=64,
+        output_dir=tmp_path / "resumed-appo",
+        eval_episodes=1,
+        run_suffix="resume-target",
+    )
+    continuous = train_appo(source_config, run_suffix="continuous-target")
+
+    _assert_checkpoint_states_match(resumed.checkpoint_path, continuous.checkpoint_path)
+
+
+def test_resume_training_reproduces_continuous_trpo_checkpoint_state(tmp_path: Path) -> None:
+    algo_kwargs = {
+        "num_steps": 16,
+        "hidden_sizes": (16, 16),
+        "learning_rate": 1e-3,
+        "value_updates": 3,
+        "max_kl": 0.01,
+        "cg_iterations": 5,
+        "cg_damping": 0.1,
+        "line_search_steps": 5,
+        "line_search_shrink": 0.8,
+        "gamma": 0.99,
+        "gae_lambda": 0.95,
+    }
+    source_config = TrainConfig(
+        algo="trpo",
+        env_id="CartPole-v1",
+        seed=25,
+        total_timesteps=64,
+        output_dir=tmp_path / "source-trpo",
+        num_envs=2,
+        eval_episodes=1,
+        device="cpu",
+        algo_kwargs=algo_kwargs,
+    )
+
+    source = train_trpo(source_config, run_suffix="resume-source", callbacks=[_StopAtGlobalStep(32)])
+    resumed = resume_training(
+        source.checkpoint_path,
+        total_timesteps=64,
+        output_dir=tmp_path / "resumed-trpo",
+        eval_episodes=1,
+        run_suffix="resume-target",
+    )
+    continuous = train_trpo(source_config, run_suffix="continuous-target")
+
+    _assert_checkpoint_states_match(resumed.checkpoint_path, continuous.checkpoint_path)
+
+
+def test_resume_training_reproduces_continuous_ppg_checkpoint_state(tmp_path: Path) -> None:
+    algo_kwargs = {
+        "num_steps": 16,
+        "update_epochs": 1,
+        "minibatch_size": 16,
+        "hidden_sizes": (16, 16),
+        "learning_rate": 1e-3,
+        "clip_coef": 0.2,
+        "ent_coef": 0.01,
+        "vf_coef": 0.5,
+        "gamma": 0.99,
+        "gae_lambda": 0.95,
+        "aux_frequency": 1,
+        "aux_epochs": 1,
+        "aux_minibatch_size": 16,
+        "aux_buffer_rollouts": 2,
+    }
+    source_config = TrainConfig(
+        algo="ppg",
+        env_id="CartPole-v1",
+        seed=27,
+        total_timesteps=64,
+        output_dir=tmp_path / "source-ppg",
+        num_envs=2,
+        eval_episodes=1,
+        device="cpu",
+        algo_kwargs=algo_kwargs,
+    )
+
+    source = train_ppg(source_config, run_suffix="resume-source", callbacks=[_StopAtGlobalStep(32)])
+    resumed = resume_training(
+        source.checkpoint_path,
+        total_timesteps=64,
+        output_dir=tmp_path / "resumed-ppg",
+        eval_episodes=1,
+        run_suffix="resume-target",
+    )
+    continuous = train_ppg(source_config, run_suffix="continuous-target")
+
+    _assert_checkpoint_states_match(resumed.checkpoint_path, continuous.checkpoint_path)
+
+
+def test_resume_training_reproduces_continuous_ars_checkpoint_state(tmp_path: Path) -> None:
+    algo_kwargs = {
+        "hidden_sizes": (16, 16),
+        "step_size": 0.02,
+        "noise_std": 0.03,
+        "num_directions": 2,
+        "num_top_directions": 2,
+        "eval_interval": 100,
+    }
+    source_config = TrainConfig(
+        algo="ars",
+        env_id="Pendulum-v1",
+        seed=29,
+        total_timesteps=200,
+        output_dir=tmp_path / "source-ars",
+        eval_episodes=1,
+        device="cpu",
+        algo_kwargs=algo_kwargs,
+        env_kwargs={"max_episode_steps": 25},
+    )
+
+    source = train_ars(source_config, run_suffix="resume-source", callbacks=[_StopAtGlobalStep(100)])
+    resumed = resume_training(
+        source.checkpoint_path,
+        total_timesteps=200,
+        output_dir=tmp_path / "resumed-ars",
+        eval_episodes=1,
+        run_suffix="resume-target",
+    )
+    continuous = train_ars(source_config, run_suffix="continuous-target")
+
+    _assert_checkpoint_states_match(resumed.checkpoint_path, continuous.checkpoint_path)
+
+
+def test_resume_training_reproduces_continuous_openai_es_checkpoint_state(tmp_path: Path) -> None:
+    algo_kwargs = {
+        "hidden_sizes": (16, 16),
+        "step_size": 0.02,
+        "noise_std": 0.03,
+        "num_directions": 2,
+        "eval_interval": 100,
+    }
+    source_config = TrainConfig(
+        algo="openai_es",
+        env_id="Pendulum-v1",
+        seed=31,
+        total_timesteps=200,
+        output_dir=tmp_path / "source-openai-es",
+        eval_episodes=1,
+        device="cpu",
+        algo_kwargs=algo_kwargs,
+        env_kwargs={"max_episode_steps": 25},
+    )
+
+    source = train_openai_es(source_config, run_suffix="resume-source", callbacks=[_StopAtGlobalStep(100)])
+    resumed = resume_training(
+        source.checkpoint_path,
+        total_timesteps=200,
+        output_dir=tmp_path / "resumed-openai-es",
+        eval_episodes=1,
+        run_suffix="resume-target",
+    )
+    continuous = train_openai_es(source_config, run_suffix="continuous-target")
+
+    _assert_checkpoint_states_match(resumed.checkpoint_path, continuous.checkpoint_path)
+
+
+def test_resume_training_reproduces_continuous_decision_transformer_checkpoint_state(tmp_path: Path) -> None:
+    algo_kwargs = {
+        "dataset_kind": "random",
+        "dataset_size": 64,
+        "dataset_seed": 17,
+        "batch_size": 4,
+        "context_length": 2,
+        "hidden_size": 16,
+        "num_layers": 1,
+        "num_heads": 1,
+        "dropout": 0.0,
+        "learning_rate": 1e-5,
+        "gamma": 0.99,
+        "target_return": 0.0,
+        "max_timestep": 64,
+    }
+    source_config = TrainConfig(
+        algo="decision_transformer",
+        env_id="Pendulum-v1",
+        seed=33,
+        total_timesteps=8,
+        output_dir=tmp_path / "source-dt",
+        eval_episodes=1,
+        device="cpu",
+        algo_kwargs=algo_kwargs,
+    )
+
+    source = train_decision_transformer(source_config, run_suffix="resume-source", callbacks=[_StopAtGlobalStep(4)])
+    resumed = resume_training(
+        source.checkpoint_path,
+        total_timesteps=8,
+        output_dir=tmp_path / "resumed-dt",
+        eval_episodes=1,
+        run_suffix="resume-target",
+    )
+    continuous = train_decision_transformer(source_config, run_suffix="continuous-target")
+
+    _assert_checkpoint_states_match(resumed.checkpoint_path, continuous.checkpoint_path)
+
+
+def test_resume_training_reproduces_continuous_iql_checkpoint_state(tmp_path: Path) -> None:
+    algo_kwargs = {
+        "dataset_kind": "random",
+        "dataset_size": 192,
+        "dataset_seed": 37,
+        "batch_size": 32,
+        "hidden_sizes": (32, 32),
+        "learning_rate": 3e-4,
+        "gamma": 0.99,
+        "tau": 0.005,
+        "expectile": 0.7,
+        "beta": 3.0,
+        "max_advantage_weight": 100.0,
+    }
+    source_config = TrainConfig(
+        algo="iql",
+        env_id="Pendulum-v1",
+        seed=35,
+        total_timesteps=64,
+        output_dir=tmp_path / "source-iql",
+        eval_episodes=1,
+        device="cpu",
+        algo_kwargs=algo_kwargs,
+    )
+
+    source = train_iql(source_config, run_suffix="resume-source", callbacks=[_StopAtGlobalStep(32)])
+    resumed = resume_training(
+        source.checkpoint_path,
+        total_timesteps=64,
+        output_dir=tmp_path / "resumed-iql",
+        eval_episodes=1,
+        run_suffix="resume-target",
+    )
+    continuous = train_iql(source_config, run_suffix="continuous-target")
+
+    _assert_checkpoint_states_match(resumed.checkpoint_path, continuous.checkpoint_path)
+
+
+def test_resume_training_reproduces_continuous_awac_checkpoint_state(tmp_path: Path) -> None:
+    algo_kwargs = {
+        "dataset_kind": "random",
+        "dataset_size": 64,
+        "dataset_seed": 40,
+        "batch_size": 8,
+        "hidden_sizes": (16, 16),
+        "learning_rate": 3e-4,
+        "gamma": 0.99,
+        "tau": 0.005,
+        "awac_lambda": 1.0,
+        "max_advantage_weight": 20.0,
+    }
+    source_config = TrainConfig(
+        algo="awac",
+        env_id="Pendulum-v1",
+        seed=37,
+        total_timesteps=32,
+        output_dir=tmp_path / "source-awac",
+        eval_episodes=1,
+        device="cpu",
+        algo_kwargs=algo_kwargs,
+    )
+
+    source = train_awac(source_config, run_suffix="resume-source", callbacks=[_StopAtGlobalStep(16)])
+    resumed = resume_training(
+        source.checkpoint_path,
+        total_timesteps=32,
+        output_dir=tmp_path / "resumed-awac",
+        eval_episodes=1,
+        run_suffix="resume-target",
+    )
+    continuous = train_awac(source_config, run_suffix="continuous-target")
+
+    _assert_checkpoint_states_match(resumed.checkpoint_path, continuous.checkpoint_path)
+
+
+def test_resume_training_reproduces_continuous_awr_checkpoint_state(tmp_path: Path) -> None:
+    algo_kwargs = {
+        "dataset_kind": "random",
+        "dataset_size": 64,
+        "dataset_seed": 43,
+        "batch_size": 8,
+        "hidden_sizes": (16, 16),
+        "learning_rate": 3e-4,
+        "gamma": 0.99,
+        "beta": 1.0,
+        "max_weight": 20.0,
+    }
+    source_config = TrainConfig(
+        algo="awr",
+        env_id="Pendulum-v1",
+        seed=39,
+        total_timesteps=32,
+        output_dir=tmp_path / "source-awr",
+        eval_episodes=1,
+        device="cpu",
+        algo_kwargs=algo_kwargs,
+    )
+
+    source = train_awr(source_config, run_suffix="resume-source", callbacks=[_StopAtGlobalStep(16)])
+    resumed = resume_training(
+        source.checkpoint_path,
+        total_timesteps=32,
+        output_dir=tmp_path / "resumed-awr",
+        eval_episodes=1,
+        run_suffix="resume-target",
+    )
+    continuous = train_awr(source_config, run_suffix="continuous-target")
+
+    _assert_checkpoint_states_match(resumed.checkpoint_path, continuous.checkpoint_path)
+
+
+def test_resume_training_reproduces_continuous_bear_checkpoint_state(tmp_path: Path) -> None:
+    algo_kwargs = {
+        "dataset_kind": "random",
+        "dataset_size": 64,
+        "dataset_seed": 41,
+        "batch_size": 8,
+        "hidden_sizes": (16, 16),
+        "learning_rate": 3e-4,
+        "gamma": 0.99,
+        "tau": 0.005,
+        "latent_dim": 2,
+        "behavior_kl_weight": 0.5,
+        "mmd_sigma": 20.0,
+        "mmd_alpha": 10.0,
+        "num_mmd_action_samples": 4,
+    }
+    source_config = TrainConfig(
+        algo="bear",
+        env_id="Pendulum-v1",
+        seed=41,
+        total_timesteps=32,
+        output_dir=tmp_path / "source-bear",
+        eval_episodes=1,
+        device="cpu",
+        algo_kwargs=algo_kwargs,
+    )
+
+    source = train_bear(source_config, run_suffix="resume-source", callbacks=[_StopAtGlobalStep(16)])
+    resumed = resume_training(
+        source.checkpoint_path,
+        total_timesteps=32,
+        output_dir=tmp_path / "resumed-bear",
+        eval_episodes=1,
+        run_suffix="resume-target",
+    )
+    continuous = train_bear(source_config, run_suffix="continuous-target")
+
+    _assert_checkpoint_states_match(resumed.checkpoint_path, continuous.checkpoint_path)
+
+
+def test_resume_training_reproduces_continuous_bcq_checkpoint_state(tmp_path: Path) -> None:
+    algo_kwargs = {
+        "dataset_kind": "random",
+        "dataset_size": 64,
+        "dataset_seed": 42,
+        "batch_size": 8,
+        "hidden_sizes": (16, 16),
+        "learning_rate": 3e-4,
+        "gamma": 0.99,
+        "tau": 0.005,
+        "latent_dim": 2,
+        "num_action_samples": 4,
+        "perturbation_scale": 0.05,
+        "vae_kl_weight": 0.5,
+    }
+    source_config = TrainConfig(
+        algo="bcq",
+        env_id="Pendulum-v1",
+        seed=43,
+        total_timesteps=32,
+        output_dir=tmp_path / "source-bcq",
+        eval_episodes=1,
+        device="cpu",
+        algo_kwargs=algo_kwargs,
+    )
+
+    source = train_bcq(source_config, run_suffix="resume-source", callbacks=[_StopAtGlobalStep(16)])
+    resumed = resume_training(
+        source.checkpoint_path,
+        total_timesteps=32,
+        output_dir=tmp_path / "resumed-bcq",
+        eval_episodes=1,
+        run_suffix="resume-target",
+    )
+    continuous = train_bcq(source_config, run_suffix="continuous-target")
+
+    _assert_checkpoint_states_match(resumed.checkpoint_path, continuous.checkpoint_path)
+
+
+def test_resume_training_reproduces_continuous_crr_checkpoint_state(tmp_path: Path) -> None:
+    algo_kwargs = {
+        "dataset_kind": "random",
+        "dataset_size": 64,
+        "dataset_seed": 41,
+        "batch_size": 8,
+        "hidden_sizes": (16, 16),
+        "learning_rate": 3e-4,
+        "gamma": 0.99,
+        "tau": 0.005,
+        "beta": 1.0,
+        "n_action_samples": 2,
+        "max_weight": 20.0,
+        "advantage_type": "mean",
+        "weight_type": "exp",
+    }
+    source_config = TrainConfig(
+        algo="crr",
+        env_id="Pendulum-v1",
+        seed=45,
+        total_timesteps=32,
+        output_dir=tmp_path / "source-crr",
+        eval_episodes=1,
+        device="cpu",
+        algo_kwargs=algo_kwargs,
+    )
+
+    source = train_crr(source_config, run_suffix="resume-source", callbacks=[_StopAtGlobalStep(16)])
+    resumed = resume_training(
+        source.checkpoint_path,
+        total_timesteps=32,
+        output_dir=tmp_path / "resumed-crr",
+        eval_episodes=1,
+        run_suffix="resume-target",
+    )
+    continuous = train_crr(source_config, run_suffix="continuous-target")
+
+    _assert_checkpoint_states_match(resumed.checkpoint_path, continuous.checkpoint_path)
+
+
+def test_resume_training_reproduces_continuous_marwil_checkpoint_state(tmp_path: Path) -> None:
+    algo_kwargs = {
+        "dataset_kind": "random",
+        "dataset_size": 64,
+        "dataset_seed": 43,
+        "batch_size": 8,
+        "hidden_sizes": (16, 16),
+        "learning_rate": 3e-4,
+        "gamma": 0.99,
+        "beta": 1.0,
+        "vf_coeff": 1.0,
+        "moving_average_sqd_adv_norm_start": 100.0,
+        "moving_average_sqd_adv_norm_update_rate": 0.05,
+    }
+    source_config = TrainConfig(
+        algo="marwil",
+        env_id="Pendulum-v1",
+        seed=47,
+        total_timesteps=32,
+        output_dir=tmp_path / "source-marwil",
+        eval_episodes=1,
+        device="cpu",
+        algo_kwargs=algo_kwargs,
+    )
+
+    source = train_marwil(source_config, run_suffix="resume-source", callbacks=[_StopAtGlobalStep(16)])
+    resumed = resume_training(
+        source.checkpoint_path,
+        total_timesteps=32,
+        output_dir=tmp_path / "resumed-marwil",
+        eval_episodes=1,
+        run_suffix="resume-target",
+    )
+    continuous = train_marwil(source_config, run_suffix="continuous-target")
+
+    _assert_checkpoint_states_match(resumed.checkpoint_path, continuous.checkpoint_path)
+
+
+def test_resume_training_reproduces_continuous_rebrac_checkpoint_state(tmp_path: Path) -> None:
+    algo_kwargs = {
+        "dataset_kind": "random",
+        "dataset_size": 64,
+        "dataset_seed": 42,
+        "batch_size": 8,
+        "hidden_sizes": (16, 16),
+        "learning_rate": 3e-4,
+        "gamma": 0.99,
+        "tau": 0.005,
+        "policy_noise": 0.2,
+        "noise_clip": 0.5,
+        "policy_delay": 2,
+        "actor_bc_weight": 1.0,
+        "critic_bc_weight": 1.0,
+        "actor_q_weight": 1.0,
+    }
+    source_config = TrainConfig(
+        algo="rebrac",
+        env_id="Pendulum-v1",
+        seed=49,
+        total_timesteps=32,
+        output_dir=tmp_path / "source-rebrac",
+        eval_episodes=1,
+        device="cpu",
+        algo_kwargs=algo_kwargs,
+    )
+
+    source = train_rebrac(source_config, run_suffix="resume-source", callbacks=[_StopAtGlobalStep(16)])
+    resumed = resume_training(
+        source.checkpoint_path,
+        total_timesteps=32,
+        output_dir=tmp_path / "resumed-rebrac",
+        eval_episodes=1,
+        run_suffix="resume-target",
+    )
+    continuous = train_rebrac(source_config, run_suffix="continuous-target")
+
+    _assert_checkpoint_states_match(resumed.checkpoint_path, continuous.checkpoint_path)
+
+
+def test_resume_training_reproduces_continuous_cql_checkpoint_state(tmp_path: Path) -> None:
+    algo_kwargs = {
+        "dataset_kind": "random",
+        "dataset_size": 64,
+        "dataset_seed": 39,
+        "batch_size": 8,
+        "hidden_sizes": (16, 16),
+        "learning_rate": 3e-4,
+        "gamma": 0.99,
+        "alpha": 0.2,
+        "tau": 0.005,
+        "cql_alpha": 5.0,
+        "num_cql_samples": 4,
+    }
+    source_config = TrainConfig(
+        algo="cql",
+        env_id="Pendulum-v1",
+        seed=51,
+        total_timesteps=32,
+        output_dir=tmp_path / "source-cql",
+        eval_episodes=1,
+        device="cpu",
+        algo_kwargs=algo_kwargs,
+    )
+
+    source = train_cql(source_config, run_suffix="resume-source", callbacks=[_StopAtGlobalStep(16)])
+    resumed = resume_training(
+        source.checkpoint_path,
+        total_timesteps=32,
+        output_dir=tmp_path / "resumed-cql",
+        eval_episodes=1,
+        run_suffix="resume-target",
+    )
+    continuous = train_cql(source_config, run_suffix="continuous-target")
+
+    _assert_checkpoint_states_match(resumed.checkpoint_path, continuous.checkpoint_path)
+
+
+def test_resume_training_reproduces_continuous_cal_ql_checkpoint_state(tmp_path: Path) -> None:
+    algo_kwargs = {
+        "dataset_kind": "random",
+        "dataset_size": 64,
+        "dataset_seed": 41,
+        "batch_size": 8,
+        "hidden_sizes": (16, 16),
+        "learning_rate": 3e-4,
+        "gamma": 0.99,
+        "alpha": 0.2,
+        "tau": 0.005,
+        "cql_alpha": 5.0,
+        "num_cql_samples": 4,
+    }
+    source_config = TrainConfig(
+        algo="cal_ql",
+        env_id="Pendulum-v1",
+        seed=53,
+        total_timesteps=32,
+        output_dir=tmp_path / "source-cal-ql",
+        eval_episodes=1,
+        device="cpu",
+        algo_kwargs=algo_kwargs,
+    )
+
+    source = train_cal_ql(source_config, run_suffix="resume-source", callbacks=[_StopAtGlobalStep(16)])
+    resumed = resume_training(
+        source.checkpoint_path,
+        total_timesteps=32,
+        output_dir=tmp_path / "resumed-cal-ql",
+        eval_episodes=1,
+        run_suffix="resume-target",
+    )
+    continuous = train_cal_ql(source_config, run_suffix="continuous-target")
+
+    _assert_checkpoint_states_match(resumed.checkpoint_path, continuous.checkpoint_path)
+
+
+def test_resume_training_reproduces_continuous_edac_checkpoint_state(tmp_path: Path) -> None:
+    algo_kwargs = {
+        "dataset_kind": "random",
+        "dataset_size": 64,
+        "dataset_seed": 41,
+        "batch_size": 8,
+        "hidden_sizes": (16, 16),
+        "learning_rate": 3e-4,
+        "gamma": 0.99,
+        "alpha": 0.2,
+        "tau": 0.005,
+        "num_critics": 4,
+        "eta": 1.0,
+    }
+    source_config = TrainConfig(
+        algo="edac",
+        env_id="Pendulum-v1",
+        seed=55,
+        total_timesteps=32,
+        output_dir=tmp_path / "source-edac",
+        eval_episodes=1,
+        device="cpu",
+        algo_kwargs=algo_kwargs,
+    )
+
+    source = train_edac(source_config, run_suffix="resume-source", callbacks=[_StopAtGlobalStep(16)])
+    resumed = resume_training(
+        source.checkpoint_path,
+        total_timesteps=32,
+        output_dir=tmp_path / "resumed-edac",
+        eval_episodes=1,
+        run_suffix="resume-target",
+    )
+    continuous = train_edac(source_config, run_suffix="continuous-target")
+
+    _assert_checkpoint_states_match(resumed.checkpoint_path, continuous.checkpoint_path)
+
+
+def test_resume_training_reproduces_continuous_xql_checkpoint_state(tmp_path: Path) -> None:
+    algo_kwargs = {
+        "dataset_kind": "random",
+        "dataset_size": 64,
+        "dataset_seed": 59,
+        "batch_size": 8,
+        "hidden_sizes": (16, 16),
+        "learning_rate": 3e-4,
+        "gamma": 0.99,
+        "tau": 0.005,
+        "beta": 3.0,
+        "loss_temperature": 1.0,
+        "max_advantage_weight": 100.0,
+        "max_value_diff_exp": 5.0,
+    }
+    source_config = TrainConfig(
+        algo="xql",
+        env_id="Pendulum-v1",
+        seed=57,
+        total_timesteps=32,
+        output_dir=tmp_path / "source-xql",
+        eval_episodes=1,
+        device="cpu",
+        algo_kwargs=algo_kwargs,
+    )
+
+    source = train_xql(source_config, run_suffix="resume-source", callbacks=[_StopAtGlobalStep(16)])
+    resumed = resume_training(
+        source.checkpoint_path,
+        total_timesteps=32,
+        output_dir=tmp_path / "resumed-xql",
+        eval_episodes=1,
+        run_suffix="resume-target",
+    )
+    continuous = train_xql(source_config, run_suffix="continuous-target")
+
+    _assert_checkpoint_states_match(resumed.checkpoint_path, continuous.checkpoint_path)
+
+
+def test_resume_training_reproduces_continuous_td3_bc_checkpoint_state(tmp_path: Path) -> None:
+    algo_kwargs = {
+        "dataset_kind": "random",
+        "dataset_size": 64,
+        "dataset_seed": 43,
+        "batch_size": 8,
+        "hidden_sizes": (16, 16),
+        "learning_rate": 3e-4,
+        "gamma": 0.99,
+        "tau": 0.005,
+        "policy_noise": 0.2,
+        "noise_clip": 0.5,
+        "policy_delay": 2,
+        "bc_alpha": 2.5,
+    }
+    source_config = TrainConfig(
+        algo="td3_bc",
+        env_id="Pendulum-v1",
+        seed=59,
+        total_timesteps=32,
+        output_dir=tmp_path / "source-td3-bc",
+        eval_episodes=1,
+        device="cpu",
+        algo_kwargs=algo_kwargs,
+    )
+
+    source = train_td3_bc(source_config, run_suffix="resume-source", callbacks=[_StopAtGlobalStep(16)])
+    resumed = resume_training(
+        source.checkpoint_path,
+        total_timesteps=32,
+        output_dir=tmp_path / "resumed-td3-bc",
+        eval_episodes=1,
+        run_suffix="resume-target",
+    )
+    continuous = train_td3_bc(source_config, run_suffix="continuous-target")
+
+    _assert_checkpoint_states_match(resumed.checkpoint_path, continuous.checkpoint_path)
+
+
+def test_resume_training_reproduces_continuous_crossq_checkpoint_state(tmp_path: Path) -> None:
+    algo_kwargs = {
+        "buffer_capacity": 256,
+        "batch_size": 16,
+        "learning_starts": 16,
+        "train_frequency": 1,
+        "hidden_sizes": (16, 16),
+        "critic_hidden_sizes": (16, 16),
+        "learning_rate": 1e-3,
+        "gamma": 0.99,
+        "alpha": 0.1,
+        "policy_delay": 1,
+        "adam_beta1": 0.5,
+        "bn_momentum": 0.99,
+        "eval_interval": 1,
+    }
+    source_config = TrainConfig(
+        algo="crossq",
+        env_id="Pendulum-v1",
+        seed=61,
+        total_timesteps=96,
+        output_dir=tmp_path / "source-crossq",
+        eval_episodes=1,
+        device="cpu",
+        algo_kwargs=algo_kwargs,
+    )
+
+    source = train_crossq(source_config, run_suffix="resume-source", callbacks=[_StopAtGlobalStep(64)])
+    resumed = resume_training(
+        source.checkpoint_path,
+        total_timesteps=96,
+        output_dir=tmp_path / "resumed-crossq",
+        eval_episodes=1,
+        run_suffix="resume-target",
+    )
+    continuous = train_crossq(source_config, run_suffix="continuous-target")
+
+    _assert_checkpoint_states_match(resumed.checkpoint_path, continuous.checkpoint_path)
+
+
+def test_resume_training_reproduces_continuous_redq_checkpoint_state(tmp_path: Path) -> None:
+    algo_kwargs = {
+        "buffer_capacity": 256,
+        "batch_size": 16,
+        "learning_starts": 16,
+        "train_frequency": 1,
+        "gradient_updates_per_step": 2,
+        "hidden_sizes": (16, 16),
+        "alpha": 0.2,
+        "tau": 0.005,
+        "num_critics": 5,
+        "subset_size": 2,
+        "eval_interval": 1,
+    }
+    source_config = TrainConfig(
+        algo="redq",
+        env_id="Pendulum-v1",
+        seed=63,
+        total_timesteps=96,
+        output_dir=tmp_path / "source-redq",
+        eval_episodes=1,
+        device="cpu",
+        algo_kwargs=algo_kwargs,
+    )
+
+    source = train_redq(source_config, run_suffix="resume-source", callbacks=[_StopAtGlobalStep(64)])
+    resumed = resume_training(
+        source.checkpoint_path,
+        total_timesteps=96,
+        output_dir=tmp_path / "resumed-redq",
+        eval_episodes=1,
+        run_suffix="resume-target",
+    )
+    continuous = train_redq(source_config, run_suffix="continuous-target")
+
+    _assert_checkpoint_states_match(resumed.checkpoint_path, continuous.checkpoint_path)
+
+
+def test_resume_training_reproduces_continuous_ddpg_checkpoint_state(tmp_path: Path) -> None:
+    algo_kwargs = {
+        "buffer_capacity": 256,
+        "batch_size": 16,
+        "learning_starts": 16,
+        "train_frequency": 1,
+        "hidden_sizes": (16, 16),
+        "tau": 0.005,
+        "eval_interval": 1,
+    }
+    source_config = TrainConfig(
+        algo="ddpg",
+        env_id="Pendulum-v1",
+        seed=65,
+        total_timesteps=96,
+        output_dir=tmp_path / "source-ddpg",
+        eval_episodes=1,
+        device="cpu",
+        algo_kwargs=algo_kwargs,
+    )
+
+    source = train_ddpg(source_config, run_suffix="resume-source", callbacks=[_StopAtGlobalStep(64)])
+    resumed = resume_training(
+        source.checkpoint_path,
+        total_timesteps=96,
+        output_dir=tmp_path / "resumed-ddpg",
+        eval_episodes=1,
+        run_suffix="resume-target",
+    )
+    continuous = train_ddpg(source_config, run_suffix="continuous-target")
+
+    _assert_checkpoint_states_match(resumed.checkpoint_path, continuous.checkpoint_path)
+
+
+def test_resume_training_reproduces_continuous_tqc_checkpoint_state(tmp_path: Path) -> None:
+    algo_kwargs = {
+        "buffer_capacity": 256,
+        "batch_size": 16,
+        "learning_starts": 16,
+        "train_frequency": 1,
+        "hidden_sizes": (16, 16),
+        "learning_rate": 3e-4,
+        "gamma": 0.99,
+        "alpha": 0.2,
+        "tau": 0.005,
+        "num_critics": 2,
+        "num_quantiles": 25,
+        "top_quantiles_to_drop_per_net": 2,
+        "eval_interval": 1,
+    }
+    source_config = TrainConfig(
+        algo="tqc",
+        env_id="Pendulum-v1",
+        seed=67,
+        total_timesteps=96,
+        output_dir=tmp_path / "source-tqc",
+        eval_episodes=1,
+        device="cpu",
+        algo_kwargs=algo_kwargs,
+    )
+
+    source = train_tqc(source_config, run_suffix="resume-source", callbacks=[_StopAtGlobalStep(64)])
+    resumed = resume_training(
+        source.checkpoint_path,
+        total_timesteps=96,
+        output_dir=tmp_path / "resumed-tqc",
+        eval_episodes=1,
+        run_suffix="resume-target",
+    )
+    continuous = train_tqc(source_config, run_suffix="continuous-target")
+
+    _assert_checkpoint_states_match(resumed.checkpoint_path, continuous.checkpoint_path)
+
+
+def test_resume_training_reproduces_continuous_naf_checkpoint_state(tmp_path: Path) -> None:
+    algo_kwargs = {
+        "buffer_capacity": 256,
+        "batch_size": 16,
+        "learning_starts": 16,
+        "train_frequency": 1,
+        "hidden_sizes": (16, 16),
+        "learning_rate": 3e-4,
+        "gamma": 0.99,
+        "tau": 0.005,
+        "exploration_noise": 0.1,
+        "eval_interval": 1,
+    }
+    source_config = TrainConfig(
+        algo="naf",
+        env_id="Pendulum-v1",
+        seed=69,
+        total_timesteps=96,
+        output_dir=tmp_path / "source-naf",
+        eval_episodes=1,
+        device="cpu",
+        algo_kwargs=algo_kwargs,
+    )
+
+    source = train_naf(source_config, run_suffix="resume-source", callbacks=[_StopAtGlobalStep(64)])
+    resumed = resume_training(
+        source.checkpoint_path,
+        total_timesteps=96,
+        output_dir=tmp_path / "resumed-naf",
+        eval_episodes=1,
+        run_suffix="resume-target",
+    )
+    continuous = train_naf(source_config, run_suffix="continuous-target")
+
+    _assert_checkpoint_states_match(resumed.checkpoint_path, continuous.checkpoint_path)
+
+
+def test_resume_training_reproduces_continuous_discrete_sac_checkpoint_state(tmp_path: Path) -> None:
+    algo_kwargs = {
+        "buffer_capacity": 256,
+        "batch_size": 16,
+        "learning_starts": 16,
+        "train_frequency": 1,
+        "hidden_sizes": (16, 16),
+        "learning_rate": 3e-4,
+        "gamma": 0.99,
+        "alpha": 0.2,
+        "tau": 0.005,
+        "eval_interval": 1,
+    }
+    source_config = TrainConfig(
+        algo="discrete_sac",
+        env_id="CartPole-v1",
+        seed=71,
+        total_timesteps=96,
+        output_dir=tmp_path / "source-discrete-sac",
+        num_envs=1,
+        eval_episodes=1,
+        device="cpu",
+        algo_kwargs=algo_kwargs,
+    )
+
+    source = train_discrete_sac(source_config, run_suffix="resume-source", callbacks=[_StopAtGlobalStep(64)])
+    resumed = resume_training(
+        source.checkpoint_path,
+        total_timesteps=96,
+        output_dir=tmp_path / "resumed-discrete-sac",
+        eval_episodes=1,
+        run_suffix="resume-target",
+    )
+    continuous = train_discrete_sac(source_config, run_suffix="continuous-target")
+
+    _assert_checkpoint_states_match(resumed.checkpoint_path, continuous.checkpoint_path)
+
+
+def test_resume_training_reproduces_continuous_d4pg_checkpoint_state(tmp_path: Path) -> None:
+    algo_kwargs = {
+        "buffer_capacity": 256,
+        "batch_size": 16,
+        "learning_starts": 16,
+        "train_frequency": 1,
+        "hidden_sizes": (16, 16),
+        "learning_rate": 3e-4,
+        "gamma": 0.99,
+        "tau": 0.005,
+        "exploration_noise": 0.1,
+        "v_min": -100.0,
+        "v_max": 100.0,
+        "num_atoms": 51,
+        "eval_interval": 1,
+    }
+    source_config = TrainConfig(
+        algo="d4pg",
+        env_id="Pendulum-v1",
+        seed=73,
+        total_timesteps=96,
+        output_dir=tmp_path / "source-d4pg",
+        eval_episodes=1,
+        device="cpu",
+        algo_kwargs=algo_kwargs,
+    )
+
+    source = train_d4pg(source_config, run_suffix="resume-source", callbacks=[_StopAtGlobalStep(64)])
+    resumed = resume_training(
+        source.checkpoint_path,
+        total_timesteps=96,
+        output_dir=tmp_path / "resumed-d4pg",
+        eval_episodes=1,
+        run_suffix="resume-target",
+    )
+    continuous = train_d4pg(source_config, run_suffix="continuous-target")
+
+    _assert_checkpoint_states_match(resumed.checkpoint_path, continuous.checkpoint_path)
+
+
+def test_resume_training_reproduces_continuous_curl_checkpoint_state(tmp_path: Path) -> None:
+    algo_kwargs = {
+        "buffer_capacity": 128,
+        "batch_size": 16,
+        "learning_starts": 16,
+        "train_frequency": 1,
+        "features_dim": 32,
+        "actor_hidden_sizes": (16,),
+        "critic_hidden_sizes": (16,),
+        "projection_dim": 16,
+        "learning_rate": 1e-4,
+        "gamma": 0.99,
+        "alpha": 0.1,
+        "tau": 0.01,
+        "augmentation_pad": 4,
+        "curl_temperature": 0.1,
+        "curl_coef": 1.0,
+        "eval_interval": 1,
+    }
+    source_config = TrainConfig(
+        algo="curl",
+        env_id=_register_tiny_render_env(),
+        seed=75,
+        total_timesteps=48,
+        output_dir=tmp_path / "source-curl",
+        eval_episodes=1,
+        device="cpu",
+        algo_kwargs=algo_kwargs,
+        env_kwargs={
+            "render_mode": "rgb_array",
+            "wrappers": {
+                "pixels": {
+                    "resize_shape": [84, 84],
+                    "frame_stack": 3,
+                    "channel_first": True,
+                }
+            },
+        },
+    )
+
+    source = train_curl(source_config, run_suffix="resume-source", callbacks=[_StopAtGlobalStep(32)])
+    resumed = resume_training(
+        source.checkpoint_path,
+        total_timesteps=48,
+        output_dir=tmp_path / "resumed-curl",
+        eval_episodes=1,
+        run_suffix="resume-target",
+    )
+    continuous = train_curl(source_config, run_suffix="continuous-target")
+
+    _assert_checkpoint_states_match(resumed.checkpoint_path, continuous.checkpoint_path)
+
+
+def test_resume_training_reproduces_continuous_drq_checkpoint_state(tmp_path: Path) -> None:
+    algo_kwargs = {
+        "buffer_capacity": 128,
+        "batch_size": 16,
+        "learning_starts": 16,
+        "train_frequency": 1,
+        "features_dim": 32,
+        "actor_hidden_sizes": (16,),
+        "critic_hidden_sizes": (16,),
+        "learning_rate": 1e-4,
+        "gamma": 0.99,
+        "alpha": 0.1,
+        "tau": 0.01,
+        "augmentation_pad": 4,
+        "eval_interval": 1,
+    }
+    source_config = TrainConfig(
+        algo="drq",
+        env_id=_register_tiny_render_env(),
+        seed=77,
+        total_timesteps=48,
+        output_dir=tmp_path / "source-drq",
+        eval_episodes=1,
+        device="cpu",
+        algo_kwargs=algo_kwargs,
+        env_kwargs={
+            "render_mode": "rgb_array",
+            "wrappers": {
+                "pixels": {
+                    "resize_shape": [84, 84],
+                    "frame_stack": 3,
+                    "channel_first": True,
+                }
+            },
+        },
+    )
+
+    source = train_drq(source_config, run_suffix="resume-source", callbacks=[_StopAtGlobalStep(32)])
+    resumed = resume_training(
+        source.checkpoint_path,
+        total_timesteps=48,
+        output_dir=tmp_path / "resumed-drq",
+        eval_episodes=1,
+        run_suffix="resume-target",
+    )
+    continuous = train_drq(source_config, run_suffix="continuous-target")
+
+    _assert_checkpoint_states_match(resumed.checkpoint_path, continuous.checkpoint_path)
+
+
+def test_resume_training_reproduces_continuous_drqv2_checkpoint_state(tmp_path: Path) -> None:
+    algo_kwargs = {
+        "buffer_capacity": 128,
+        "batch_size": 16,
+        "learning_starts": 16,
+        "train_frequency": 1,
+        "features_dim": 32,
+        "actor_hidden_sizes": (16,),
+        "critic_hidden_sizes": (16,),
+        "learning_rate": 1e-4,
+        "gamma": 0.99,
+        "tau": 0.01,
+        "policy_delay": 2,
+        "augmentation_pad": 4,
+        "exploration_noise": 0.1,
+        "exploration_noise_clip": 0.3,
+        "eval_interval": 1,
+    }
+    source_config = TrainConfig(
+        algo="drqv2",
+        env_id=_register_tiny_render_env(),
+        seed=79,
+        total_timesteps=48,
+        output_dir=tmp_path / "source-drqv2",
+        eval_episodes=1,
+        device="cpu",
+        algo_kwargs=algo_kwargs,
+        env_kwargs={
+            "render_mode": "rgb_array",
+            "wrappers": {
+                "pixels": {
+                    "resize_shape": [84, 84],
+                    "frame_stack": 3,
+                    "channel_first": True,
+                }
+            },
+        },
+    )
+
+    source = train_drqv2(source_config, run_suffix="resume-source", callbacks=[_StopAtGlobalStep(32)])
+    resumed = resume_training(
+        source.checkpoint_path,
+        total_timesteps=48,
+        output_dir=tmp_path / "resumed-drqv2",
+        eval_episodes=1,
+        run_suffix="resume-target",
+    )
+    continuous = train_drqv2(source_config, run_suffix="continuous-target")
+
+    _assert_checkpoint_states_match(resumed.checkpoint_path, continuous.checkpoint_path)
+
+
+def test_resume_training_reproduces_continuous_dreamer_checkpoint_state(tmp_path: Path) -> None:
+    algo_kwargs = {
+        "buffer_capacity": 128,
+        "batch_size": 8,
+        "learning_starts": 8,
+        "train_frequency": 1,
+        "world_model_updates": 1,
+        "actor_critic_updates": 1,
+        "imagination_batch_size": 4,
+        "imagination_horizon": 2,
+        "features_dim": 32,
+        "action_embed_dim": 8,
+        "world_model_learning_rate": 1e-3,
+        "actor_learning_rate": 3e-4,
+        "critic_learning_rate": 3e-4,
+        "gamma": 0.99,
+        "entropy_coef": 1e-3,
+        "eval_interval": 1,
+    }
+    source_config = TrainConfig(
+        algo="dreamer",
+        env_id=_register_tiny_render_discrete_env(),
+        seed=81,
+        total_timesteps=18,
+        output_dir=tmp_path / "source-dreamer",
+        eval_episodes=1,
+        device="cpu",
+        algo_kwargs=algo_kwargs,
+        env_kwargs={
+            "render_mode": "rgb_array",
+            "wrappers": {
+                "pixels": {
+                    "resize_shape": [84, 84],
+                    "frame_stack": 3,
+                    "channel_first": True,
+                }
+            },
+        },
+    )
+
+    source = train_dreamer(source_config, run_suffix="resume-source", callbacks=[_StopAtGlobalStep(10)])
+    resumed = resume_training(
+        source.checkpoint_path,
+        total_timesteps=18,
+        output_dir=tmp_path / "resumed-dreamer",
+        eval_episodes=1,
+        run_suffix="resume-target",
+    )
+    continuous = train_dreamer(source_config, run_suffix="continuous-target")
+
+    _assert_checkpoint_states_match(resumed.checkpoint_path, continuous.checkpoint_path)
+
+
+def test_resume_training_reproduces_continuous_muzero_checkpoint_state(tmp_path: Path) -> None:
+    algo_kwargs = {
+        "buffer_capacity": 64,
+        "batch_size": 4,
+        "learning_starts": 8,
+        "train_frequency": 1,
+        "unroll_steps": 2,
+        "learning_rate": 1e-3,
+        "gamma": 0.99,
+        "latent_dim": 32,
+        "action_embed_dim": 8,
+        "dynamics_hidden_sizes": (32,),
+        "prediction_hidden_sizes": (32,),
+        "num_simulations": 4,
+        "eval_interval": 1,
+    }
+    source_config = TrainConfig(
+        algo="muzero",
+        env_id=_register_tiny_render_discrete_env(),
+        seed=83,
+        total_timesteps=18,
+        output_dir=tmp_path / "source-muzero",
+        eval_episodes=1,
+        device="cpu",
+        algo_kwargs=algo_kwargs,
+        env_kwargs={
+            "render_mode": "rgb_array",
+            "wrappers": {
+                "pixels": {
+                    "resize_shape": [84, 84],
+                    "frame_stack": 3,
+                    "channel_first": True,
+                }
+            },
+        },
+    )
+
+    source = train_muzero(source_config, run_suffix="resume-source", callbacks=[_StopAtGlobalStep(10)])
+    resumed = resume_training(
+        source.checkpoint_path,
+        total_timesteps=18,
+        output_dir=tmp_path / "resumed-muzero",
+        eval_episodes=1,
+        run_suffix="resume-target",
+    )
+    continuous = train_muzero(source_config, run_suffix="continuous-target")
+
+    _assert_checkpoint_states_match(resumed.checkpoint_path, continuous.checkpoint_path)
+
+
+def test_resume_training_reproduces_continuous_efficientzero_checkpoint_state(tmp_path: Path) -> None:
+    algo_kwargs = {
+        "buffer_capacity": 64,
+        "batch_size": 4,
+        "learning_starts": 8,
+        "train_frequency": 1,
+        "unroll_steps": 2,
+        "learning_rate": 1e-3,
+        "gamma": 0.99,
+        "latent_dim": 32,
+        "action_embed_dim": 8,
+        "dynamics_hidden_sizes": (32,),
+        "prediction_hidden_sizes": (32,),
+        "num_simulations": 4,
+        "eval_interval": 1,
+    }
+    source_config = TrainConfig(
+        algo="efficientzero",
+        env_id=_register_tiny_render_discrete_env(),
+        seed=85,
+        total_timesteps=18,
+        output_dir=tmp_path / "source-efficientzero",
+        eval_episodes=1,
+        device="cpu",
+        algo_kwargs=algo_kwargs,
+        env_kwargs={
+            "render_mode": "rgb_array",
+            "wrappers": {
+                "pixels": {
+                    "resize_shape": [84, 84],
+                    "frame_stack": 3,
+                    "channel_first": True,
+                }
+            },
+        },
+    )
+
+    source = train_efficientzero(source_config, run_suffix="resume-source", callbacks=[_StopAtGlobalStep(10)])
+    resumed = resume_training(
+        source.checkpoint_path,
+        total_timesteps=18,
+        output_dir=tmp_path / "resumed-efficientzero",
+        eval_episodes=1,
+        run_suffix="resume-target",
+    )
+    continuous = train_efficientzero(source_config, run_suffix="continuous-target")
+
+    _assert_checkpoint_states_match(resumed.checkpoint_path, continuous.checkpoint_path)
 
 
 def test_resume_training_reproduces_continuous_dqn_checkpoint_state(tmp_path: Path) -> None:

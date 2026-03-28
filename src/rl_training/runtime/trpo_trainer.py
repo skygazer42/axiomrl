@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from pathlib import Path
 from collections.abc import Sequence
+from pathlib import Path
 
 import gymnasium as gym
 import numpy as np
@@ -9,14 +9,20 @@ import torch
 
 from rl_training.algorithms.trpo import TRPO
 from rl_training.data.rollout_buffer import RolloutBuffer
+from rl_training.envs.factory import make_vector_env
 from rl_training.experiment.checkpointing import CheckpointState
 from rl_training.experiment.config import TrainConfig
-from rl_training.envs.factory import make_vector_env
 from rl_training.models.mlp_actor_critic import MLPActorCritic
 from rl_training.runtime.callbacks import Callback
 from rl_training.runtime.collector import CollectResult
 from rl_training.runtime.controls import resolve_entropy_coefficient
 from rl_training.runtime.ppo_trainer import _evaluate_policy
+from rl_training.runtime.resume_state import (
+    capture_global_random_state,
+    capture_vector_env_resume_state,
+    restore_global_random_state,
+    restore_vector_env_resume_state,
+)
 from rl_training.runtime.run_utils import save_training_checkpoint
 from rl_training.runtime.session import create_training_session
 from rl_training.runtime.trainer import TrainResult
@@ -94,6 +100,17 @@ def train_trpo(
             algorithm.load_state_dict(checkpoint_state.algorithm_state)
 
         obs, _ = envs.reset(seed=config.seed)
+        if checkpoint_state is not None:
+            resume_context = checkpoint_state.trainer_state.get("resume_context")
+            if isinstance(resume_context, dict):
+                env_resume_state = resume_context.get("env_state")
+                if isinstance(env_resume_state, dict):
+                    restored_obs = restore_vector_env_resume_state(envs, env_resume_state)
+                    if restored_obs is not None:
+                        obs = np.asarray(restored_obs)
+                random_state = resume_context.get("random_state")
+                if isinstance(random_state, dict):
+                    restore_global_random_state(random_state)
         global_step = int(checkpoint_state.trainer_state.get("global_step", 0)) if checkpoint_state is not None else 0
         update_index = 0
         trainer_state.global_step = global_step
@@ -196,6 +213,10 @@ def train_trpo(
                 "global_step": global_step,
                 "should_stop": trainer_state.should_stop,
                 "stop_reason": trainer_state.stop_reason,
+                "resume_context": {
+                    "env_state": capture_vector_env_resume_state(envs),
+                    "random_state": capture_global_random_state(),
+                },
             },
             metrics=metrics,
         )
