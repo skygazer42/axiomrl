@@ -3,11 +3,19 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
+import gymnasium as gym
 import numpy as np
 
 from rl_training.data.replay_buffer import ReplayBuffer
+from rl_training.experiment.checkpointing import CheckpointState
 from rl_training.runtime.callbacks import CallbackList
 from rl_training.runtime.collector import CollectResult
+from rl_training.runtime.resume_state import (
+    capture_global_random_state,
+    capture_vector_env_resume_state,
+    restore_global_random_state,
+    restore_vector_env_resume_state,
+)
 from rl_training.runtime.trainer import TrainerState
 from rl_training.runtime.types import MetricDict
 
@@ -115,3 +123,41 @@ def maybe_run_evaluation(
     logger.log_metrics(merged_metrics, step=global_step)
     callback_list.on_eval_end(trainer_state, merged_metrics)
     return merged_metrics, trainer_state.should_stop
+
+
+def restore_replay_training_state(
+    *,
+    algorithm: object,
+    replay_buffer: ReplayBuffer,
+    envs: gym.vector.VectorEnv,
+    checkpoint_state: CheckpointState | None,
+) -> tuple[object | None, int, int]:
+    if checkpoint_state is None:
+        return None, 0, 0
+
+    algorithm.load_state_dict(checkpoint_state.algorithm_state)  # type: ignore[attr-defined]
+    if checkpoint_state.buffer_state is not None:
+        replay_buffer.load_state_dict(checkpoint_state.buffer_state)
+
+    restored_obs = None
+    resume_context = checkpoint_state.trainer_state.get("resume_context")
+    if isinstance(resume_context, dict):
+        env_resume_state = resume_context.get("env_state")
+        if isinstance(env_resume_state, dict):
+            restored_obs = restore_vector_env_resume_state(envs, env_resume_state)
+        random_state = resume_context.get("random_state")
+        if isinstance(random_state, dict):
+            restore_global_random_state(random_state)
+
+    return (
+        restored_obs,
+        int(checkpoint_state.trainer_state.get("global_step", 0)),
+        int(checkpoint_state.trainer_state.get("update_count", 0)),
+    )
+
+
+def capture_replay_resume_context(envs: gym.vector.VectorEnv) -> dict[str, object]:
+    return {
+        "env_state": capture_vector_env_resume_state(envs),
+        "random_state": capture_global_random_state(),
+    }

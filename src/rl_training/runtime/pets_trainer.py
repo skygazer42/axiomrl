@@ -17,9 +17,15 @@ from rl_training.runtime.callbacks import Callback, CallbackList
 from rl_training.runtime.collector import CollectResult
 from rl_training.runtime.controls import resolve_eval_interval, should_run_evaluation
 from rl_training.runtime.evaluation_support import evaluate_continuous_episodes
+from rl_training.runtime.resume_state import (
+    capture_env_resume_state,
+    capture_global_random_state,
+    restore_env_resume_state,
+    restore_global_random_state,
+)
 from rl_training.runtime.run_utils import save_training_checkpoint
 from rl_training.runtime.session import create_training_session
-from rl_training.runtime.trainer import TrainResult, TrainerState
+from rl_training.runtime.trainer import TrainerState, TrainResult
 from rl_training.runtime.types import MetricDict
 
 
@@ -360,6 +366,19 @@ def train_pets(
         episode_return = 0.0
         episode_length = 0
         latest_update_metrics: MetricDict = {}
+        if checkpoint_state is not None:
+            resume_context = checkpoint_state.trainer_state.get("resume_context")
+            if isinstance(resume_context, dict):
+                env_resume_state = resume_context.get("env_state")
+                if isinstance(env_resume_state, dict):
+                    restored_obs = restore_env_resume_state(train_env, env_resume_state)
+                    if restored_obs is not None:
+                        obs = np.asarray(restored_obs, dtype=np.float32)
+                random_state = resume_context.get("random_state")
+                if isinstance(random_state, dict):
+                    restore_global_random_state(random_state)
+                episode_return = float(resume_context.get("episode_return", episode_return))
+                episode_length = int(resume_context.get("episode_length", episode_length))
         trainer_state.global_step = global_step
         trainer_state.update_count = update_count
         callback_list.on_train_start(trainer_state)
@@ -463,6 +482,12 @@ def train_pets(
                 "episode_index": episode_index,
                 "should_stop": trainer_state.should_stop,
                 "stop_reason": trainer_state.stop_reason,
+                "resume_context": {
+                    "env_state": capture_env_resume_state(train_env),
+                    "random_state": capture_global_random_state(),
+                    "episode_return": float(episode_return),
+                    "episode_length": int(episode_length),
+                },
             },
             metrics=metrics,
         )

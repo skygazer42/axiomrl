@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from copy import deepcopy
 from typing import Any
 
 import gymnasium as gym
@@ -288,6 +289,7 @@ class HERReplayBuffer:
             "goal_selection_strategy": self.goal_selection_strategy,
             "seed": self.seed,
             "num_transitions": self._num_transitions,
+            "rng_state": deepcopy(self._rng.bit_generator.state),
             "episodes": [
                 {
                     key: value.clone() if isinstance(value, torch.Tensor) else value
@@ -301,6 +303,9 @@ class HERReplayBuffer:
     def load_state_dict(self, state_dict: dict[str, Any]) -> None:
         self.seed = state_dict.get("seed", self.seed)
         self._rng = np.random.default_rng(self.seed)
+        rng_state = state_dict.get("rng_state")
+        if rng_state is not None:
+            self._rng.bit_generator.state = deepcopy(rng_state)
         self._episodes = []
         for episode in state_dict.get("episodes", ()):
             self._episodes.append(

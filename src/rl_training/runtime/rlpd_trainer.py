@@ -27,11 +27,17 @@ from rl_training.runtime.controls import (
 )
 from rl_training.runtime.iql_trainer import _build_offline_dataset
 from rl_training.runtime.off_policy_trainer_utils import maybe_run_evaluation, store_vector_transitions
+from rl_training.runtime.resume_state import (
+    capture_global_random_state,
+    capture_vector_env_resume_state,
+    restore_global_random_state,
+    restore_vector_env_resume_state,
+)
 from rl_training.runtime.run_utils import save_training_checkpoint
 from rl_training.runtime.sac_trainer import _action_bounds, _evaluate_sac_policy, _infer_spaces, _scale_actions
 from rl_training.runtime.schedules import apply_learning_rate_scale, resolve_schedule_value
 from rl_training.runtime.session import create_training_session
-from rl_training.runtime.trainer import TrainResult, TrainerState
+from rl_training.runtime.trainer import TrainerState, TrainResult
 from rl_training.runtime.types import MetricDict
 
 
@@ -471,6 +477,17 @@ def train_rlpd(
             offline_pretrain_updates=offline_pretrain_updates,
             learning_rate=learning_rate,
         )
+        if checkpoint_state is not None:
+            resume_context = checkpoint_state.trainer_state.get("resume_context")
+            if isinstance(resume_context, dict):
+                env_resume_state = resume_context.get("env_state")
+                if isinstance(env_resume_state, dict):
+                    restored_obs = restore_vector_env_resume_state(envs, env_resume_state)
+                    if restored_obs is not None:
+                        obs = np.asarray(restored_obs)
+                random_state = resume_context.get("random_state")
+                if isinstance(random_state, dict):
+                    restore_global_random_state(random_state)
         loop_config = _RLPDLoopConfig(
             learning_rate_schedule=learning_rate_schedule,
             effective_total_updates=effective_total_updates,
@@ -597,6 +614,10 @@ def train_rlpd(
                 "pretrain_updates_done": state.pretrain_updates_done,
                 "should_stop": trainer_state.should_stop,
                 "stop_reason": trainer_state.stop_reason,
+                "resume_context": {
+                    "env_state": capture_vector_env_resume_state(envs),
+                    "random_state": capture_global_random_state(),
+                },
             },
             metrics=metrics,
         )

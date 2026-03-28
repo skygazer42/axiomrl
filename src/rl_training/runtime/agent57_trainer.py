@@ -21,19 +21,29 @@ from rl_training.runtime.controls import (
     should_run_evaluation,
 )
 from rl_training.runtime.r2d2_trainer import (
-    _PrioritizedReplaySchedule,
     _append_recurrent_transitions,
     _beta_at_step,
     _build_q_network,
     _build_r2d2_metrics,
+    _capture_metadata_buffers,
+    _capture_rollout_state,
     _emit_collect_event,
     _evaluate_r2d2_policy,
     _infer_spaces,
     _maybe_run_r2d2_evaluation,
+    _PrioritizedReplaySchedule,
+    _restore_metadata_buffers,
+    _restore_rollout_state,
+)
+from rl_training.runtime.resume_state import (
+    capture_global_random_state,
+    capture_vector_env_resume_state,
+    restore_global_random_state,
+    restore_vector_env_resume_state,
 )
 from rl_training.runtime.run_utils import save_training_checkpoint
 from rl_training.runtime.session import create_training_session
-from rl_training.runtime.trainer import TrainResult, TrainerState
+from rl_training.runtime.trainer import TrainerState, TrainResult
 from rl_training.runtime.types import MetricDict
 
 
@@ -163,7 +173,6 @@ def train_agent57(
             algorithm.load_state_dict(checkpoint_state.algorithm_state)
             if checkpoint_state.buffer_state is not None:
                 replay_buffer.load_state_dict(checkpoint_state.buffer_state)
-                replay_buffer.clear_active_chunks()
 
         n_step_accumulator = NStepAccumulator(num_envs=config.num_envs, n_step=n_step, gamma=gamma)
         metadata_buffers: list[deque[dict[str, object]]] = [deque() for _ in range(config.num_envs)]
@@ -179,6 +188,31 @@ def train_agent57(
             "intrinsic_reward_mean": 0.0,
             "combined_reward_mean": 0.0,
         }
+        if checkpoint_state is not None:
+            resume_context = checkpoint_state.trainer_state.get("resume_context")
+            if isinstance(resume_context, dict):
+                env_resume_state = resume_context.get("env_state")
+                if isinstance(env_resume_state, dict):
+                    restored_obs = restore_vector_env_resume_state(envs, env_resume_state)
+                    if restored_obs is not None:
+                        obs = np.asarray(restored_obs)
+                random_state = resume_context.get("random_state")
+                if isinstance(random_state, dict):
+                    restore_global_random_state(random_state)
+                n_step_state = resume_context.get("n_step_accumulator")
+                if isinstance(n_step_state, dict):
+                    n_step_accumulator.load_state_dict(n_step_state)
+                metadata_buffers = _restore_metadata_buffers(
+                    resume_context.get("metadata_buffers"),
+                    num_envs=config.num_envs,
+                    device=device,
+                )
+                recurrent_state, episode_starts = _restore_rollout_state(
+                    payload=resume_context.get("rollout_state"),
+                    initial_recurrent_state=recurrent_state,
+                    num_envs=config.num_envs,
+                    device=device,
+                )
         trainer_state.global_step = global_step
         trainer_state.update_count = update_count
         callback_list.on_train_start(trainer_state)
@@ -285,8 +319,16 @@ def train_agent57(
             buffer_state=replay_buffer.state_dict(),
             trainer_state={
                 "global_step": global_step,
+                "update_count": update_count,
                 "should_stop": trainer_state.should_stop,
                 "stop_reason": trainer_state.stop_reason,
+                "resume_context": {
+                    "env_state": capture_vector_env_resume_state(envs),
+                    "random_state": capture_global_random_state(),
+                    "n_step_accumulator": n_step_accumulator.state_dict(),
+                    "metadata_buffers": _capture_metadata_buffers(metadata_buffers),
+                    "rollout_state": _capture_rollout_state(recurrent_state, episode_starts),
+                },
             },
             metrics=metrics,
         )

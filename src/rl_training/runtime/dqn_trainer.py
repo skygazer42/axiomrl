@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from collections.abc import Sequence
 
 import gymnasium as gym
 import numpy as np
@@ -11,26 +11,26 @@ from torch import nn
 
 from rl_training.algorithms.c51_dqn import C51DQN
 from rl_training.algorithms.dqn import (
-    AdvantageLearningDQN,
-    BoltzmannDQN,
-    BoltzmannDoubleDQN,
     CQLDQN,
-    CQLDoubleDQN,
-    ClippedDoubleDQN,
     DQN,
+    AdvantageLearningDQN,
+    BoltzmannDoubleDQN,
+    BoltzmannDQN,
+    ClippedDoubleDQN,
+    CQLDoubleDQN,
     DoubleDQN,
     DuelingDQN,
     ExpectedDoubleDQN,
     ExpectedSARSA,
     HystereticDQN,
     MellowmaxDQN,
-    MunchausenDQN,
     MunchausenDoubleDQN,
+    MunchausenDQN,
     PersistentAdvantageLearningDQN,
     PrioritizedDQN,
     RainbowDQN,
-    SoftDQN,
     SoftDoubleDQN,
+    SoftDQN,
 )
 from rl_training.algorithms.fqf import FQF
 from rl_training.algorithms.iqn import IQN
@@ -71,9 +71,15 @@ from rl_training.runtime.controls import (
     should_run_evaluation,
 )
 from rl_training.runtime.evaluation_support import evaluate_discrete_episodes
+from rl_training.runtime.resume_state import (
+    capture_global_random_state,
+    capture_vector_env_resume_state,
+    restore_global_random_state,
+    restore_vector_env_resume_state,
+)
 from rl_training.runtime.run_utils import save_training_checkpoint
 from rl_training.runtime.session import create_training_session
-from rl_training.runtime.trainer import TrainResult, TrainerState
+from rl_training.runtime.trainer import TrainerState, TrainResult
 from rl_training.runtime.types import MetricDict
 
 
@@ -318,7 +324,7 @@ def _build_distributional_dqn_algorithm(
     target_update_interval: int,
 ) -> C51DQN | QRDQN | IQN | FQF | None:
     if config.algo == "c51_dqn":
-        if not isinstance(q_network, (CNNC51QNetwork, MLPC51QNetwork)):
+        if not isinstance(q_network, CNNC51QNetwork | MLPC51QNetwork):
             raise TypeError(f"expected C51 q_network for c51_dqn, got {type(q_network)!r}")
         return C51DQN(
             q_network=q_network,
@@ -330,7 +336,7 @@ def _build_distributional_dqn_algorithm(
             num_atoms=int(config.algo_kwargs.get("num_atoms", q_network.num_atoms)),  # type: ignore[attr-defined]
         )
     if config.algo == "qr_dqn":
-        if not isinstance(q_network, (CNNQRQNetwork, MLPQRQNetwork)):
+        if not isinstance(q_network, CNNQRQNetwork | MLPQRQNetwork):
             raise TypeError(f"expected QR q_network for qr_dqn, got {type(q_network)!r}")
         num_quantiles = int(config.algo_kwargs.get("num_quantiles", q_network.num_quantiles))  # type: ignore[attr-defined]
         return QRDQN(
@@ -342,7 +348,7 @@ def _build_distributional_dqn_algorithm(
             kappa=float(config.algo_kwargs.get("kappa", 1.0)),
         )
     if config.algo == "iqn":
-        if not isinstance(q_network, (CNNIQNetwork, MLPIQNetwork)):
+        if not isinstance(q_network, CNNIQNetwork | MLPIQNetwork):
             raise TypeError(f"expected IQN q_network for iqn, got {type(q_network)!r}")
         num_quantiles = int(config.algo_kwargs.get("num_quantiles", q_network.num_quantiles))  # type: ignore[attr-defined]
         return IQN(
@@ -354,7 +360,7 @@ def _build_distributional_dqn_algorithm(
             kappa=float(config.algo_kwargs.get("kappa", 1.0)),
         )
     if config.algo == "fqf":
-        if not isinstance(q_network, (CNNFQFNetwork, MLPFQFNetwork)):
+        if not isinstance(q_network, CNNFQFNetwork | MLPFQFNetwork):
             raise TypeError(f"expected FQF q_network for fqf, got {type(q_network)!r}")
         num_quantiles = int(config.algo_kwargs.get("num_quantiles", q_network.num_quantiles))  # type: ignore[attr-defined]
         return FQF(
@@ -980,9 +986,24 @@ def train_dqn(
 
         obs, _ = envs.reset(seed=config.seed)
         global_step = int(checkpoint_state.trainer_state.get("global_step", 0)) if checkpoint_state is not None else 0
-        update_count = 0
+        update_count = int(checkpoint_state.trainer_state.get("update_count", 0)) if checkpoint_state is not None else 0
         latest_update_metrics: MetricDict = {}
+        if checkpoint_state is not None:
+            resume_context = checkpoint_state.trainer_state.get("resume_context")
+            if isinstance(resume_context, dict):
+                env_resume_state = resume_context.get("env_state")
+                if isinstance(env_resume_state, dict):
+                    restored_obs = restore_vector_env_resume_state(envs, env_resume_state)
+                    if restored_obs is not None:
+                        obs = restored_obs
+                random_state = resume_context.get("random_state")
+                if isinstance(random_state, dict):
+                    restore_global_random_state(random_state)
+                n_step_state = resume_context.get("n_step_accumulator")
+                if n_step_accumulator is not None and isinstance(n_step_state, dict):
+                    n_step_accumulator.load_state_dict(n_step_state)
         trainer_state.global_step = global_step
+        trainer_state.update_count = update_count
         callback_list.on_train_start(trainer_state)
 
         while global_step < config.total_timesteps:
@@ -1033,6 +1054,7 @@ def train_dqn(
                 latest_update_metrics=latest_update_metrics,
                 update_count=update_count,
             )
+            trainer_state.update_count = update_count
 
             metrics = _build_dqn_metrics(
                 latest_update_metrics=latest_update_metrics,
@@ -1072,8 +1094,16 @@ def train_dqn(
             buffer_state=replay_buffer.state_dict(),
             trainer_state={
                 "global_step": global_step,
+                "update_count": update_count,
                 "should_stop": trainer_state.should_stop,
                 "stop_reason": trainer_state.stop_reason,
+                "resume_context": {
+                    "env_state": capture_vector_env_resume_state(envs),
+                    "random_state": capture_global_random_state(),
+                    "n_step_accumulator": (
+                        n_step_accumulator.state_dict() if n_step_accumulator is not None else None
+                    ),
+                },
             },
             metrics=metrics,
         )

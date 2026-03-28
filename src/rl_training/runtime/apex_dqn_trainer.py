@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from collections.abc import Sequence
 
 import gymnasium as gym
 import numpy as np
@@ -20,9 +20,13 @@ from rl_training.runtime.callbacks import Callback, CallbackList
 from rl_training.runtime.collector import CollectResult
 from rl_training.runtime.controls import resolve_eval_interval, should_run_evaluation
 from rl_training.runtime.dqn_trainer import _evaluate_q_policy
+from rl_training.runtime.off_policy_trainer_utils import (
+    capture_replay_resume_context,
+    restore_replay_training_state,
+)
 from rl_training.runtime.run_utils import save_training_checkpoint
 from rl_training.runtime.session import create_training_session
-from rl_training.runtime.trainer import TrainResult, TrainerState
+from rl_training.runtime.trainer import TrainerState, TrainResult
 from rl_training.runtime.types import MetricDict
 
 
@@ -298,16 +302,23 @@ def train_apex_dqn(
             device=device,
             obs_dtype=obs_dtype,
         )
-        if checkpoint_state is not None:
-            algorithm.load_state_dict(checkpoint_state.algorithm_state)
-            if checkpoint_state.buffer_state is not None:
-                replay_buffer.load_state_dict(checkpoint_state.buffer_state)
-
         n_step_accumulator = NStepAccumulator(num_envs=config.num_envs, n_step=n_step, gamma=gamma)
 
         obs, _ = envs.reset(seed=config.seed)
-        global_step = int(checkpoint_state.trainer_state.get("global_step", 0)) if checkpoint_state is not None else 0
-        update_count = int(checkpoint_state.trainer_state.get("update_count", 0)) if checkpoint_state is not None else 0
+        restored_obs, global_step, update_count = restore_replay_training_state(
+            algorithm=algorithm,
+            replay_buffer=replay_buffer,
+            envs=envs,
+            checkpoint_state=checkpoint_state,
+        )
+        if restored_obs is not None:
+            obs = np.asarray(restored_obs)
+        if checkpoint_state is not None:
+            resume_context = checkpoint_state.trainer_state.get("resume_context")
+            if isinstance(resume_context, dict):
+                n_step_state = resume_context.get("n_step_accumulator")
+                if isinstance(n_step_state, dict):
+                    n_step_accumulator.load_state_dict(n_step_state)
         latest_update_metrics: MetricDict = {}
         trainer_state.global_step = global_step
         trainer_state.update_count = update_count
@@ -410,6 +421,10 @@ def train_apex_dqn(
                 "update_count": update_count,
                 "should_stop": trainer_state.should_stop,
                 "stop_reason": trainer_state.stop_reason,
+                "resume_context": {
+                    **capture_replay_resume_context(envs),
+                    "n_step_accumulator": n_step_accumulator.state_dict(),
+                },
             },
             metrics=metrics,
         )

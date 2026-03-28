@@ -1,20 +1,20 @@
 from __future__ import annotations
 
-from pathlib import Path
 from collections.abc import Sequence
+from pathlib import Path
 
 import gymnasium as gym
 import numpy as np
 import torch
 
-from rl_training.algorithms.dreamer import Dreamer
-from rl_training.algorithms.eadream import EADream
 from rl_training.algorithms.diamond import Diamond
+from rl_training.algorithms.dreamer import Dreamer
+from rl_training.algorithms.dreamerv3 import DreamerV3
+from rl_training.algorithms.eadream import EADream
 from rl_training.algorithms.horizon_imagination import HorizonImagination
+from rl_training.algorithms.mow import MoW
 from rl_training.algorithms.po_dreamer import PODreamer
 from rl_training.algorithms.twisted import Twisted
-from rl_training.algorithms.dreamerv3 import DreamerV3
-from rl_training.algorithms.mow import MoW
 from rl_training.data.replay_buffer import ReplayBuffer
 from rl_training.envs.factory import make_vector_env
 from rl_training.experiment.checkpointing import CheckpointState
@@ -30,7 +30,12 @@ from rl_training.runtime.controls import (
     should_run_periodic_eval,
 )
 from rl_training.runtime.evaluation_support import evaluate_discrete_episodes
-from rl_training.runtime.off_policy_trainer_utils import emit_collect_event, store_vector_transitions
+from rl_training.runtime.off_policy_trainer_utils import (
+    capture_replay_resume_context,
+    emit_collect_event,
+    restore_replay_training_state,
+    store_vector_transitions,
+)
 from rl_training.runtime.run_utils import save_training_checkpoint
 from rl_training.runtime.session import create_training_session
 from rl_training.runtime.trainer import TrainResult
@@ -199,14 +204,15 @@ def train_dreamer(
             device=device,
             obs_dtype=torch.uint8,
         )
-        if checkpoint_state is not None:
-            algorithm.load_state_dict(checkpoint_state.algorithm_state)
-            if checkpoint_state.buffer_state is not None:
-                replay_buffer.load_state_dict(checkpoint_state.buffer_state)
-
         obs, _ = envs.reset(seed=config.seed)
-        global_step = int(checkpoint_state.trainer_state.get("global_step", 0)) if checkpoint_state is not None else 0
-        update_count = int(checkpoint_state.trainer_state.get("update_count", 0)) if checkpoint_state is not None else 0
+        restored_obs, global_step, update_count = restore_replay_training_state(
+            algorithm=algorithm,
+            replay_buffer=replay_buffer,
+            envs=envs,
+            checkpoint_state=checkpoint_state,
+        )
+        if restored_obs is not None:
+            obs = restored_obs
         latest_world_model_metrics: MetricDict = {}
         latest_actor_metrics: MetricDict = {}
         trainer_state.global_step = global_step
@@ -305,6 +311,7 @@ def train_dreamer(
                 "update_count": update_count,
                 "should_stop": trainer_state.should_stop,
                 "stop_reason": trainer_state.stop_reason,
+                "resume_context": capture_replay_resume_context(envs),
             },
             metrics=metrics,
         )

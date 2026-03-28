@@ -17,10 +17,14 @@ from rl_training.runtime.callbacks import Callback, CallbackList
 from rl_training.runtime.collector import CollectResult
 from rl_training.runtime.controls import resolve_eval_interval, should_run_evaluation
 from rl_training.runtime.evaluation_support import evaluate_continuous_episodes
+from rl_training.runtime.off_policy_trainer_utils import (
+    capture_replay_resume_context,
+    restore_replay_training_state,
+)
 from rl_training.runtime.run_utils import save_training_checkpoint
 from rl_training.runtime.session import create_training_session
 from rl_training.runtime.td3_trainer import _action_bounds, _scale_actions
-from rl_training.runtime.trainer import TrainResult, TrainerState
+from rl_training.runtime.trainer import TrainerState, TrainResult
 from rl_training.runtime.types import MetricDict
 
 
@@ -73,20 +77,6 @@ def _evaluate_drqv2_policy(
         num_episodes=num_episodes,
         action_fn=_ActionFn(),
     )
-
-
-def _restore_training_state(
-    *,
-    algorithm: DrQv2,
-    replay_buffer: ReplayBuffer,
-    checkpoint_state: CheckpointState | None,
-) -> int:
-    if checkpoint_state is None:
-        return 0
-    algorithm.load_state_dict(checkpoint_state.algorithm_state)
-    if checkpoint_state.buffer_state is not None:
-        replay_buffer.load_state_dict(checkpoint_state.buffer_state)
-    return int(checkpoint_state.trainer_state.get("global_step", 0))
 
 
 def _store_replay_transitions(
@@ -240,12 +230,14 @@ def train_drqv2(
         )
 
         obs, _ = envs.reset(seed=config.seed)
-        global_step = _restore_training_state(
+        restored_obs, global_step, update_count = restore_replay_training_state(
             algorithm=algorithm,
             replay_buffer=replay_buffer,
+            envs=envs,
             checkpoint_state=checkpoint_state,
         )
-        update_count = int(checkpoint_state.trainer_state.get("update_count", 0)) if checkpoint_state is not None else 0
+        if restored_obs is not None:
+            obs = restored_obs
         latest_update_metrics: MetricDict = {}
         trainer_state.global_step = global_step
         trainer_state.update_count = update_count
@@ -332,6 +324,7 @@ def train_drqv2(
                 "update_count": update_count,
                 "should_stop": trainer_state.should_stop,
                 "stop_reason": trainer_state.stop_reason,
+                "resume_context": capture_replay_resume_context(envs),
             },
             metrics=metrics,
         )

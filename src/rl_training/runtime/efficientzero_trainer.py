@@ -26,7 +26,9 @@ from rl_training.runtime.muzero_trainer import (
     _evaluate_muzero_policy,
     _infer_spaces,
     _maybe_run_muzero_evaluation,
+    _restore_training_state,
 )
+from rl_training.runtime.resume_state import capture_env_resume_state, capture_global_random_state
 from rl_training.runtime.run_utils import save_training_checkpoint
 from rl_training.runtime.session import create_training_session
 from rl_training.runtime.trainer import TrainResult
@@ -110,14 +112,15 @@ def train_efficientzero(
             obs_dtype=torch.uint8,
         )
 
-        if checkpoint_state is not None:
-            algorithm.load_state_dict(checkpoint_state.algorithm_state)
-            if checkpoint_state.buffer_state is not None:
-                replay_buffer.load_state_dict(checkpoint_state.buffer_state)
-
         obs, _ = env.reset(seed=config.seed)
-        global_step = int(checkpoint_state.trainer_state.get("global_step", 0)) if checkpoint_state is not None else 0
-        update_count = int(checkpoint_state.trainer_state.get("update_count", 0)) if checkpoint_state is not None else 0
+        restored_obs, global_step, update_count = _restore_training_state(
+            algorithm=algorithm,
+            replay_buffer=replay_buffer,
+            env=env,
+            checkpoint_state=checkpoint_state,
+        )
+        if restored_obs is not None:
+            obs = restored_obs
         latest_update_metrics: MetricDict = {}
         trainer_state.global_step = global_step
         trainer_state.update_count = update_count
@@ -228,6 +231,10 @@ def train_efficientzero(
                 "update_count": update_count,
                 "should_stop": trainer_state.should_stop,
                 "stop_reason": trainer_state.stop_reason,
+                "resume_context": {
+                    "env_state": capture_env_resume_state(env),
+                    "random_state": capture_global_random_state(),
+                },
             },
             metrics=metrics,
         )

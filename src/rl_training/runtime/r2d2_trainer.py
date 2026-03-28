@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from collections import deque
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from collections.abc import Sequence
 
 import gymnasium as gym
 import numpy as np
@@ -24,9 +24,18 @@ from rl_training.runtime.controls import (
     should_run_evaluation,
 )
 from rl_training.runtime.evaluation_support import evaluate_discrete_episodes
+from rl_training.runtime.resume_state import (
+    capture_global_random_state,
+    capture_resume_value,
+    capture_vector_env_resume_state,
+    move_resume_value_to_device,
+    restore_global_random_state,
+    restore_resume_value,
+    restore_vector_env_resume_state,
+)
 from rl_training.runtime.run_utils import save_training_checkpoint
 from rl_training.runtime.session import create_training_session
-from rl_training.runtime.trainer import TrainResult, TrainerState
+from rl_training.runtime.trainer import TrainerState, TrainResult
 from rl_training.runtime.types import MetricDict
 
 
@@ -133,6 +142,82 @@ def _evaluate_r2d2_policy(
         num_episodes=num_episodes,
         action_fn=_ActionFn(),
     )
+
+
+def _capture_rollout_state(
+    recurrent_state: tuple[torch.Tensor, torch.Tensor],
+    episode_starts: torch.Tensor,
+) -> dict[str, object]:
+    return {
+        "recurrent_state": capture_resume_value(recurrent_state),
+        "episode_starts": capture_resume_value(episode_starts),
+    }
+
+
+def _restore_rollout_state(
+    *,
+    payload: object,
+    initial_recurrent_state: tuple[torch.Tensor, torch.Tensor],
+    num_envs: int,
+    device: torch.device,
+) -> tuple[tuple[torch.Tensor, torch.Tensor], torch.Tensor]:
+    recurrent_state = initial_recurrent_state
+    episode_starts = torch.ones(num_envs, dtype=torch.bool, device=device)
+    if not isinstance(payload, dict):
+        return recurrent_state, episode_starts
+
+    restored_state = payload.get("recurrent_state")
+    if restored_state is not None:
+        restored_recurrent_state = move_resume_value_to_device(
+            restore_resume_value(restored_state),
+            device=device,
+        )
+        if (
+            isinstance(restored_recurrent_state, tuple)
+            and len(restored_recurrent_state) == 2
+            and torch.is_tensor(restored_recurrent_state[0])
+            and torch.is_tensor(restored_recurrent_state[1])
+        ):
+            recurrent_state = (
+                restored_recurrent_state[0].to(device=device),
+                restored_recurrent_state[1].to(device=device),
+            )
+
+    restored_episode_starts = payload.get("episode_starts")
+    if restored_episode_starts is not None:
+        episode_start_tensor = move_resume_value_to_device(
+            restore_resume_value(restored_episode_starts),
+            device=device,
+        )
+        if torch.is_tensor(episode_start_tensor):
+            episode_starts = episode_start_tensor.to(device=device, dtype=torch.bool)
+    return recurrent_state, episode_starts
+
+
+def _capture_metadata_buffers(metadata_buffers: list[deque[dict[str, object]]]) -> list[object]:
+    return [capture_resume_value(list(buffer)) for buffer in metadata_buffers]
+
+
+def _restore_metadata_buffers(
+    payload: object,
+    *,
+    num_envs: int,
+    device: torch.device,
+) -> list[deque[dict[str, object]]]:
+    restored_buffers: list[deque[dict[str, object]]] = [deque() for _ in range(num_envs)]
+    if not isinstance(payload, list):
+        return restored_buffers
+
+    for env_index in range(min(num_envs, len(payload))):
+        restored_buffer = move_resume_value_to_device(
+            restore_resume_value(payload[env_index]),
+            device=device,
+        )
+        if isinstance(restored_buffer, list):
+            restored_buffers[env_index] = deque(
+                item for item in restored_buffer if isinstance(item, dict)
+            )
+    return restored_buffers
 
 
 def _append_recurrent_transitions(
@@ -368,7 +453,6 @@ def train_r2d2(
             algorithm.load_state_dict(checkpoint_state.algorithm_state)
             if checkpoint_state.buffer_state is not None:
                 replay_buffer.load_state_dict(checkpoint_state.buffer_state)
-                replay_buffer.clear_active_chunks()
 
         n_step_accumulator = NStepAccumulator(num_envs=config.num_envs, n_step=n_step, gamma=gamma)
         metadata_buffers: list[deque[dict[str, object]]] = [deque() for _ in range(config.num_envs)]
@@ -379,6 +463,31 @@ def train_r2d2(
         global_step = int(checkpoint_state.trainer_state.get("global_step", 0)) if checkpoint_state is not None else 0
         update_count = int(checkpoint_state.trainer_state.get("update_count", 0)) if checkpoint_state is not None else 0
         latest_update_metrics: MetricDict = {}
+        if checkpoint_state is not None:
+            resume_context = checkpoint_state.trainer_state.get("resume_context")
+            if isinstance(resume_context, dict):
+                env_resume_state = resume_context.get("env_state")
+                if isinstance(env_resume_state, dict):
+                    restored_obs = restore_vector_env_resume_state(envs, env_resume_state)
+                    if restored_obs is not None:
+                        obs = np.asarray(restored_obs)
+                random_state = resume_context.get("random_state")
+                if isinstance(random_state, dict):
+                    restore_global_random_state(random_state)
+                n_step_state = resume_context.get("n_step_accumulator")
+                if isinstance(n_step_state, dict):
+                    n_step_accumulator.load_state_dict(n_step_state)
+                metadata_buffers = _restore_metadata_buffers(
+                    resume_context.get("metadata_buffers"),
+                    num_envs=config.num_envs,
+                    device=device,
+                )
+                recurrent_state, episode_starts = _restore_rollout_state(
+                    payload=resume_context.get("rollout_state"),
+                    initial_recurrent_state=recurrent_state,
+                    num_envs=config.num_envs,
+                    device=device,
+                )
         trainer_state.global_step = global_step
         trainer_state.update_count = update_count
         callback_list.on_train_start(trainer_state)
@@ -476,6 +585,13 @@ def train_r2d2(
                 "update_count": update_count,
                 "should_stop": trainer_state.should_stop,
                 "stop_reason": trainer_state.stop_reason,
+                "resume_context": {
+                    "env_state": capture_vector_env_resume_state(envs),
+                    "random_state": capture_global_random_state(),
+                    "n_step_accumulator": n_step_accumulator.state_dict(),
+                    "metadata_buffers": _capture_metadata_buffers(metadata_buffers),
+                    "rollout_state": _capture_rollout_state(recurrent_state, episode_starts),
+                },
             },
             metrics=metrics,
         )

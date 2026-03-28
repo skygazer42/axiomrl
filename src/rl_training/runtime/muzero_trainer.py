@@ -7,9 +7,9 @@ import gymnasium as gym
 import numpy as np
 import torch
 
+from rl_training.algorithms.gumbel_muzero import GumbelMuZero
 from rl_training.algorithms.muzero import MuZero, MuZeroMCTSConfig
 from rl_training.algorithms.scalezero import ScaleZero
-from rl_training.algorithms.gumbel_muzero import GumbelMuZero
 from rl_training.data.muzero_replay_buffer import MuZeroReplayBuffer
 from rl_training.envs.factory import build_env
 from rl_training.experiment.checkpointing import CheckpointState
@@ -26,9 +26,15 @@ from rl_training.runtime.controls import (
     should_run_evaluation,
 )
 from rl_training.runtime.evaluation_support import evaluate_discrete_episodes
+from rl_training.runtime.resume_state import (
+    capture_env_resume_state,
+    capture_global_random_state,
+    restore_env_resume_state,
+    restore_global_random_state,
+)
 from rl_training.runtime.run_utils import save_training_checkpoint
 from rl_training.runtime.session import create_training_session
-from rl_training.runtime.trainer import TrainResult, TrainerState
+from rl_training.runtime.trainer import TrainerState, TrainResult
 from rl_training.runtime.types import MetricDict
 
 
@@ -113,6 +119,34 @@ def _maybe_run_muzero_evaluation(
     logger.log_metrics(evaluated_metrics, step=global_step)
     callback_list.on_eval_end(trainer_state, evaluated_metrics)
     return evaluated_metrics, trainer_state.should_stop
+
+
+def _restore_training_state(
+    *,
+    algorithm: MuZero,
+    replay_buffer: MuZeroReplayBuffer,
+    env: gym.Env,
+    checkpoint_state: CheckpointState | None,
+) -> tuple[object | None, int, int]:
+    if checkpoint_state is None:
+        return None, 0, 0
+    algorithm.load_state_dict(checkpoint_state.algorithm_state)
+    if checkpoint_state.buffer_state is not None:
+        replay_buffer.load_state_dict(checkpoint_state.buffer_state)
+    restored_obs = None
+    resume_context = checkpoint_state.trainer_state.get("resume_context")
+    if isinstance(resume_context, dict):
+        env_resume_state = resume_context.get("env_state")
+        if isinstance(env_resume_state, dict):
+            restored_obs = restore_env_resume_state(env, env_resume_state)
+        random_state = resume_context.get("random_state")
+        if isinstance(random_state, dict):
+            restore_global_random_state(random_state)
+    return (
+        restored_obs,
+        int(checkpoint_state.trainer_state.get("global_step", 0)),
+        int(checkpoint_state.trainer_state.get("update_count", 0)),
+    )
 
 
 def train_muzero(
@@ -204,14 +238,15 @@ def train_muzero(
             obs_dtype=torch.uint8,
         )
 
-        if checkpoint_state is not None:
-            algorithm.load_state_dict(checkpoint_state.algorithm_state)
-            if checkpoint_state.buffer_state is not None:
-                replay_buffer.load_state_dict(checkpoint_state.buffer_state)
-
         obs, _ = env.reset(seed=config.seed)
-        global_step = int(checkpoint_state.trainer_state.get("global_step", 0)) if checkpoint_state is not None else 0
-        update_count = int(checkpoint_state.trainer_state.get("update_count", 0)) if checkpoint_state is not None else 0
+        restored_obs, global_step, update_count = _restore_training_state(
+            algorithm=algorithm,
+            replay_buffer=replay_buffer,
+            env=env,
+            checkpoint_state=checkpoint_state,
+        )
+        if restored_obs is not None:
+            obs = restored_obs
         latest_update_metrics: MetricDict = {}
         trainer_state.global_step = global_step
         trainer_state.update_count = update_count
@@ -324,6 +359,10 @@ def train_muzero(
                 "update_count": update_count,
                 "should_stop": trainer_state.should_stop,
                 "stop_reason": trainer_state.stop_reason,
+                "resume_context": {
+                    "env_state": capture_env_resume_state(env),
+                    "random_state": capture_global_random_state(),
+                },
             },
             metrics=metrics,
         )

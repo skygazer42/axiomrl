@@ -26,11 +26,12 @@ from rl_training.runtime.controls import (
 )
 from rl_training.runtime.iql_trainer import _build_offline_dataset, _infer_env_spaces
 from rl_training.runtime.off_policy_trainer_utils import maybe_run_evaluation
+from rl_training.runtime.resume_state import capture_global_random_state, restore_global_random_state
 from rl_training.runtime.run_utils import save_training_checkpoint
 from rl_training.runtime.sac_trainer import _evaluate_sac_policy
 from rl_training.runtime.schedules import apply_learning_rate_scale, resolve_schedule_value
 from rl_training.runtime.session import create_training_session
-from rl_training.runtime.trainer import TrainResult, TrainerState
+from rl_training.runtime.trainer import TrainerState, TrainResult
 from rl_training.runtime.types import MetricDict
 
 
@@ -574,6 +575,12 @@ def train_mopo(
             batch_size=batch_size,
             model_updates=model_updates,
         )
+        if checkpoint_state is not None:
+            resume_context = checkpoint_state.trainer_state.get("resume_context")
+            if isinstance(resume_context, dict):
+                random_state = resume_context.get("random_state")
+                if isinstance(random_state, dict):
+                    restore_global_random_state(random_state)
         loop_config = _MOPOLoopConfig(
             learning_rate_schedule=learning_rate_schedule,
             effective_total_updates=effective_total_updates,
@@ -691,6 +698,9 @@ def train_mopo(
                 "model_updates_done": state.model_updates_done,
                 "should_stop": trainer_state.should_stop,
                 "stop_reason": trainer_state.stop_reason,
+                "resume_context": {
+                    "random_state": capture_global_random_state(),
+                },
             },
             metrics=metrics,
         )

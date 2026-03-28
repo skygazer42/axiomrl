@@ -13,8 +13,8 @@ from rl_training.envs.pixels import apply_pixel_wrappers, resolve_pixel_wrapper_
 from rl_training.envs.rewards import apply_reward_wrappers, resolve_reward_wrapper_config
 from rl_training.envs.video import apply_video_wrapper, resolve_video_wrapper_config
 from rl_training.experiment.config import TrainConfig
+from rl_training.runtime.resume_state import ResumeStateWrapper
 from rl_training.runtime.vector_envs import resolve_worker_backend
-
 
 EnvFactory = Callable[[], gym.Env]
 
@@ -102,6 +102,7 @@ def build_env(
         evaluation=evaluation,
     )
     env = gym.wrappers.RecordEpisodeStatistics(env)
+    env = ResumeStateWrapper(env)
     env.action_space.seed(config.seed + env_index)
     if getattr(env, "observation_space", None) is not None:
         env.observation_space.seed(config.seed + env_index)

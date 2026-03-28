@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from pathlib import Path
 from collections.abc import Sequence
+from pathlib import Path
 
 import gymnasium as gym
 import numpy as np
@@ -17,6 +17,12 @@ from rl_training.models.mlp_sac import MLPSACModel
 from rl_training.runtime.callbacks import Callback
 from rl_training.runtime.controls import resolve_eval_interval, should_run_periodic_eval
 from rl_training.runtime.off_policy_trainer_utils import emit_collect_event, store_vector_transitions
+from rl_training.runtime.resume_state import (
+    capture_global_random_state,
+    capture_vector_env_resume_state,
+    restore_global_random_state,
+    restore_vector_env_resume_state,
+)
 from rl_training.runtime.run_utils import save_training_checkpoint
 from rl_training.runtime.sac_trainer import _action_bounds, _evaluate_sac_policy, _scale_actions
 from rl_training.runtime.session import create_training_session
@@ -228,6 +234,17 @@ def train_mbpo(
                     synthetic_buffer.load_state_dict(synthetic_state)
 
         obs, _ = envs.reset(seed=config.seed)
+        if checkpoint_state is not None:
+            resume_context = checkpoint_state.trainer_state.get("resume_context")
+            if isinstance(resume_context, dict):
+                env_resume_state = resume_context.get("env_state")
+                if isinstance(env_resume_state, dict):
+                    restored_obs = restore_vector_env_resume_state(envs, env_resume_state)
+                    if restored_obs is not None:
+                        obs = np.asarray(restored_obs)
+                random_state = resume_context.get("random_state")
+                if isinstance(random_state, dict):
+                    restore_global_random_state(random_state)
         global_step = int(checkpoint_state.trainer_state.get("global_step", 0)) if checkpoint_state is not None else 0
         update_count = int(checkpoint_state.trainer_state.get("update_count", 0)) if checkpoint_state is not None else 0
         model_update_count = int(checkpoint_state.trainer_state.get("model_update_count", 0)) if checkpoint_state is not None else 0
@@ -363,6 +380,10 @@ def train_mbpo(
                 "model_update_count": model_update_count,
                 "should_stop": trainer_state.should_stop,
                 "stop_reason": trainer_state.stop_reason,
+                "resume_context": {
+                    "env_state": capture_vector_env_resume_state(envs),
+                    "random_state": capture_global_random_state(),
+                },
             },
             metrics=metrics,
         )
