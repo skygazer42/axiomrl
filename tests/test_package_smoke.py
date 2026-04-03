@@ -4,7 +4,6 @@ from rl_training import __version__
 from rl_training import contrib as root_contrib
 from rl_training.resources import find_packaged_asset
 
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -51,8 +50,9 @@ def test_readme_describes_core_contrib_and_zoo_workflows() -> None:
     assert "axiomrl train --config configs/xql/pendulum.yaml" in readme_text
     assert "axiomrl train --config configs/rebrac/pendulum.yaml" in readme_text
     assert "axiomrl train --config zoo/atari/dqn_breakout.yaml" in readme_text
+    assert "axiomrl tune --config" in readme_text
     assert "axiomrl zoo --format commands" in readme_text
-    assert 'pip install -e ".[offline]"' in readme_text
+    assert 'pip install "axiomrl[offline]"' in readme_text
     assert "configs/awac/pendulum.yaml" in readme_text
     assert "configs/bear/pendulum.yaml" in readme_text
     assert "configs/her/point_goal.yaml" in readme_text
@@ -85,6 +85,53 @@ def test_readme_describes_core_contrib_and_zoo_workflows() -> None:
     assert "python -m rl_training.examples.dqn_breakout_atari_reference" in readme_text
     assert "python -m rl_training train --config configs/dqn/cartpole.yaml" in readme_text
     assert "from rl_training.contrib import RecurrentPPO" in readme_text
+    assert "axiomrl tune-report --study-dir" in readme_text
+    assert "--status completed --sort-by objective-value --descending --top-k 1" in readme_text
+    assert "--sort-by duration-seconds --descending" in readme_text
+    assert "--objective-at-least 200" in readme_text
+    assert "--duration-at-most 600" in readme_text
+    assert "--frontier-only" in readme_text
+    assert "--param total_timesteps=128" in readme_text
+    assert '--error "RuntimeError: boom"' in readme_text
+    assert "--error-contains runtimeerror" in readme_text
+    assert "--error-type runtimeerror" in readme_text
+    assert "--focus-param total_timesteps" in readme_text
+    assert "--focus-sort-by value" in readme_text
+    assert "--focus-sort-by incumbent-updates" in readme_text
+    assert "--focus-sort-by mean-duration-seconds" in readme_text
+    assert "--focus-top-k 2" in readme_text
+    assert "focused_parameter_*" in readme_text
+    assert "selected_objective_summary" in readme_text
+    assert "selected_duration_summary" in readme_text
+    assert "selected_incumbent_trace" in readme_text
+    assert "selected_incumbent_update_summary" in readme_text
+    assert "selected_incumbent_staleness_summary" in readme_text
+    assert "selected_incumbent_trial_index" in readme_text
+    assert "selected_is_incumbent_update" in readme_text
+    assert "selected_incumbent_update_improvement" in readme_text
+    assert "selected_incumbent_trials_since_previous_update" in readme_text
+    assert "selected_incumbent_age_trials" in readme_text
+    assert "selected_incumbent_age_seconds" in readme_text
+    assert "selected_objective_duration_frontier" in readme_text
+    assert "is_objective_duration_frontier" in readme_text
+    assert "selected_error_summaries" in readme_text
+    assert "selected_error_type_summaries" in readme_text
+    assert "selected_parameter_incumbent_leaderboard" in readme_text
+    assert "selected_parameter_incumbent_summaries" in readme_text
+    assert "selected_parameter_effect_leaderboard" in readme_text
+    assert "selected_parameter_value_summaries" in readme_text
+    assert "completion/failure rates" in readme_text
+    assert "incumbent_updates" in readme_text
+    assert "latest_incumbent_trial_index" in readme_text
+    assert "top_incumbent_value" in readme_text
+    assert "mean_duration_seconds" in readme_text
+    assert "selected_best_objective_delta" in readme_text
+    assert "coverage_ratio" in readme_text
+    assert "search_efficiency_summary" in readme_text
+    assert "selected_trials_until_best" in readme_text
+    assert "time_to_best_seconds" in readme_text
+    assert "search_efficiency_*" in readme_text
+    assert "--export-configs-dir" in readme_text
 
 
 def test_packaged_assets_include_core_configs_and_zoo_manifest() -> None:

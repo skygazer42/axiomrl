@@ -92,6 +92,139 @@ the resulting runs into `axiomrl zoo` report and leaderboard commands. If
 `<output_dir>/benchmark-summary.json` already exists, the sweep fails instead
 of overwriting it, so use a fresh `output_dir` or remove the old summary first.
 
+For hyperparameter studies, point `axiomrl tune` at a study YAML that wraps an
+existing train config:
+
+```bash
+axiomrl tune --config studies/ppo_cartpole_tune.yaml
+axiomrl tune --resume-study runs/studies/ppo_cartpole_tune
+axiomrl tune-report --study-dir runs/studies/ppo_cartpole_tune
+axiomrl tune-report --study-dir runs/studies/ppo_cartpole_tune --report-output json --output reports/ppo_cartpole_tune.json
+axiomrl tune-report --study-dir runs/studies/ppo_cartpole_tune --status completed --sort-by objective-value --descending --top-k 1
+axiomrl tune-report --study-dir runs/studies/ppo_cartpole_tune --sort-by duration-seconds --descending
+axiomrl tune-report --study-dir runs/studies/ppo_cartpole_tune --objective-at-least 200
+axiomrl tune-report --study-dir runs/studies/ppo_cartpole_tune --duration-at-most 600
+axiomrl tune-report --study-dir runs/studies/ppo_cartpole_tune --frontier-only
+axiomrl tune-report --study-dir runs/studies/ppo_cartpole_tune --status completed --param total_timesteps=128 --param algo_kwargs.learning_rate=0.0003
+axiomrl tune-report --study-dir runs/studies/ppo_cartpole_tune --error "RuntimeError: boom"
+axiomrl tune-report --study-dir runs/studies/ppo_cartpole_tune --error-contains runtimeerror
+axiomrl tune-report --study-dir runs/studies/ppo_cartpole_tune --error-type runtimeerror
+axiomrl tune-report --study-dir runs/studies/ppo_cartpole_tune --focus-param total_timesteps
+axiomrl tune-report --study-dir runs/studies/ppo_cartpole_tune --focus-param total_timesteps --focus-sort-by value
+axiomrl tune-report --study-dir runs/studies/ppo_cartpole_tune --focus-param total_timesteps --focus-sort-by incumbent-updates
+axiomrl tune-report --study-dir runs/studies/ppo_cartpole_tune --focus-param total_timesteps --focus-sort-by mean-duration-seconds
+axiomrl tune-report --study-dir runs/studies/ppo_cartpole_tune --focus-param total_timesteps --focus-top-k 2
+axiomrl tune-report --study-dir runs/studies/ppo_cartpole_tune --status completed --sort-by objective-value --descending --top-k 3 --export-configs-dir exports/ppo_cartpole_top3
+```
+
+`axiomrl tune` writes one study directory with `study.json`, `trials.jsonl`,
+`best_trial.json`, `best_config.yaml`, and one nested `trials/` run tree that
+reuses the standard training artifacts for each trial. If a study directory
+already exists with a partial `trials.jsonl`, `axiomrl tune --resume-study ...`
+reloads the stored study config and continues only the missing trial indices.
+Use `axiomrl tune-report` when you want a read-only summary export in `text`,
+`json`, or `csv` without resuming or modifying the study. Add `--status
+completed|failed`, `--sort-by trial-index|objective-value|duration-seconds`,
+`--descending`, and `--top-k <n>` when you want to isolate best trials,
+inspect only failures, or rank slowest / fastest trials by wall-clock duration.
+Add `--objective-at-least <value>` or `--objective-at-most <value>` when you
+want to keep only visible trials whose raw objective metric falls inside a
+specific numeric band.
+Add `--duration-at-least <seconds>` or `--duration-at-most <seconds>` when you
+want to keep only visible trials whose derived wall-clock duration falls inside
+a specific numeric band.
+Add `--frontier-only` when you want to keep only the current visible trials on
+the objective-vs-duration Pareto frontier before any final sorting or `top-k`
+truncation is applied.
+Add repeated `--param key=value` filters when you want to inspect only the
+visible trials that exactly match specific hyperparameter assignments.
+Add `--error <text>` when you want an exact failed-trial error match, usually
+by copying one entry from `selected_error_summaries`.
+Add `--error-contains <text>` when you want a case-insensitive substring match
+against failed trial error text so one failure family can be isolated quickly.
+Add `--error-type <name>` when you want a case-insensitive exact match on the
+derived exception class, for example `RuntimeError`.
+Use only one of the message-level error filters at a time.
+Add `--focus-param <name>` when you want one hyperparameter's value buckets
+pulled into a dedicated mini-leaderboard ordered by bucket strength; text
+reports show a focused section and CSV rows expose the matched bucket fields in
+flattened `focused_parameter_*` columns.
+Add `--focus-sort-by best-objective-value|mean-objective-value|completion-rate|incumbent-updates|mean-duration-seconds|value`
+when you want that focused bucket view ordered by objective strength, success
+rate, best-so-far update contribution, raw value, or fastest mean wall-clock
+bucket duration.
+Add `--focus-top-k <n>` when you only want the strongest `n` focused buckets
+after that ordering is applied. Focus-only flags require `--focus-param`.
+JSON reports also include `selected_status_counts`,
+`selected_objective_summary`, `selected_parameter_summaries`,
+`selected_parameter_incumbent_summaries`, and
+`selected_parameter_value_summaries` for the currently visible trial slice.
+They also include `selected_duration_summary` plus per-trial
+`duration_seconds` so timing cost stays visible in both summaries and rows.
+They also include `selected_incumbent_trace`, a visible-slice best-so-far
+timeline ordered by `trial_index`, plus per-trial
+`selected_incumbent_trial_index`, `selected_incumbent_objective_value`, and
+`selected_is_incumbent_update` fields so convergence can be plotted or filtered
+without reconstructing the incumbent path client-side.
+They also include `selected_incumbent_update_summary`, which condenses how many
+visible incumbent updates occurred, where the first/latest ones landed, how
+large later improvements were versus the previous incumbent, and how many
+visible trials elapsed between updates. Each visible trial row also exposes
+`selected_incumbent_update_improvement` and
+`selected_incumbent_trials_since_previous_update` so incumbent update quality
+and spacing can be exported directly in JSON, text, and CSV outputs.
+They also include `selected_incumbent_staleness_summary`, which reports how old
+the current visible incumbent is at the tail of the slice and what the maximum
+visible incumbent age became over the run. Each visible trial row also exposes
+`selected_incumbent_age_trials` and `selected_incumbent_age_seconds` so best
+plateau length can be inspected directly without rebuilding the timeline
+client-side.
+They also include `selected_objective_duration_frontier`, a Pareto frontier of
+the visible completed timed trials over objective quality and wall-clock
+duration, plus a per-trial `is_objective_duration_frontier` flag so JSON and
+CSV consumers can identify the visible efficiency frontier directly.
+Each `selected_parameter_value_summaries` bucket also includes
+`timed_trials`, `untimed_trials`, `min_duration_seconds`,
+`max_duration_seconds`, `mean_duration_seconds`, and
+`median_duration_seconds` so hyperparameter values can be compared by runtime
+cost as well as objective quality. They also include `incumbent_updates` plus
+`latest_incumbent_trial_index` so you can see which hyperparameter values most
+often produced visible best-so-far improvements, and how late those updates
+arrived in the visible slice.
+At the parameter level, `selected_parameter_incumbent_summaries` condenses
+those bucket-level update counts into per-parameter rollups such as
+`contributing_values`, `top_incumbent_value`, and `latest_incumbent_value`.
+`selected_parameter_incumbent_leaderboard` then turns those per-parameter
+rollups into an ordered ranking so the most incumbent-driving hyperparameters
+are immediately visible without client-side sorting.
+They also include `selected_parameter_effect_leaderboard`, which uses the
+already-exposed parameter value buckets to rank hyperparameters by how wide
+their observed best/mean objective spread is across visible values. That makes
+it easy to spot which knobs appear to matter most in the current visible slice
+without claiming a heavier model-based importance analysis.
+They also include `selected_error_summaries` so failed trials are grouped by
+error text with per-error counts, shares, and trial indices.
+They also include `selected_error_type_summaries` so failed trials can be
+grouped by exception class while still retaining the matched full error texts.
+They also expose
+`selected_best_trial_index`, `selected_best_objective_value`, and a
+per-trial `selected_best_objective_delta` field so each visible trial shows its
+gap from the current visible best. Parameter summaries now also include
+observed unique counts plus search-space-aware `candidate_count` and
+`coverage_ratio` fields when the study search space is discrete. Value
+summaries group trials by each observed hyperparameter value and report
+completed/failed counts, completion/failure rates, bucket-level rank fields,
+and best/mean/median objective values for each bucket.
+A top-level
+`search_efficiency_summary` block condenses failure rate, best-vs-center deltas,
+highest/lowest coverage parameters, and visible-slice convergence speed fields
+such as `selected_trials_until_best`, `completed_trials_until_best`, and
+`time_to_best_seconds`. Text and CSV outputs also flatten these convergence
+metrics into `search_efficiency_*` fields for direct inspection. Add
+`--export-configs-dir <dir>` when you want the current visible completed trials
+exported as ranked YAML configs plus a `manifest.json`; JSON reports include the
+resulting `config_export_summary`.
+
 <details>
 <summary><b>More CLI examples</b></summary>
 
@@ -202,6 +335,12 @@ pip install "axiomrl[atari]"
 
 ```bash
 pip install "axiomrl[offline]"
+```
+
+**With tuning support (Optuna backend):**
+
+```bash
+pip install "axiomrl[tuning]"
 ```
 
 **With the experimental namespace enabled:**

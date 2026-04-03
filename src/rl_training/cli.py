@@ -22,6 +22,14 @@ def _print_result(result: Any) -> None:
     print(f"metrics={result.metrics}")
 
 
+def _print_study_result(result: Any) -> None:
+    print(f"study_dir={result.study_dir}")
+    print(f"best_trial_index={result.best_trial_index}")
+    print(f"best_objective_value={result.best_objective_value}")
+    print(f"best_run_dir={result.best_run_dir}")
+    print(f"best_checkpoint_path={result.best_checkpoint_path}")
+
+
 def _emit_output(content: str, *, output_path: str | Path | None = None) -> None:
     if output_path is not None:
         destination = Path(output_path)
@@ -220,6 +228,57 @@ def _build_parser() -> argparse.ArgumentParser:
     config_parser.add_argument("--format", choices=("json", "yaml"), default="json")
     config_parser.add_argument("--output")
 
+    tune_parser = subparsers.add_parser("tune")
+    tune_group = tune_parser.add_mutually_exclusive_group(required=True)
+    tune_group.add_argument("--config")
+    tune_group.add_argument("--resume-study")
+    tune_parser.add_argument("--output-dir")
+    tune_parser.add_argument("--backend", choices=("native", "optuna"))
+
+    tune_report_parser = subparsers.add_parser("tune-report")
+    tune_report_parser.add_argument("--study-dir", required=True)
+    tune_report_parser.add_argument(
+        "--report-output",
+        choices=("text", "json", "csv"),
+        default="text",
+    )
+    tune_report_parser.add_argument(
+        "--status",
+        choices=("all", "completed", "failed"),
+        default="all",
+    )
+    tune_report_parser.add_argument(
+        "--sort-by",
+        choices=("trial-index", "objective-value", "duration-seconds"),
+        default="trial-index",
+    )
+    tune_report_parser.add_argument("--descending", action="store_true")
+    tune_report_parser.add_argument("--top-k", type=int)
+    tune_report_parser.add_argument("--objective-at-least", type=float)
+    tune_report_parser.add_argument("--objective-at-most", type=float)
+    tune_report_parser.add_argument("--duration-at-least", type=float)
+    tune_report_parser.add_argument("--duration-at-most", type=float)
+    tune_report_parser.add_argument("--frontier-only", action="store_true")
+    tune_report_parser.add_argument("--param", dest="param_filters", action="append")
+    tune_report_parser.add_argument("--error")
+    tune_report_parser.add_argument("--error-contains")
+    tune_report_parser.add_argument("--error-type")
+    tune_report_parser.add_argument("--focus-param")
+    tune_report_parser.add_argument(
+        "--focus-sort-by",
+        choices=(
+            "best-objective-value",
+            "mean-objective-value",
+            "completion-rate",
+            "incumbent-updates",
+            "mean-duration-seconds",
+            "value",
+        ),
+    )
+    tune_report_parser.add_argument("--focus-top-k", type=int)
+    tune_report_parser.add_argument("--export-configs-dir")
+    tune_report_parser.add_argument("--output")
+
     subparsers.add_parser("doctor")
     return parser
 
@@ -238,6 +297,23 @@ def _normalize_seed_argument_tokens(argv: list[str]) -> list[str]:
         normalized.append(token)
         index += 1
     return normalized
+
+
+def _parse_param_filters(tokens: list[str] | None) -> dict[str, object]:
+    if not tokens:
+        return {}
+    parsed: dict[str, object] = {}
+    for token in tokens:
+        if "=" not in token:
+            raise ValueError(f"expected --param in key=value form, got {token!r}")
+        key, raw_value = token.split("=", 1)
+        key = key.strip()
+        if not key:
+            raise ValueError(f"expected --param in key=value form, got {token!r}")
+        if key in parsed:
+            raise ValueError(f"duplicate --param filter for {key!r}")
+        parsed[key] = yaml.safe_load(raw_value)
+    return parsed
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -279,6 +355,84 @@ def main(argv: list[str] | None = None) -> int:
         except FileExistsError as exc:
             parser.error(str(exc))
         _print_result(result)
+        return 0
+
+    if args.command == "tune":
+        from dataclasses import replace
+
+        from rl_training.tuning.config import load_study_config
+        from rl_training.tuning.study import resume_study, run_study
+
+        if getattr(args, "resume_study", None) is not None:
+            if getattr(args, "output_dir", None) is not None:
+                parser.error("--output-dir is not supported with --resume-study")
+            if getattr(args, "backend", None) is not None:
+                parser.error("--backend is not supported with --resume-study")
+            try:
+                result = resume_study(args.resume_study)
+            except (TypeError, ValueError, FileExistsError, ModuleNotFoundError) as exc:
+                parser.error(str(exc))
+            _print_study_result(result)
+            return 0
+
+        try:
+            study_config = load_study_config(args.config)
+            if getattr(args, "output_dir", None) is not None:
+                study_config = replace(study_config, output_dir=Path(args.output_dir).resolve())
+            if getattr(args, "backend", None) is not None:
+                study_config = replace(
+                    study_config,
+                    study=replace(study_config.study, backend=str(args.backend)),
+                )
+            result = run_study(study_config)
+        except (TypeError, ValueError, FileExistsError, ModuleNotFoundError) as exc:
+            parser.error(str(exc))
+        _print_study_result(result)
+        return 0
+
+    if args.command == "tune-report":
+        from rl_training.tuning.study import (
+            export_selected_study_configs,
+            load_study_report,
+            render_csv_study_report,
+            render_json_study_report,
+            render_text_study_report,
+            select_study_report,
+        )
+
+        try:
+            payload = load_study_report(args.study_dir)
+            payload = select_study_report(
+                payload,
+                status=str(args.status),
+                sort_by=str(args.sort_by),
+                descending=bool(args.descending),
+                top_k=args.top_k,
+                frontier_only=bool(getattr(args, "frontier_only", False)),
+                objective_at_least=getattr(args, "objective_at_least", None),
+                objective_at_most=getattr(args, "objective_at_most", None),
+                duration_at_least=getattr(args, "duration_at_least", None),
+                duration_at_most=getattr(args, "duration_at_most", None),
+                param_filters=_parse_param_filters(getattr(args, "param_filters", None)),
+                error=getattr(args, "error", None),
+                error_contains=getattr(args, "error_contains", None),
+                error_type=getattr(args, "error_type", None),
+                focus_param=getattr(args, "focus_param", None),
+                focus_sort_by=getattr(args, "focus_sort_by", None),
+                focus_top_k=getattr(args, "focus_top_k", None),
+            )
+            if args.export_configs_dir is not None:
+                payload = dict(payload)
+                payload["config_export_summary"] = export_selected_study_configs(payload, args.export_configs_dir)
+        except (TypeError, ValueError) as exc:
+            parser.error(str(exc))
+        if args.report_output == "json":
+            rendered = render_json_study_report(payload)
+        elif args.report_output == "csv":
+            rendered = render_csv_study_report(payload)
+        else:
+            rendered = render_text_study_report(payload)
+        _emit_output(rendered, output_path=args.output)
         return 0
 
     if args.command == "eval":

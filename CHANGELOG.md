@@ -6,3 +6,37 @@
 - Added `rl_training.core` and `rl_training.experimental` namespaces.
 - Added compatibility and deprecation policy documentation.
 - Added CI and publish workflows for build, test, and release verification.
+- Added `axiomrl tune` with native and Optuna-backed study workflows plus study artifacts.
+- Added `axiomrl tune-report` for read-only study summaries and `json`/`csv` exports.
+- Added `tune-report` trial filtering, objective sorting, and `top-k` inspection flags.
+- Added selected-trial analytics to `tune-report`, including status, objective, and parameter summaries.
+- Added compare-to-best study reporting fields so each visible trial can report its delta from the selected best result.
+- Added discrete search-space coverage fields to study parameter summaries, including observed counts, candidate counts, and coverage ratios.
+- Added `search_efficiency_summary` to study reports for a compact rollup of failure rate, objective deltas, and coverage extremes.
+- Added `tune-report --export-configs-dir` to export the current visible best-study slice as ranked YAML configs plus a manifest.
+- Added repeated `tune-report --param key=value` filters so study reports can slice visible trials by exact hyperparameter assignments.
+- Added `selected_parameter_value_summaries` so study reports can group visible trials by each observed hyperparameter value and compare bucket-level objective stats.
+- Added completion/failure rates plus best/mean rank fields to `selected_parameter_value_summaries` so each hyperparameter bucket behaves like a mini leaderboard.
+- Added `tune-report --focus-param <name>` so one hyperparameter's value buckets can be surfaced as a dedicated ordered leaderboard block.
+- Added richer text and CSV rendering for `--focus-param`, including a dedicated text section and flattened `focused_parameter_*` CSV columns.
+- Added `tune-report --focus-sort-by` so focused parameter views can be ordered by bucket value, completion rate, or objective-based strength.
+- Added `tune-report --focus-top-k` plus focus-only flag validation so focused parameter reports can keep only the strongest ordered buckets.
+- Added `selected_error_summaries` to study reports so failed trials are grouped by error text in JSON, text, and CSV outputs.
+- Added `tune-report --error` for exact failed-trial error filtering.
+- Added `tune-report --error-contains` for case-insensitive failed-trial error filtering.
+- Added `selected_error_type_summaries` plus `tune-report --error-type` for exception-class-level failure grouping and filtering.
+- Added per-trial `duration_seconds`, top-level `selected_duration_summary`, and `tune-report --sort-by duration-seconds` for timing-aware study inspection.
+- Added per-bucket duration analytics to `selected_parameter_value_summaries` plus `tune-report --focus-sort-by mean-duration-seconds` for runtime-aware focused parameter comparisons.
+- Added visible-slice convergence speed fields to `search_efficiency_summary`, including trial-count progress toward the best result and `time_to_best_seconds`.
+- Added flattened `search_efficiency_*` convergence fields to text and CSV study reports for easier grep and spreadsheet inspection.
+- Added `tune-report --objective-at-least/--objective-at-most` so visible study slices can be filtered by raw objective thresholds.
+- Added `tune-report --duration-at-least/--duration-at-most` so visible study slices can be filtered by derived wall-clock duration thresholds.
+- Added `selected_objective_duration_frontier` plus per-trial `is_objective_duration_frontier` so tune reports surface the visible objective-vs-duration Pareto frontier in JSON, text, and CSV outputs.
+- Added `tune-report --frontier-only` so visible study slices can be reduced directly to the current objective-vs-duration Pareto frontier.
+- Added `selected_incumbent_trace` plus per-trial incumbent fields so tune reports expose the visible best-so-far trajectory in JSON, text, and CSV outputs.
+- Added `selected_incumbent_update_summary` plus per-trial incumbent improvement / spacing fields so tune reports expose how strong and how frequent visible incumbent improvements were.
+- Added `selected_incumbent_staleness_summary` plus per-trial incumbent age fields so tune reports expose how stale the current visible best-so-far trajectory has become.
+- Added `incumbent_updates`, `latest_incumbent_trial_index`, and `tune-report --focus-sort-by incumbent-updates` so parameter buckets can be ranked by how often they improved the visible incumbent.
+- Added `selected_parameter_incumbent_summaries` so tune reports also expose parameter-level rollups of which values contributed visible incumbent updates.
+- Added `selected_parameter_incumbent_leaderboard` so tune reports also expose those parameter-level incumbent rollups as a pre-sorted leaderboard.
+- Added `selected_parameter_effect_leaderboard` so tune reports also rank hyperparameters by how wide their visible bucket-level objective spread is.

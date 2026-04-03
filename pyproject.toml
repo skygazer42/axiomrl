@@ -43,6 +43,9 @@ atari = [
 offline = [
   "minari",
 ]
+tuning = [
+  "optuna",
+]
 experimental = []
 dev = [
   "build",
