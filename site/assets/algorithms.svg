@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 680" font-family="'Segoe UI',system-ui,-apple-system,sans-serif">
+  <defs>
+    <linearGradient id="bg2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <filter id="sh2">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+
+  <rect width="900" height="680" rx="12" fill="url(#bg2)"/>
+  <text x="450" y="36" text-anchor="middle" fill="#f8fafc" font-size="20" font-weight="700">Supported Algorithms  (80+)</text>
+
+  <!-- On-Policy -->
+  <rect x="20" y="56" width="418" height="178" rx="8" fill="#1e3a5f" filter="url(#sh2)"/>
+  <rect x="20" y="56" width="418" height="30" rx="8" fill="#3b82f6"/>
+  <rect x="20" y="75" width="418" height="11" fill="#3b82f6"/>
+  <text x="229" y="76" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">On-Policy</text>
+  <text x="35" y="108" fill="#93c5fd" font-size="11" font-weight="600">Policy Gradient</text>
+  <text x="35" y="124" fill="#cbd5e1" font-size="11">PPO � A2C � TRPO � PPG � GAIL</text>
+  <text x="35" y="148" fill="#93c5fd" font-size="11" font-weight="600">Distributed</text>
+  <text x="35" y="164" fill="#cbd5e1" font-size="11">IMPALA � APPO</text>
+  <text x="35" y="188" fill="#93c5fd" font-size="11" font-weight="600">Recurrent (Contrib)</text>
+  <text x="35" y="204" fill="#cbd5e1" font-size="11">RecurrentPPO (LSTM)</text>
+  <text x="35" y="224" fill="#93c5fd" font-size="11" font-weight="600">Evolutionary</text>
+  <text x="250" y="224" fill="#cbd5e1" font-size="11">ARS � OpenAI ES</text>
+
+  <!-- Off-Policy -->
+  <rect x="460" y="56" width="420" height="178" rx="8" fill="#1e3a5f" filter="url(#sh2)"/>
+  <rect x="460" y="56" width="420" height="30" rx="8" fill="#06b6d4"/>
+  <rect x="460" y="75" width="420" height="11" fill="#06b6d4"/>
+  <text x="670" y="76" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">Off-Policy  (Continuous)</text>
+  <text x="475" y="108" fill="#67e8f9" font-size="11" font-weight="600">Actor-Critic</text>
+  <text x="475" y="124" fill="#cbd5e1" font-size="11">SAC � TD3 � DDPG � CrossQ</text>
+  <text x="475" y="148" fill="#67e8f9" font-size="11" font-weight="600">Ensemble</text>
+  <text x="475" y="164" fill="#cbd5e1" font-size="11">REDQ � TQC � D4PG � EDAC</text>
+  <text x="475" y="188" fill="#67e8f9" font-size="11" font-weight="600">Pixel-Based</text>
+  <text x="475" y="204" fill="#cbd5e1" font-size="11">DrQ � CURL � DrQ-v2</text>
+  <text x="475" y="224" fill="#67e8f9" font-size="11" font-weight="600">Other</text>
+  <text x="670" y="224" fill="#cbd5e1" font-size="11">NAF � Discrete SAC</text>
+
+  <!-- Value-Based -->
+  <rect x="20" y="250" width="418" height="202" rx="8" fill="#1e3a5f" filter="url(#sh2)"/>
+  <rect x="20" y="250" width="418" height="30" rx="8" fill="#a855f7"/>
+  <rect x="20" y="269" width="418" height="11" fill="#a855f7"/>
+  <text x="229" y="270" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">Value-Based  (Discrete)</text>
+  <text x="35" y="302" fill="#d8b4fe" font-size="11" font-weight="600">DQN Family</text>
+  <text x="35" y="318" fill="#cbd5e1" font-size="11">DQN � Double � Dueling � Noisy � Prioritized</text>
+  <text x="35" y="334" fill="#cbd5e1" font-size="11">N-Step � C51 � QR-DQN � IQN � FQF � Rainbow</text>
+  <text x="35" y="356" fill="#d8b4fe" font-size="11" font-weight="600">Exploration Variants</text>
+  <text x="35" y="372" fill="#cbd5e1" font-size="11">Boltzmann � Mellowmax � Soft � Expected SARSA</text>
+  <text x="35" y="396" fill="#d8b4fe" font-size="11" font-weight="600">Regularization</text>
+  <text x="35" y="412" fill="#cbd5e1" font-size="11">Munchausen � CQL-DQN � Hysteretic � Clipped Double</text>
+  <text x="35" y="412" fill="#cbd5e1" font-size="11">Munchausen � CQL-DQN � Hysteretic � Clipped Double</text>
+  <text x="35" y="436" fill="#d8b4fe" font-size="11" font-weight="600">Recurrent</text>
+  <text x="145" y="436" fill="#cbd5e1" font-size="11">DRQN � R2D2 � Agent57 � SPR</text>
+
+  <!-- Offline RL -->
+  <rect x="460" y="250" width="420" height="202" rx="8" fill="#1e3a5f" filter="url(#sh2)"/>
+  <rect x="460" y="250" width="420" height="30" rx="8" fill="#f59e0b"/>
+  <rect x="460" y="269" width="420" height="11" fill="#f59e0b"/>
+  <text x="670" y="270" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">Offline RL</text>
+  <text x="475" y="302" fill="#fde68a" font-size="11" font-weight="600">Imitation &amp; Weighted</text>
+  <text x="475" y="318" fill="#cbd5e1" font-size="11">BC � AWR � AWAC � MARWIL</text>
+  <text x="475" y="342" fill="#fde68a" font-size="11" font-weight="600">Constrained Policy</text>
+  <text x="475" y="358" fill="#cbd5e1" font-size="11">BCQ � BEAR � CRR � TD3+BC � ReBRAC</text>
+  <text x="475" y="382" fill="#fde68a" font-size="11" font-weight="600">Conservative &amp; Value-Based</text>
+  <text x="475" y="398" fill="#cbd5e1" font-size="11">IQL � CQL � Cal-QL � XQL</text>
+  <text x="475" y="422" fill="#fde68a" font-size="11" font-weight="600">Ensemble &amp; Online</text>
+  <text x="475" y="438" fill="#cbd5e1" font-size="11">EDAC � RLPD</text>
+
+  <!-- Model-Based -->
+  <rect x="20" y="468" width="418" height="96" rx="8" fill="#1e3a5f" filter="url(#sh2)"/>
+  <rect x="20" y="468" width="418" height="30" rx="8" fill="#10b981"/>
+  <rect x="20" y="487" width="418" height="11" fill="#10b981"/>
+  <text x="229" y="488" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">Model-Based</text>
+  <text x="35" y="518" fill="#6ee7b7" font-size="11" font-weight="600">Dynamics Models</text>
+  <text x="35" y="534" fill="#cbd5e1" font-size="11">MOPO � MBPO � PETS</text>
+  <text x="35" y="554" fill="#6ee7b7" font-size="11" font-weight="600">Sequence / Planning</text>
+  <text x="260" y="554" fill="#cbd5e1" font-size="11">Decision Transformer</text>
+
+  <!-- World Models -->
+  <rect x="460" y="468" width="420" height="96" rx="8" fill="#1e3a5f" filter="url(#sh2)"/>
+  <rect x="460" y="468" width="420" height="30" rx="8" fill="#ec4899"/>
+  <rect x="460" y="487" width="420" height="11" fill="#ec4899"/>
+  <text x="670" y="488" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">World Models &amp; Planning</text>
+  <text x="475" y="518" fill="#f9a8d4" font-size="11" font-weight="600">Dreamer Family</text>
+  <text x="475" y="534" fill="#cbd5e1" font-size="11">Dreamer � DreamerV3 � Diamond</text>
+  <text x="475" y="554" fill="#f9a8d4" font-size="11" font-weight="600">MuZero Family</text>
+  <text x="670" y="554" fill="#cbd5e1" font-size="11">MuZero � Gumbel � EfficientZero � ScaleZero</text>
+
+  <!-- Goal-Conditioned -->
+  <rect x="20" y="580" width="860" height="50" rx="8" fill="#1e3a5f" filter="url(#sh2)"/>
+  <rect x="20" y="580" width="860" height="28" rx="8" fill="#6366f1"/>
+  <rect x="20" y="599" width="860" height="9" fill="#6366f1"/>
+  <text x="450" y="598" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">Goal-Conditioned  &amp;  Special</text>
+  <text x="80" y="622" fill="#c7d2fe" font-size="11" font-weight="600">HER</text>
+  <text x="114" y="622" fill="#cbd5e1" font-size="11">Hindsight Experience Replay</text>
+  <text x="350" y="622" fill="#c7d2fe" font-size="11" font-weight="600">Advantage Learning</text>
+  <text x="350" y="622" fill="#cbd5e1" font-size="11">              AL-DQN � PAL-DQN</text>
+  <text x="610" y="622" fill="#c7d2fe" font-size="11" font-weight="600">Other</text>
+  <text x="648" y="622" fill="#cbd5e1" font-size="11">PODreamer � EADream � MoW � JOWA � HorizonImagination</text>
+
+  <!-- Footer -->
+  <text x="450" y="660" text-anchor="middle" fill="#475569" font-size="10">All algorithms share a unified TrainConfig � train / eval / resume workflow</text>
+</svg>

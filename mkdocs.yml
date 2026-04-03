@@ -1,0 +1,155 @@
+site_name: AxiomRL 文档
+site_url: https://axiomrl.github.io/axiomrl
+site_description: AxiomRL - 80+ 算法的 PyTorch 强化学习库，提供稳定核心 API、实验性扩展和基准工作流
+site_author: AxiomRL Team
+repo_name: axiomrl/axiomrl
+repo_url: https://github.com/axiomrl/axiomrl
+edit_uri: edit/main/docs/
+copyright: Copyright &copy; 2024-2026 AxiomRL Team
+
+theme:
+  name: material
+  language: zh
+  custom_dir: docs/overrides
+  icon:
+    repo: fontawesome/brands/github
+  font:
+    text: Noto Sans SC
+    code: JetBrains Mono
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: deep purple
+      accent: deep purple
+      toggle:
+        icon: material/brightness-7
+        name: 切换到暗色模式
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: deep purple
+      accent: deep purple
+      toggle:
+        icon: material/brightness-4
+        name: 切换到亮色模式
+  features:
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
+    - navigation.path
+    - navigation.top
+    - navigation.indexes
+    - navigation.footer
+    - search.suggest
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+    - toc.follow
+    - announce.dismiss
+
+plugins:
+  - search:
+      separator: '[\s\u200b\-]'
+      lang:
+        - zh
+        - en
+  - minify:
+      minify_html: true
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+      toc_depth: 3
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/axiomrl/axiomrl
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/axiomrl/
+  generator: false
+
+extra_css:
+  - assets/css/custom.css
+
+nav:
+  - 首页: index.md
+  - 快速开始:
+    - getting-started/index.md
+    - 环境要求: getting-started/requirements.md
+    - 安装指南: getting-started/installation.md
+    - 5 分钟上手: getting-started/quickstart.md
+  - 核心概念:
+    - concepts/index.md
+    - 系统架构: concepts/architecture.md
+    - 训练流程: concepts/training-workflow.md
+  - 使用指南:
+    - guide/index.md
+    - 训练详解: guide/training.md
+    - 评估与推理: guide/evaluation.md
+    - 检查点与恢复: guide/checkpointing.md
+    - 离线 RL: guide/offline-rl.md
+    - 像素观测: guide/pixel-observations.md
+    - Zoo 基准测试: guide/zoo-benchmarks.md
+  - 算法参考:
+    - algorithms/index.md
+    - 策略梯度算法: algorithms/on-policy.md
+    - 离策略算法: algorithms/off-policy.md
+    - 离线 RL 算法: algorithms/offline.md
+    - 模型基础算法: algorithms/model-based.md
+  - 配置参考:
+    - configuration/index.md
+    - TrainConfig: configuration/train-config.md
+    - 调度器配置: configuration/scheduling.md
+  - API 参考:
+    - api/index.md
+    - 稳定核心 API: api/stable-core.md
+    - 实验性 API: api/experimental.md
+  - CLI 参考: cli/index.md
+  - 开发者:
+    - developer/index.md
+    - 贡献指南: developer/contributing.md
+    - 项目结构: developer/project-structure.md
+  - 兼容性: compatibility.md
+  - 更新日志: changelog.md
+  - FAQ: faq.md

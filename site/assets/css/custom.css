@@ -1,0 +1,102 @@
+/* AxiomRL Documentation - Custom Styles */
+
+/* Hero section on home page */
+.md-typeset .axiomrl-hero {
+  text-align: center;
+  padding: 2rem 0;
+}
+
+.md-typeset .axiomrl-hero h1 {
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+/* Feature grid */
+.md-typeset .grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.md-typeset .grid .card {
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 0.5rem;
+  padding: 1.2rem;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.md-typeset .grid .card:hover {
+  border-color: var(--md-primary-fg-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.md-typeset .grid .card h3 {
+  margin-top: 0;
+}
+
+/* Badge styles */
+.md-typeset .badge {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.md-typeset .badge-stable {
+  background-color: #49cc90;
+  color: #111827;
+}
+
+.md-typeset .badge-experimental {
+  background-color: #fca130;
+  color: #111827;
+}
+
+.md-typeset .badge-contrib {
+  background-color: #61affe;
+  color: #111827;
+}
+
+/* Algorithm table enhancements */
+.md-typeset .algo-table th {
+  white-space: nowrap;
+}
+
+.md-typeset .algo-table td:first-child {
+  font-weight: 600;
+}
+
+/* Tier indicator */
+.md-typeset .tier-stable {
+  color: #49cc90;
+  font-weight: 600;
+}
+
+.md-typeset .tier-experimental {
+  color: #fca130;
+  font-weight: 600;
+}
+
+.md-typeset .tier-contrib {
+  color: #61affe;
+  font-weight: 600;
+}
+
+/* Version badge */
+.md-typeset .version-badge {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border-radius: 1rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: var(--md-primary-fg-color);
+  color: white;
+  vertical-align: middle;
+}
+
+/* Code example section */
+.md-typeset .code-example {
+  margin: 1.5rem 0;
+}
