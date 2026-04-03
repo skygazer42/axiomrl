@@ -12,8 +12,10 @@ def test_pyproject_declares_release_metadata_and_optional_installs() -> None:
     assert "Intended Audience :: Developers" in pyproject_text
     assert "project.urls" in pyproject_text
     assert "dev = [" in pyproject_text
+    assert "tuning = [" in pyproject_text
     assert "experimental = [" in pyproject_text
     assert '"build"' in pyproject_text
+    assert '"optuna"' in pyproject_text
     assert '"twine"' in pyproject_text
 
 

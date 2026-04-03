@@ -8,6 +8,7 @@
 | `pip install -e ".[dev]"` | Local development, repo checks, packaging, and pixel/render smoke coverage |
 | `pip install -e ".[atari]"` | Atari environment support |
 | `pip install -e ".[offline]"` | Offline dataset support |
+| `pip install -e ".[tuning]"` | Optuna-backed tuning workflows |
 | `pip install -e ".[experimental]"` | Experimental namespace toggles |
 
 ## Quality Commands
