@@ -1,0 +1,53 @@
+algo: efficientzero
+env_id: ALE/Tennis-v5
+seed: 53
+total_timesteps: 10000000
+output_dir: /raiddata/kdsoft/axiomrl-runs
+device: auto
+num_envs: 1
+eval_episodes: 10
+checkpoint_interval: 250000
+tags:
+  - atari
+algo_kwargs:
+  buffer_capacity: 50000
+  batch_size: 32
+  learning_starts: 1000
+  train_frequency: 1
+  unroll_steps: 5
+  learning_rate: 0.00025
+  gamma: 0.997
+  temperature: 1.0
+  num_simulations: 25
+  latent_dim: 256
+  action_embed_dim: 64
+  dynamics_hidden_sizes: [256]
+  prediction_hidden_sizes: [256]
+  normalize_latent: true
+  value_loss_weight: 1.0
+  reward_loss_weight: 1.0
+  policy_loss_weight: 1.0
+  consistency_loss_weight: 1.0
+  max_grad_norm: 10.0
+  eval_interval: 250000
+env_kwargs:
+  frameskip: 1
+  full_action_space: false
+  wrappers:
+    atari:
+      screen_size: 84
+      frame_skip: 4
+      noop_max: 30
+      grayscale_obs: true
+      frame_stack: 4
+      channel_first: true
+  training:
+    repeat_action_probability: 0.0
+    wrappers:
+      atari:
+        clip_reward: true
+  evaluation:
+    repeat_action_probability: 0.25
+    wrappers:
+      atari:
+        clip_reward: false

@@ -1,0 +1,4 @@
+name: agent57_tennis
+config: configs/agent57/tennis_atari.yaml
+algorithm: agent57
+env_id: ALE/Tennis-v5

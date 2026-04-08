@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
 import hashlib
 import json
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
@@ -102,12 +102,21 @@ def find_manifest_for_preset(
 ) -> dict[str, Any] | None:
     resolved_preset_path = Path(preset_path).resolve()
     for parent in resolved_preset_path.parents:
-        candidate = parent / "benchmark.yaml"
-        if not candidate.exists():
-            continue
-        manifest = load_manifest(candidate)
-        if _manifest_matches_preset(manifest, preset_path=resolved_preset_path, preset_payload=preset_payload):
-            return manifest
+        benchmark_candidate = parent / "benchmark.yaml"
+        candidates: list[Path] = []
+        if benchmark_candidate.exists():
+            candidates.append(benchmark_candidate)
+        candidates.extend(
+            sorted(
+                candidate
+                for candidate in parent.glob("*.yaml")
+                if candidate != benchmark_candidate
+            )
+        )
+        for candidate in candidates:
+            manifest = load_manifest(candidate)
+            if _manifest_matches_preset(manifest, preset_path=resolved_preset_path, preset_payload=preset_payload):
+                return manifest
     return None
 
 

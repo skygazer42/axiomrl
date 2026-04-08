@@ -33,7 +33,7 @@ from rl_training.runtime.resume_state import (
     restore_resume_value,
     restore_vector_env_resume_state,
 )
-from rl_training.runtime.run_utils import save_training_checkpoint
+from rl_training.runtime.run_utils import save_training_checkpoint, should_save_periodic_checkpoint
 from rl_training.runtime.session import create_training_session
 from rl_training.runtime.trainer import TrainerState, TrainResult
 from rl_training.runtime.types import MetricDict
@@ -491,6 +491,29 @@ def train_r2d2(
         trainer_state.global_step = global_step
         trainer_state.update_count = update_count
         callback_list.on_train_start(trainer_state)
+        last_checkpoint_step = global_step
+
+        def _save_checkpoint() -> Path:
+            return save_training_checkpoint(
+                run_context=run_context,
+                config=config,
+                algorithm_state=algorithm.state_dict(),
+                buffer_state=replay_buffer.state_dict(),
+                trainer_state={
+                    "global_step": global_step,
+                    "update_count": update_count,
+                    "should_stop": trainer_state.should_stop,
+                    "stop_reason": trainer_state.stop_reason,
+                    "resume_context": {
+                        "env_state": capture_vector_env_resume_state(envs),
+                        "random_state": capture_global_random_state(),
+                        "n_step_accumulator": n_step_accumulator.state_dict(),
+                        "metadata_buffers": _capture_metadata_buffers(metadata_buffers),
+                        "rollout_state": _capture_rollout_state(recurrent_state, episode_starts),
+                    },
+                },
+                metrics=metrics,
+            )
 
         while global_step < config.total_timesteps:
             epsilon = resolve_exploration_epsilon(config, step=global_step)
@@ -572,29 +595,17 @@ def train_r2d2(
                 metrics=metrics,
                 global_step=global_step,
             )
+            if should_save_periodic_checkpoint(
+                global_step=global_step,
+                last_checkpoint_step=last_checkpoint_step,
+                checkpoint_interval=config.checkpoint_interval,
+            ):
+                checkpoint_path = _save_checkpoint()
+                last_checkpoint_step = global_step
             if should_stop:
                 break
 
-        checkpoint_path = save_training_checkpoint(
-            run_context=run_context,
-            config=config,
-            algorithm_state=algorithm.state_dict(),
-            buffer_state=replay_buffer.state_dict(),
-            trainer_state={
-                "global_step": global_step,
-                "update_count": update_count,
-                "should_stop": trainer_state.should_stop,
-                "stop_reason": trainer_state.stop_reason,
-                "resume_context": {
-                    "env_state": capture_vector_env_resume_state(envs),
-                    "random_state": capture_global_random_state(),
-                    "n_step_accumulator": n_step_accumulator.state_dict(),
-                    "metadata_buffers": _capture_metadata_buffers(metadata_buffers),
-                    "rollout_state": _capture_rollout_state(recurrent_state, episode_starts),
-                },
-            },
-            metrics=metrics,
-        )
+        checkpoint_path = _save_checkpoint()
     finally:
         if envs is not None:
             envs.close()

@@ -1,0 +1,4 @@
+name: efficientzero_tennis
+config: configs/efficientzero/tennis_atari.yaml
+algorithm: efficientzero
+env_id: ALE/Tennis-v5

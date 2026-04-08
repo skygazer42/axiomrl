@@ -7,6 +7,8 @@ from typing import Any
 import gymnasium as gym
 import numpy as np
 
+from rl_training.envs.atari import ensure_atari_env_registered
+
 
 def _stack_samples(samples: list[np.ndarray]) -> np.ndarray:
     first = samples[0]
@@ -107,6 +109,7 @@ def export_random_transition_dataset(
     seed: int = 0,
     env_kwargs: Mapping[str, Any] | None = None,
 ) -> Path:
+    ensure_atari_env_registered(env_id=env_id)
     env = gym.make(env_id, **dict(env_kwargs or {}))
     try:
         payload = collect_random_transition_dataset(env, num_steps=num_steps, seed=seed)

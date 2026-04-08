@@ -1,0 +1,4 @@
+name: rainbow_dqn_tennis_no_early_stop
+config: configs/rainbow_dqn/tennis_no_early_stop.yaml
+algorithm: rainbow_dqn
+env_id: ALE/Tennis-v5

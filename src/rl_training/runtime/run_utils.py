@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
-from importlib import metadata
 import json
-from pathlib import Path
 import platform
 import shutil
 import subprocess
 import sys
+from dataclasses import asdict, dataclass
+from datetime import datetime, timezone
+from importlib import metadata
+from pathlib import Path
 from typing import Any
 
 import torch
@@ -129,6 +129,19 @@ def _is_better_metric(candidate: float, incumbent: float | None, *, mode: str) -
     if mode == "min":
         return candidate < incumbent
     return candidate > incumbent
+
+
+def should_save_periodic_checkpoint(
+    *,
+    global_step: int,
+    last_checkpoint_step: int,
+    checkpoint_interval: int,
+) -> bool:
+    if checkpoint_interval < 1:
+        raise ValueError(f"checkpoint_interval must be >= 1, got {checkpoint_interval}")
+    if global_step < checkpoint_interval:
+        return False
+    return global_step // checkpoint_interval > last_checkpoint_step // checkpoint_interval
 
 
 def create_training_run(config: TrainConfig, *, run_suffix: str | None = None) -> RunArtifacts:

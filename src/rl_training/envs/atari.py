@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 
@@ -61,6 +62,62 @@ class ChannelFirstObservation(gym.ObservationWrapper):
 def looks_like_atari_env(env_id: str) -> bool:
     lowered = env_id.lower()
     return env_id.startswith("ALE/") or "noframeskip" in lowered or lowered.endswith("-ram-v5")
+
+
+def ensure_atari_env_registered(*, env_id: str | None = None) -> None:
+    if env_id is not None and not looks_like_atari_env(env_id):
+        return
+
+    try:
+        ale_py = importlib.import_module("ale_py")
+    except ModuleNotFoundError as exc:
+        raise ModuleNotFoundError(
+            "Atari environments require 'ale-py'. Install Atari support with "
+            "`pip install \"axiomrl[atari]\"` and download ROMs with `AutoROM --accept-license`."
+        ) from exc
+
+    register_envs = getattr(gym, "register_envs", None)
+    if callable(register_envs):
+        register_envs(ale_py)
+
+
+def probe_atari_runtime(*, env_id: str = "ALE/Tennis-v5") -> dict[str, object]:
+    status: dict[str, object] = {
+        "atari_env_registration": "unknown",
+        "atari_roms_available": False,
+        "atari_probe_env_id": env_id,
+    }
+
+    try:
+        ensure_atari_env_registered(env_id=env_id)
+    except ModuleNotFoundError as exc:
+        status["atari_env_registration"] = "missing_dependency"
+        status["atari_probe_error"] = str(exc)
+        return status
+    except Exception as exc:  # pragma: no cover - defensive probe path
+        status["atari_env_registration"] = "error"
+        status["atari_probe_error"] = str(exc)
+        return status
+
+    status["atari_env_registration"] = "ready"
+    env = None
+    try:
+        env = gym.make(
+            env_id,
+            frameskip=1,
+            repeat_action_probability=0.0,
+            full_action_space=False,
+        )
+    except Exception as exc:
+        status["atari_probe_error"] = str(exc)
+        return status
+    finally:
+        if env is not None:
+            env.close()
+
+    status["atari_roms_available"] = True
+    status["atari_probe_error"] = "none"
+    return status
 
 
 def split_env_kwargs(env_kwargs: Mapping[str, object]) -> tuple[dict[str, object], dict[str, object]]:

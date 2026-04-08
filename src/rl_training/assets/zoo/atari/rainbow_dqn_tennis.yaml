@@ -1,0 +1,4 @@
+name: rainbow_dqn_tennis
+config: configs/rainbow_dqn/tennis_atari.yaml
+algorithm: rainbow_dqn
+env_id: ALE/Tennis-v5

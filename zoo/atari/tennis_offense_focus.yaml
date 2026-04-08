@@ -1,0 +1,25 @@
+suite: atari
+protocol:
+  name: atari_default_v1
+  description: Deterministic ALE training with no-op reset and 4-frame stack, plus sticky-action evaluation.
+  training:
+    frameskip: 1
+    repeat_action_probability: 0.0
+  evaluation:
+    frameskip: 1
+    repeat_action_probability: 0.25
+best_metric: eval_return_mean
+best_metric_mode: max
+presets:
+  - name: apex_dqn_tennis_event_shaped
+    config: zoo/atari/apex_dqn_tennis_event_shaped.yaml
+    description: Ape-X Tennis event-shaped control line.
+  - name: apex_dqn_tennis_event_offense
+    config: zoo/atari/apex_dqn_tennis_event_offense.yaml
+    description: Ape-X Tennis offense-shaped line with deeper and wider landing bonuses.
+  - name: rainbow_dqn_tennis_event_shaped
+    config: zoo/atari/rainbow_dqn_tennis_event_shaped.yaml
+    description: Rainbow Tennis event-shaped control line.
+  - name: rainbow_dqn_tennis_event_offense
+    config: zoo/atari/rainbow_dqn_tennis_event_offense.yaml
+    description: Rainbow Tennis offense-shaped line with deeper and wider landing bonuses.

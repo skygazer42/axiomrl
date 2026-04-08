@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import csv
 import hashlib
-import io
 import json
 from pathlib import Path
 
@@ -11,7 +9,6 @@ import yaml
 
 from rl_training.cli import load_config
 from rl_training.zoo_cli import main as zoo_main
-
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -33,8 +30,13 @@ def test_atari_benchmark_manifest_points_to_existing_configs() -> None:
 
 
 def test_each_atari_zoo_preset_resolves_to_a_train_config() -> None:
-    preset_paths = sorted((REPO_ROOT / "zoo" / "atari").glob("*.yaml"))
-    preset_paths = [path for path in preset_paths if path.name != "benchmark.yaml"]
+    preset_paths = []
+    for path in sorted((REPO_ROOT / "zoo" / "atari").glob("*.yaml")):
+        if path.name.endswith("benchmark.yaml"):
+            continue
+        payload = yaml.safe_load(path.read_text(encoding="utf-8"))
+        if isinstance(payload, dict) and ("algo" in payload or "config" in payload):
+            preset_paths.append(path)
 
     assert preset_paths
     assert (REPO_ROOT / "zoo" / "atari" / "horizon_imagination_breakout.yaml").exists()
@@ -78,7 +80,7 @@ def test_each_atari_zoo_preset_resolves_to_a_train_config() -> None:
     for preset_path in preset_paths:
         config = load_config(preset_path)
         assert config.algo in expected_algorithms
-        assert config.env_id == "ALE/Breakout-v5"
+        assert config.env_id in {"ALE/Breakout-v5", "ALE/Tennis-v5"}
         assert "atari" in config.tags
 
 
@@ -108,6 +110,145 @@ def test_packaged_zoo_preset_inherits_manifest_benchmark_and_protocol_defaults(
     assert score_normalization["human_score"] == pytest.approx(30.5)
     assert config.env_kwargs["training"]["repeat_action_probability"] == pytest.approx(0.0)
     assert config.env_kwargs["evaluation"]["repeat_action_probability"] == pytest.approx(0.25)
+
+
+def test_tennis_benchmark_manifest_lists_expected_presets() -> None:
+    manifest_path = REPO_ROOT / "zoo" / "atari" / "tennis_benchmark.yaml"
+    payload = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+
+    assert payload["suite"] == "atari"
+    assert payload["protocol"]["name"] == "atari_default_v1"
+    assert [preset["name"] for preset in payload["presets"]] == [
+        "rainbow_dqn_tennis",
+        "r2d2_tennis",
+        "apex_dqn_tennis",
+        "agent57_tennis",
+        "efficientzero_tennis",
+    ]
+
+
+def test_tennis_tuning_stage1_manifest_lists_expected_presets() -> None:
+    manifest_path = REPO_ROOT / "zoo" / "atari" / "tennis_tuning_stage1.yaml"
+    payload = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+
+    assert payload["suite"] == "atari"
+    assert payload["protocol"]["name"] == "atari_default_v1"
+    assert [preset["name"] for preset in payload["presets"]] == [
+        "apex_dqn_tennis_stable_lr",
+        "apex_dqn_tennis_explore_tuned",
+        "apex_dqn_tennis_reward_lite",
+        "rainbow_dqn_tennis_stable_lr",
+        "rainbow_dqn_tennis_no_early_stop",
+        "rainbow_dqn_tennis_reward_lite",
+    ]
+
+
+def test_tennis_focus_manifest_lists_expected_presets() -> None:
+    manifest_path = REPO_ROOT / "zoo" / "atari" / "tennis_focus.yaml"
+    payload = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+
+    assert payload["suite"] == "atari"
+    assert payload["protocol"]["name"] == "atari_default_v1"
+    assert [preset["name"] for preset in payload["presets"]] == [
+        "apex_dqn_tennis_stable_lr",
+        "apex_dqn_tennis_event_shaped",
+        "rainbow_dqn_tennis_no_early_stop",
+        "rainbow_dqn_tennis_event_shaped",
+    ]
+
+
+def test_tennis_offense_focus_manifest_lists_expected_presets() -> None:
+    manifest_path = REPO_ROOT / "zoo" / "atari" / "tennis_offense_focus.yaml"
+    payload = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+
+    assert payload["suite"] == "atari"
+    assert payload["protocol"]["name"] == "atari_default_v1"
+    assert [preset["name"] for preset in payload["presets"]] == [
+        "apex_dqn_tennis_event_shaped",
+        "apex_dqn_tennis_event_offense",
+        "rainbow_dqn_tennis_event_shaped",
+        "rainbow_dqn_tennis_event_offense",
+    ]
+
+
+@pytest.mark.parametrize(
+    ("preset_name", "expected_algo"),
+    [
+        ("rainbow_dqn_tennis", "rainbow_dqn"),
+        ("apex_dqn_tennis", "apex_dqn"),
+        ("agent57_tennis", "agent57"),
+        ("efficientzero_tennis", "efficientzero"),
+    ],
+)
+def test_packaged_tennis_zoo_preset_inherits_manifest_protocol_defaults(
+    monkeypatch, tmp_path: Path, preset_name: str, expected_algo: str
+) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    config = load_config(f"zoo/atari/{preset_name}.yaml")
+
+    assert config.algo == expected_algo
+    assert config.env_id == "ALE/Tennis-v5"
+    assert config.benchmark["suite"] == "atari"
+    assert config.benchmark["preset_name"] == preset_name
+    assert config.benchmark["protocol_name"] == "atari_default_v1"
+    assert "score_normalization" not in config.benchmark
+    assert config.env_kwargs["training"]["repeat_action_probability"] == pytest.approx(0.0)
+    assert config.env_kwargs["evaluation"]["repeat_action_probability"] == pytest.approx(0.25)
+
+
+@pytest.mark.parametrize(
+    ("preset_name", "expected_algo"),
+    [
+        ("apex_dqn_tennis_stable_lr", "apex_dqn"),
+        ("apex_dqn_tennis_explore_tuned", "apex_dqn"),
+        ("apex_dqn_tennis_reward_lite", "apex_dqn"),
+        ("rainbow_dqn_tennis_stable_lr", "rainbow_dqn"),
+        ("rainbow_dqn_tennis_no_early_stop", "rainbow_dqn"),
+        ("rainbow_dqn_tennis_reward_lite", "rainbow_dqn"),
+    ],
+)
+def test_packaged_tennis_tuning_stage1_preset_inherits_manifest_protocol_defaults(
+    monkeypatch, tmp_path: Path, preset_name: str, expected_algo: str
+) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    config = load_config(f"zoo/atari/{preset_name}.yaml")
+
+    assert config.algo == expected_algo
+    assert config.env_id == "ALE/Tennis-v5"
+    assert config.benchmark["suite"] == "atari"
+    assert config.benchmark["preset_name"] == preset_name
+    assert config.benchmark["protocol_name"] == "atari_default_v1"
+    assert "score_normalization" not in config.benchmark
+    assert config.env_kwargs["training"]["repeat_action_probability"] == pytest.approx(0.0)
+    assert config.env_kwargs["evaluation"]["repeat_action_probability"] == pytest.approx(0.25)
+
+
+@pytest.mark.parametrize(
+    ("preset_name", "expected_algo"),
+    [
+        ("apex_dqn_tennis_event_shaped", "apex_dqn"),
+        ("rainbow_dqn_tennis_event_shaped", "rainbow_dqn"),
+        ("apex_dqn_tennis_event_offense", "apex_dqn"),
+        ("rainbow_dqn_tennis_event_offense", "rainbow_dqn"),
+    ],
+)
+def test_packaged_tennis_event_shaped_preset_inherits_manifest_protocol_defaults(
+    monkeypatch, tmp_path: Path, preset_name: str, expected_algo: str
+) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    config = load_config(f"zoo/atari/{preset_name}.yaml")
+
+    assert config.algo == expected_algo
+    assert config.env_id == "ALE/Tennis-v5"
+    assert config.benchmark["suite"] == "atari"
+    assert config.benchmark["preset_name"] == preset_name
+    assert config.benchmark["protocol_name"] == "atari_default_v1"
+    assert config.env_kwargs["training"]["repeat_action_probability"] == pytest.approx(0.0)
+    assert config.env_kwargs["evaluation"]["repeat_action_probability"] == pytest.approx(0.25)
+    assert "tennis_events" in config.env_kwargs["training"]["wrappers"]
 
 
 def test_zoo_cli_can_resolve_packaged_manifest_outside_repo_root(monkeypatch, tmp_path: Path) -> None:

@@ -220,6 +220,20 @@ def test_load_config_can_resolve_packaged_ppg_config_outside_repo_root(monkeypat
     assert config.algo_kwargs["aux_buffer_rollouts"] == 4
 
 
+def test_load_config_can_resolve_packaged_tennis_training_configs_to_raiddata(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    for config_path in (
+        "configs/rainbow_dqn/tennis_atari.yaml",
+        "configs/r2d2/tennis_atari.yaml",
+        "configs/ppo/tennis_atari.yaml",
+        "configs/impala/tennis_atari.yaml",
+    ):
+        config = load_config(config_path)
+        assert config.env_id == "ALE/Tennis-v5"
+        assert config.output_dir == Path("/raiddata/kdsoft/axiomrl-runs")
+
+
 def test_load_config_can_resolve_packaged_decision_transformer_config_outside_repo_root(
     monkeypatch, tmp_path: Path
 ) -> None:

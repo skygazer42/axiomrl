@@ -1,0 +1,28 @@
+suite: atari
+protocol:
+  name: atari_default_v1
+  description: Deterministic ALE training with no-op reset and 4-frame stack, plus sticky-action evaluation.
+  training:
+    frameskip: 1
+    repeat_action_probability: 0.0
+  evaluation:
+    frameskip: 1
+    repeat_action_probability: 0.25
+best_metric: eval_return_mean
+best_metric_mode: max
+presets:
+  - name: rainbow_dqn_tennis
+    config: zoo/atari/rainbow_dqn_tennis.yaml
+    description: Rainbow DQN Atari Tennis baseline with distributional, noisy, prioritized, and n-step updates.
+  - name: r2d2_tennis
+    config: zoo/atari/r2d2_tennis.yaml
+    description: Recurrent prioritized replay Atari Tennis fallback baseline for long-horizon control.
+  - name: apex_dqn_tennis
+    config: zoo/atari/apex_dqn_tennis.yaml
+    description: Ape-X style Atari Tennis preset with prioritized replay, n-step returns, and multi-actor exploration.
+  - name: agent57_tennis
+    config: zoo/atari/agent57_tennis.yaml
+    description: Agent57 Atari Tennis preset with recurrent prioritized replay plus intrinsic exploration.
+  - name: efficientzero_tennis
+    config: zoo/atari/efficientzero_tennis.yaml
+    description: EfficientZero Atari Tennis preset for model-based planning with sample-efficient updates.

@@ -20,6 +20,13 @@ def print_doctor() -> None:
         except metadata.PackageNotFoundError:
             return "missing"
 
+    def resolve_first_available_version(*distributions: str) -> str:
+        for distribution in distributions:
+            version = resolve_version(distribution)
+            if version != "missing":
+                return version
+        return "missing"
+
     try:
         import torch
     except ImportError:  # pragma: no cover
@@ -32,9 +39,26 @@ def print_doctor() -> None:
     print(f"torch_version={resolve_version('torch')}")
     print(f"gymnasium_version={resolve_version('gymnasium')}")
     print(f"numpy_version={resolve_version('numpy')}")
+    print(f"ale_py_version={resolve_first_available_version('ale-py', 'ale_py')}")
+    print(f"autorom_version={resolve_first_available_version('AutoROM', 'autorom')}")
     print(f"opencv_python_version={resolve_version('opencv-python')}")
     print(f"pygame_version={resolve_version('pygame')}")
     print(f"minari_version={resolve_version('minari')}")
+    try:
+        from rl_training.envs.atari import probe_atari_runtime
+    except Exception as exc:  # pragma: no cover - diagnostic fallback
+        atari_status = {
+            "atari_env_registration": "unavailable",
+            "atari_roms_available": False,
+            "atari_probe_env_id": "ALE/Tennis-v5",
+            "atari_probe_error": str(exc),
+        }
+    else:
+        atari_status = probe_atari_runtime()
+    print(f"atari_env_registration={atari_status['atari_env_registration']}")
+    print(f"atari_roms_available={atari_status['atari_roms_available']}")
+    print(f"atari_probe_env_id={atari_status['atari_probe_env_id']}")
+    print(f"atari_probe_error={atari_status.get('atari_probe_error', 'none')}")
     if torch is None:
         print("cuda_available=unknown")
         print("cuda_device_count=unknown")

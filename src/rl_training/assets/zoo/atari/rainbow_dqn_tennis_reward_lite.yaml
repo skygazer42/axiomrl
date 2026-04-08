@@ -1,0 +1,4 @@
+name: rainbow_dqn_tennis_reward_lite
+config: configs/rainbow_dqn/tennis_reward_lite.yaml
+algorithm: rainbow_dqn
+env_id: ALE/Tennis-v5

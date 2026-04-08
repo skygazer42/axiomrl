@@ -26,6 +26,12 @@ from rl_training.envs.rewards import (
     resolve_reward_preset,
     resolve_reward_wrapper_config,
 )
+from rl_training.envs.tennis_events import (
+    TennisEventConfig,
+    TennisEventRewardWrapper,
+    apply_tennis_event_wrapper,
+    resolve_tennis_event_wrapper_config,
+)
 from rl_training.envs.video import VideoWrapperConfig, apply_video_wrapper, resolve_video_wrapper_config
 
 __all__ = [
@@ -35,6 +41,8 @@ __all__ = [
     "RewardScaleWrapper",
     "RewardShiftWrapper",
     "RewardTransformConfig",
+    "TennisEventConfig",
+    "TennisEventRewardWrapper",
     "PixelObservationConfig",
     "VideoWrapperConfig",
     "ACHIEVED_GOAL_KEY",
@@ -45,6 +53,7 @@ __all__ = [
     "PointGoal1DEnv",
     "apply_pixel_wrappers",
     "apply_reward_wrappers",
+    "apply_tennis_event_wrapper",
     "apply_video_wrapper",
     "build_env",
     "flatten_goal_observation",
@@ -56,6 +65,7 @@ __all__ = [
     "make_vector_env",
     "register_builtin_goal_envs",
     "resolve_reward_preset",
+    "resolve_tennis_event_wrapper_config",
     "resolve_video_wrapper_config",
     "resolve_pixel_wrapper_config",
     "resolve_reward_wrapper_config",

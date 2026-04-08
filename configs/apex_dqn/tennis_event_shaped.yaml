@@ -1,0 +1,58 @@
+algo: apex_dqn
+env_id: ALE/Tennis-v5
+seed: 53
+total_timesteps: 10000000
+output_dir: /raiddata/kdsoft/axiomrl-runs
+device: auto
+num_envs: 8
+eval_episodes: 10
+checkpoint_interval: 250000
+tags:
+  - atari
+algo_kwargs:
+  buffer_capacity: 100000
+  batch_size: 64
+  learning_starts: 20000
+  train_frequency: 1
+  target_update_interval: 4000
+  learning_rate: 0.00005
+  gamma: 0.99
+  n_step: 3
+  prioritized_alpha: 0.6
+  prioritized_beta_start: 0.4
+  prioritized_beta_end: 1.0
+  prioritized_beta_fraction: 1.0
+  prioritized_eps: 1.0e-6
+  updates_per_collect: 1
+  actor_epsilon_base: 0.4
+  actor_epsilon_alpha: 7.0
+  head_hidden_sizes: [512]
+  features_dim: 512
+  eval_interval: 250000
+env_kwargs:
+  frameskip: 1
+  full_action_space: false
+  wrappers:
+    atari:
+      screen_size: 84
+      frame_skip: 4
+      noop_max: 30
+      grayscale_obs: true
+      frame_stack: 4
+      channel_first: true
+  training:
+    repeat_action_probability: 0.0
+    wrappers:
+      atari:
+        clip_reward: false
+      tennis_events:
+        rally_survival_bonus: 0.001
+        net_cross_bonus: 0.02
+        successful_return_bonus: 0.05
+        failure_penalty: -0.05
+        agent_side: left
+  evaluation:
+    repeat_action_probability: 0.25
+    wrappers:
+      atari:
+        clip_reward: false

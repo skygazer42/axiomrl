@@ -1,4 +1,6 @@
+import sys
 from pathlib import Path
+from types import ModuleType
 
 import gymnasium as gym
 import numpy as np
@@ -11,6 +13,11 @@ from rl_training.envs.atari import (
     split_env_kwargs,
 )
 from rl_training.envs.factory import build_env
+from rl_training.envs.tennis_events import (
+    TennisEventConfig,
+    TennisEventRewardWrapper,
+    resolve_tennis_event_wrapper_config,
+)
 from rl_training.experiment.config import TrainConfig
 
 
@@ -89,6 +96,41 @@ class DummyAtariPreprocessing(gym.ObservationWrapper):
         return np.zeros(self.observation_space.shape, dtype=self.observation_space.dtype)
 
 
+class DummyStackedTennisEnv(gym.Env):
+    metadata = {"render_modes": []}
+
+    def __init__(self, frames: list[np.ndarray], rewards: list[float], terminated_at: int | None = None) -> None:
+        super().__init__()
+        self.frames = [np.asarray(frame, dtype=np.uint8) for frame in frames]
+        self.rewards = list(rewards)
+        self.terminated_at = terminated_at
+        self.observation_space = gym.spaces.Box(low=0, high=255, shape=self.frames[0].shape, dtype=np.uint8)
+        self.action_space = gym.spaces.Discrete(2)
+        self._index = 0
+
+    def reset(self, *, seed: int | None = None, options: dict | None = None):
+        super().reset(seed=seed)
+        del options
+        self._index = 0
+        return self.frames[0], {}
+
+    def step(self, action: int):
+        del action
+        self._index += 1
+        frame = self.frames[min(self._index, len(self.frames) - 1)]
+        reward = float(self.rewards[min(self._index - 1, len(self.rewards) - 1)])
+        terminated = self.terminated_at is not None and self._index >= self.terminated_at
+        truncated = False
+        return frame, reward, terminated, truncated, {}
+
+
+def _stacked_ball_frame(*xs: int, y: int = 40) -> np.ndarray:
+    frame = np.zeros((4, 84, 84), dtype=np.uint8)
+    for channel, x in enumerate(xs[-4:]):
+        frame[channel, y, x] = 255
+    return frame
+
+
 def test_split_env_kwargs_separates_wrapper_config() -> None:
     env_kwargs, wrapper_kwargs = split_env_kwargs(
         {
@@ -100,6 +142,94 @@ def test_split_env_kwargs_separates_wrapper_config() -> None:
 
     assert env_kwargs == {"render_mode": "rgb_array", "frameskip": 1}
     assert wrapper_kwargs == {"atari": {"frame_stack": 4}}
+
+
+def test_resolve_tennis_event_wrapper_config_reads_mapping() -> None:
+    config = resolve_tennis_event_wrapper_config(
+        {
+            "tennis_events": {
+                "rally_survival_bonus": 0.001,
+                "net_cross_bonus": 0.05,
+                "successful_return_bonus": 0.1,
+                "failure_penalty": -0.2,
+                "deep_landing_bonus": 0.03,
+                "wide_landing_bonus": 0.02,
+            }
+        }
+    )
+
+    assert config == TennisEventConfig(
+        rally_survival_bonus=pytest.approx(0.001),
+        net_cross_bonus=pytest.approx(0.05),
+        successful_return_bonus=pytest.approx(0.1),
+        failure_penalty=pytest.approx(-0.2),
+        deep_landing_bonus=pytest.approx(0.03),
+        wide_landing_bonus=pytest.approx(0.02),
+    )
+
+
+def test_tennis_event_reward_wrapper_awards_net_cross_and_failure_penalty() -> None:
+    env = DummyStackedTennisEnv(
+        frames=[
+            _stacked_ball_frame(10, 10, 10, 10),
+            _stacked_ball_frame(20, 20, 20, 20),
+            _stacked_ball_frame(60, 60, 60, 60),
+            _stacked_ball_frame(62, 62, 62, 62),
+        ],
+        rewards=[0.0, 0.0, -1.0],
+        terminated_at=3,
+    )
+    wrapped = TennisEventRewardWrapper(
+        env,
+        TennisEventConfig(
+            rally_survival_bonus=0.001,
+            net_cross_bonus=0.05,
+            successful_return_bonus=0.1,
+            failure_penalty=-0.2,
+            agent_side="left",
+        ),
+    )
+
+    wrapped.reset()
+    _, reward_one, _, _, _ = wrapped.step(0)
+    _, reward_two, _, _, _ = wrapped.step(0)
+    _, reward_three, terminated, _, _ = wrapped.step(0)
+
+    assert reward_one == pytest.approx(0.001)
+    assert reward_two == pytest.approx(0.151)
+    assert terminated is True
+    assert reward_three == pytest.approx(-1.199)
+
+
+def test_tennis_event_reward_wrapper_awards_offensive_landing_bonuses() -> None:
+    env = DummyStackedTennisEnv(
+        frames=[
+            _stacked_ball_frame(12, 12, 12, 12, y=42),
+            _stacked_ball_frame(20, 20, 20, 20, y=42),
+            _stacked_ball_frame(74, 74, 74, 74, y=8),
+        ],
+        rewards=[0.0, 0.0],
+        terminated_at=None,
+    )
+    wrapped = TennisEventRewardWrapper(
+        env,
+        TennisEventConfig(
+            rally_survival_bonus=0.001,
+            net_cross_bonus=0.05,
+            successful_return_bonus=0.1,
+            deep_landing_bonus=0.03,
+            wide_landing_bonus=0.02,
+            failure_penalty=-0.2,
+            agent_side="left",
+        ),
+    )
+
+    wrapped.reset()
+    _, reward_one, _, _, _ = wrapped.step(0)
+    _, reward_two, _, _, _ = wrapped.step(0)
+
+    assert reward_one == pytest.approx(0.001)
+    assert reward_two == pytest.approx(0.201)
 
 
 def test_resolve_atari_wrapper_config_uses_tags_and_eval_mode() -> None:
@@ -176,6 +306,42 @@ def test_build_env_applies_atari_wrappers_when_requested(monkeypatch, tmp_path: 
     assert obs.shape == (4, 84, 84)
     assert reward == pytest.approx(1.0)
     assert terminated or truncated
+
+    env.close()
+
+
+def test_build_env_registers_ale_envs_before_retrying_make(monkeypatch, tmp_path: Path) -> None:
+    fake_ale = ModuleType("ale_py")
+    register_calls: list[ModuleType] = []
+    state = {"registered": False}
+
+    def fake_register_envs(module: ModuleType) -> None:
+        register_calls.append(module)
+        state["registered"] = True
+
+    def fake_make(env_id: str, **kwargs):
+        del kwargs
+        if env_id == "ALE/Tennis-v5" and not state["registered"]:
+            raise gym.error.NameNotFound("ALE/Tennis-v5")
+        return DummyImageEnv()
+
+    monkeypatch.setitem(sys.modules, "ale_py", fake_ale)
+    monkeypatch.setattr(gym, "register_envs", fake_register_envs, raising=False)
+    monkeypatch.setattr(gym, "make", fake_make)
+    monkeypatch.setattr(gym.wrappers, "AtariPreprocessing", DummyAtariPreprocessing)
+
+    config = TrainConfig(
+        algo="ppo",
+        env_id="ALE/Tennis-v5",
+        seed=5,
+        total_timesteps=32,
+        output_dir=tmp_path,
+        tags=("atari",),
+    )
+
+    env = build_env(config, env_index=0)
+
+    assert register_calls == [fake_ale]
 
     env.close()
 

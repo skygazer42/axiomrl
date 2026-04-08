@@ -1,0 +1,4 @@
+name: apex_dqn_tennis_stable_lr
+config: configs/apex_dqn/tennis_stable_lr.yaml
+algorithm: apex_dqn
+env_id: ALE/Tennis-v5
