@@ -461,6 +461,136 @@ def test_resume_command_runs_from_checkpoint(tmp_path: Path) -> None:
     assert len(run_dirs) >= 2
 
 
+def test_resume_command_can_use_compatible_config_override(tmp_path: Path) -> None:
+    base_run_root = tmp_path / "base-runs"
+    config = TrainConfig(
+        algo="dqn",
+        env_id="CartPole-v1",
+        seed=29,
+        total_timesteps=96,
+        output_dir=base_run_root,
+        eval_episodes=1,
+        algo_kwargs={
+            "buffer_capacity": 256,
+            "batch_size": 32,
+            "learning_starts": 32,
+            "train_frequency": 1,
+            "target_update_interval": 16,
+            "hidden_sizes": (16, 16),
+        },
+    )
+    result = train_dqn(config, run_suffix="cli-resume-config")
+
+    resume_run_root = tmp_path / "resume-runs"
+    resume_config = tmp_path / "resume-config.yaml"
+    resume_config.write_text(
+        "\n".join(
+            [
+                "algo: dqn",
+                "env_id: CartPole-v1",
+                "seed: 29",
+                "total_timesteps: 160",
+                f"output_dir: {resume_run_root}",
+                "num_envs: 1",
+                "eval_episodes: 2",
+                "checkpoint_interval: 8",
+                "env_kwargs:",
+                "  render_mode: rgb_array",
+                "algo_kwargs:",
+                "  buffer_capacity: 256",
+                "  batch_size: 32",
+                "  learning_starts: 32",
+                "  train_frequency: 1",
+                "  target_update_interval: 16",
+                "  hidden_sizes: [16, 16]",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    exit_code = main(
+        [
+            "resume",
+            "--checkpoint",
+            str(result.checkpoint_path),
+            "--config",
+            str(resume_config),
+        ]
+    )
+
+    run_dirs = [path for path in resume_run_root.iterdir() if path.is_dir()]
+
+    assert exit_code == 0
+    assert len(run_dirs) == 1
+    config_payload = json.loads((run_dirs[0] / "config.yaml").read_text(encoding="utf-8"))
+    assert config_payload["output_dir"] == str(resume_run_root)
+    assert config_payload["total_timesteps"] == 160
+    assert config_payload["eval_episodes"] == 2
+    assert config_payload["env_kwargs"]["render_mode"] == "rgb_array"
+
+
+def test_resume_command_rejects_incompatible_config_override(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    base_run_root = tmp_path / "base-runs"
+    config = TrainConfig(
+        algo="dqn",
+        env_id="CartPole-v1",
+        seed=29,
+        total_timesteps=96,
+        output_dir=base_run_root,
+        eval_episodes=1,
+        algo_kwargs={
+            "buffer_capacity": 256,
+            "batch_size": 32,
+            "learning_starts": 32,
+            "train_frequency": 1,
+            "target_update_interval": 16,
+            "hidden_sizes": (16, 16),
+        },
+    )
+    result = train_dqn(config, run_suffix="cli-resume-config-bad")
+
+    bad_config = tmp_path / "resume-config-bad.yaml"
+    bad_config.write_text(
+        "\n".join(
+            [
+                "algo: dqn",
+                "env_id: MountainCar-v0",
+                "seed: 29",
+                "total_timesteps: 160",
+                f"output_dir: {tmp_path / 'resume-runs-bad'}",
+                "num_envs: 1",
+                "eval_episodes: 1",
+                "algo_kwargs:",
+                "  buffer_capacity: 256",
+                "  batch_size: 32",
+                "  learning_starts: 32",
+                "  train_frequency: 1",
+                "  target_update_interval: 16",
+                "  hidden_sizes: [16, 16]",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(SystemExit) as exc:
+        main(
+            [
+                "resume",
+                "--checkpoint",
+                str(result.checkpoint_path),
+                "--config",
+                str(bad_config),
+            ]
+        )
+
+    assert exc.value.code == 2
+    stderr = capsys.readouterr().err
+    assert "resume config" in stderr
+    assert "env_id='MountainCar-v0' expected 'CartPole-v1'" in stderr
+
+
 def test_train_command_runs_for_sac_config(tmp_path: Path) -> None:
     config_file = tmp_path / "sac-config.yaml"
     config_file.write_text(

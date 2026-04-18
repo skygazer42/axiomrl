@@ -1,0 +1,4 @@
+name: rainbow_dqn_tennis_event_v2
+config: configs/rainbow_dqn/tennis_event_v2.yaml
+algorithm: rainbow_dqn
+env_id: ALE/Tennis-v5

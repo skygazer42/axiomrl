@@ -53,6 +53,7 @@ def test_train_apex_dqn_writes_checkpoint_and_metrics(tmp_path: Path, monkeypatc
         device="cpu",
         num_envs=4,
         eval_episodes=1,
+        checkpoint_interval=16,
         algo_kwargs={
             "buffer_capacity": 128,
             "batch_size": 8,
@@ -80,9 +81,11 @@ def test_train_apex_dqn_writes_checkpoint_and_metrics(tmp_path: Path, monkeypatc
     assert result.run_dir.exists()
     assert result.checkpoint_path is not None
     assert result.checkpoint_path.exists()
+    checkpoints_dir = result.run_dir / "checkpoints"
+    assert (checkpoints_dir / "step_16.pt").exists()
+    assert (checkpoints_dir / "step_32.pt").exists()
     assert result.metrics["global_step"] >= 64
     assert "eval_return_mean" in result.metrics
 
     metrics = evaluate_checkpoint(result.checkpoint_path, num_episodes=1)
     assert "eval_return_mean" in metrics
-

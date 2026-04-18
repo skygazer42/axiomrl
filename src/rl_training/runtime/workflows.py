@@ -7,6 +7,7 @@ from typing import Any
 
 import numpy as np
 
+from rl_training.cli_config import load_config
 from rl_training.experiment.checkpointing import CheckpointState, load_checkpoint
 from rl_training.experiment.benchmarking import augment_metrics_with_benchmark
 from rl_training.experiment.config import TrainConfig
@@ -36,6 +37,55 @@ def _config_from_payload(payload: dict[str, Any]) -> TrainConfig:
         benchmark=dict(payload.get("benchmark", {})),
         algo_kwargs=dict(payload.get("algo_kwargs", {})),
         env_kwargs=dict(payload.get("env_kwargs", {})),
+    )
+
+
+def _resolve_resume_config(
+    checkpoint_state: CheckpointState,
+    *,
+    config_path: str | Path | None = None,
+) -> TrainConfig:
+    checkpoint_config = _config_from_payload(checkpoint_state.config)
+    if config_path is None:
+        return checkpoint_config
+
+    resume_config = load_config(config_path)
+    mismatches: list[str] = []
+    if resume_config.algo != checkpoint_config.algo:
+        mismatches.append(f"algo={resume_config.algo!r} expected {checkpoint_config.algo!r}")
+    if resume_config.env_id != checkpoint_config.env_id:
+        mismatches.append(f"env_id={resume_config.env_id!r} expected {checkpoint_config.env_id!r}")
+    if resume_config.seed != checkpoint_config.seed:
+        mismatches.append(f"seed={resume_config.seed!r} expected {checkpoint_config.seed!r}")
+    if resume_config.num_envs != checkpoint_config.num_envs:
+        mismatches.append(f"num_envs={resume_config.num_envs!r} expected {checkpoint_config.num_envs!r}")
+    if mismatches:
+        resolved_path = Path(config_path).resolve()
+        raise ValueError(
+            f"resume config {resolved_path} is incompatible with checkpoint: " + ", ".join(mismatches)
+        )
+    return resume_config
+
+
+def _prepare_checkpoint_for_resume(
+    checkpoint_state: CheckpointState,
+    *,
+    config: TrainConfig,
+) -> CheckpointState:
+    checkpoint_config = _config_from_payload(checkpoint_state.config)
+    if checkpoint_config.env_kwargs == config.env_kwargs:
+        return checkpoint_state
+
+    trainer_state = dict(checkpoint_state.trainer_state)
+    trainer_state["resume_context"] = {}
+    metadata = dict(checkpoint_state.metadata)
+    metadata["resume_replay_reset_reason"] = "env_kwargs_changed"
+    return CheckpointState(
+        algorithm_state=checkpoint_state.algorithm_state,
+        buffer_state=None,
+        trainer_state=trainer_state,
+        config=checkpoint_state.config,
+        metadata=metadata,
     )
 
 
@@ -79,6 +129,7 @@ def predict_checkpoint(
 def resume_training(
     checkpoint_path: str | Path | None,
     *,
+    config_path: str | Path | None = None,
     total_timesteps: int | None = None,
     output_dir: str | Path | None = None,
     execution_backend: str | None = None,
@@ -90,7 +141,8 @@ def resume_training(
         raise ValueError(_CHECKPOINT_PATH_REQUIRED_ERROR)
 
     checkpoint_state = load_checkpoint(Path(checkpoint_path))
-    config = _config_from_payload(checkpoint_state.config)
+    config = _resolve_resume_config(checkpoint_state, config_path=config_path)
+    checkpoint_state = _prepare_checkpoint_for_resume(checkpoint_state, config=config)
 
     overrides: dict[str, Any] = {}
     if total_timesteps is not None:

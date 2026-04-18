@@ -58,6 +58,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
     resume_parser = subparsers.add_parser("resume")
     resume_parser.add_argument("--checkpoint", required=True)
+    resume_parser.add_argument("--config")
     resume_parser.add_argument("--total-timesteps", type=int)
     resume_parser.add_argument("--output-dir")
     resume_parser.add_argument("--execution-backend")
@@ -448,13 +449,17 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "resume":
         from rl_training.runtime.workflows import resume_training
 
-        result = resume_training(
-            args.checkpoint,
-            total_timesteps=args.total_timesteps,
-            output_dir=args.output_dir,
-            execution_backend=args.execution_backend,
-            eval_episodes=args.eval_episodes,
-        )
+        try:
+            result = resume_training(
+                args.checkpoint,
+                config_path=args.config,
+                total_timesteps=args.total_timesteps,
+                output_dir=args.output_dir,
+                execution_backend=args.execution_backend,
+                eval_episodes=args.eval_episodes,
+            )
+        except (TypeError, ValueError, FileExistsError) as exc:
+            parser.error(str(exc))
         _print_result(result)
         return 0
 

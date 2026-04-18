@@ -1,0 +1,72 @@
+algo: rainbow_dqn
+env_id: ALE/Tennis-v5
+seed: 31
+total_timesteps: 100000000
+output_dir: /raiddata/kdsoft/axiomrl-runs
+device: auto
+num_envs: 1
+eval_episodes: 10
+checkpoint_interval: 250000
+tags:
+  - atari
+algo_kwargs:
+  buffer_capacity: 100000
+  batch_size: 32
+  learning_starts: 20000
+  train_frequency: 4
+  target_update_interval: 1000
+  learning_rate: 0.0001
+  gamma: 0.99
+  n_step: 3
+  epsilon_start: 0.0
+  epsilon_end: 0.0
+  exploration_fraction: 0.0
+  sigma_init: 0.5
+  prioritized_alpha: 0.6
+  prioritized_beta_start: 0.4
+  prioritized_beta_end: 1.0
+  prioritized_beta_fraction: 1.0
+  prioritized_eps: 1.0e-6
+  head_hidden_sizes: [512]
+  features_dim: 512
+  eval_interval: 250000
+  early_stopping:
+    metric: eval_return_mean
+    mode: max
+    min_steps: 20000000
+    patience: 12
+    min_delta: 0.5
+env_kwargs:
+  frameskip: 1
+  full_action_space: false
+  wrappers:
+    atari:
+      screen_size: 84
+      frame_skip: 4
+      noop_max: 30
+      grayscale_obs: true
+      frame_stack: 4
+      channel_first: true
+  training:
+    repeat_action_probability: 0.0
+    wrappers:
+      atari:
+        clip_reward: false
+      tennis_events:
+        rally_survival_bonus: 0.002
+        net_cross_bonus: 0.03
+        successful_return_bonus: 0.08
+        failure_penalty: -0.12
+        deep_landing_bonus: 0.04
+        wide_landing_bonus: 0.03
+        agent_side: left
+        motion_threshold: 10.0
+        min_cross_delta_x_px: 6.0
+        cross_cooldown_steps: 2
+        max_step_shaping_abs: 0.25
+        emit_info_metrics: true
+  evaluation:
+    repeat_action_probability: 0.25
+    wrappers:
+      atari:
+        clip_reward: false

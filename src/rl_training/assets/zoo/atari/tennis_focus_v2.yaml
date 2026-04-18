@@ -1,0 +1,25 @@
+suite: atari
+protocol:
+  name: atari_default_v1
+  description: Deterministic ALE training with no-op reset and 4-frame stack, plus sticky-action evaluation.
+  training:
+    frameskip: 1
+    repeat_action_probability: 0.0
+  evaluation:
+    frameskip: 1
+    repeat_action_probability: 0.25
+best_metric: eval_return_mean
+best_metric_mode: max
+presets:
+  - name: apex_dqn_tennis_stable_lr
+    config: zoo/atari/apex_dqn_tennis_stable_lr.yaml
+    description: Ape-X Tennis stable-learning-rate control line.
+  - name: apex_dqn_tennis_event_v2
+    config: zoo/atari/apex_dqn_tennis_event_v2.yaml
+    description: Ape-X Tennis V2 event shaping line with cross-gating, cooldown, and clipped shaping.
+  - name: rainbow_dqn_tennis_no_early_stop
+    config: zoo/atari/rainbow_dqn_tennis_no_early_stop.yaml
+    description: Rainbow Tennis control line with no reward shaping.
+  - name: rainbow_dqn_tennis_event_v2
+    config: zoo/atari/rainbow_dqn_tennis_event_v2.yaml
+    description: Rainbow Tennis V2 event shaping line with cross-gating, cooldown, and clipped shaping.

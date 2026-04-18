@@ -85,11 +85,12 @@ class ReplayBuffer:
             "action_shape": self.action_shape,
             "position": self.position,
             "size": self.size,
-            "obs": self.obs.clone(),
-            "actions": self.actions.clone(),
-            "rewards": self.rewards.clone(),
-            "next_obs": self.next_obs.clone(),
-            "dones": self.dones.clone(),
+            # Checkpoints should live on CPU so saving does not duplicate the full buffer on GPU.
+            "obs": self.obs.detach().cpu().clone(),
+            "actions": self.actions.detach().cpu().clone(),
+            "rewards": self.rewards.detach().cpu().clone(),
+            "next_obs": self.next_obs.detach().cpu().clone(),
+            "dones": self.dones.detach().cpu().clone(),
         }
 
     def load_state_dict(self, state_dict: dict) -> None:

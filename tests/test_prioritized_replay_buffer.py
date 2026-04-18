@@ -31,3 +31,29 @@ def test_prioritized_replay_buffer_can_add_sample_and_update_priorities() -> Non
     indices = batch["indices"]
     priorities = torch.ones_like(indices, dtype=torch.float32) * 2.0
     buffer.update_priorities(indices, priorities)
+
+
+def test_prioritized_replay_buffer_state_dict_moves_tensor_payloads_to_cpu() -> None:
+    buffer = PrioritizedReplayBuffer(
+        capacity=8,
+        obs_shape=(4,),
+        action_shape=(),
+        alpha=0.6,
+        device="cpu",
+    )
+    buffer.add(
+        obs=torch.ones(4),
+        actions=1,
+        rewards=1.0,
+        next_obs=torch.ones(4) * 2,
+        dones=0.0,
+    )
+
+    state = buffer.state_dict()
+
+    assert state["obs"].device.type == "cpu"
+    assert state["actions"].device.type == "cpu"
+    assert state["rewards"].device.type == "cpu"
+    assert state["next_obs"].device.type == "cpu"
+    assert state["dones"].device.type == "cpu"
+    assert state["priorities"].device.type == "cpu"

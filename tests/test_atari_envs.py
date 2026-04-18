@@ -168,6 +168,89 @@ def test_resolve_tennis_event_wrapper_config_reads_mapping() -> None:
     )
 
 
+def test_resolve_tennis_event_wrapper_config_reads_v2_control_fields() -> None:
+    config = resolve_tennis_event_wrapper_config(
+        {
+            "tennis_events": {
+                "net_cross_bonus": 0.05,
+                "min_cross_delta_x_px": 7.5,
+                "cross_cooldown_steps": 3,
+                "max_step_shaping_abs": 0.2,
+                "emit_info_metrics": False,
+            }
+        }
+    )
+
+    assert config is not None
+    assert config.min_cross_delta_x_px == pytest.approx(7.5)
+    assert config.cross_cooldown_steps == 3
+    assert config.max_step_shaping_abs == pytest.approx(0.2)
+    assert config.emit_info_metrics is False
+
+
+def test_resolve_tennis_event_wrapper_config_reads_point_outcome_fields() -> None:
+    config = resolve_tennis_event_wrapper_config(
+        {
+            "tennis_events": {
+                "point_win_bonus": 0.4,
+                "point_loss_penalty": 0.6,
+            }
+        }
+    )
+
+    assert config is not None
+    assert config.point_win_bonus == pytest.approx(0.4)
+    assert config.point_loss_penalty == pytest.approx(0.6)
+
+
+def test_resolve_tennis_event_wrapper_config_reads_attack_conversion_fields() -> None:
+    config = resolve_tennis_event_wrapper_config(
+        {
+            "tennis_events": {
+                "attack_window_steps": 12,
+                "attack_conversion_bonus": 0.2,
+                "failed_attack_penalty": 0.15,
+            }
+        }
+    )
+
+    assert config is not None
+    assert config.attack_window_steps == 12
+    assert config.attack_conversion_bonus == pytest.approx(0.2)
+    assert config.failed_attack_penalty == pytest.approx(0.15)
+
+
+def test_tennis_event_reward_wrapper_applies_point_outcome_anchoring() -> None:
+    env = DummyStackedTennisEnv(
+        frames=[
+            _stacked_ball_frame(10, 10, 10, 10),
+            _stacked_ball_frame(12, 12, 12, 12),
+            _stacked_ball_frame(14, 14, 14, 14),
+        ],
+        rewards=[1.0, -1.0],
+        terminated_at=None,
+    )
+    wrapped = TennisEventRewardWrapper(
+        env,
+        TennisEventConfig(
+            point_win_bonus=0.5,
+            point_loss_penalty=0.3,
+            max_step_shaping_abs=1.0,
+        ),
+    )
+
+    wrapped.reset()
+    _, reward_one, _, _, info_one = wrapped.step(0)
+    _, reward_two, _, _, info_two = wrapped.step(0)
+
+    assert reward_one == pytest.approx(1.5)
+    assert reward_two == pytest.approx(-1.3)
+    assert info_one["tennis_events/point_outcome_bonus"] == pytest.approx(0.5)
+    assert info_two["tennis_events/point_outcome_bonus"] == pytest.approx(-0.3)
+    assert info_one["tennis_events/base_reward"] == pytest.approx(1.0)
+    assert info_two["tennis_events/base_reward"] == pytest.approx(-1.0)
+
+
 def test_tennis_event_reward_wrapper_awards_net_cross_and_failure_penalty() -> None:
     env = DummyStackedTennisEnv(
         frames=[
@@ -230,6 +313,204 @@ def test_tennis_event_reward_wrapper_awards_offensive_landing_bonuses() -> None:
 
     assert reward_one == pytest.approx(0.001)
     assert reward_two == pytest.approx(0.201)
+
+
+def test_tennis_event_reward_wrapper_rewards_attack_conversion_when_point_is_won() -> None:
+    env = DummyStackedTennisEnv(
+        frames=[
+            _stacked_ball_frame(12, 12, 12, 12, y=42),
+            _stacked_ball_frame(20, 20, 20, 20, y=42),
+            _stacked_ball_frame(74, 74, 74, 74, y=8),
+            _stacked_ball_frame(74, 74, 74, 74, y=8),
+        ],
+        rewards=[0.0, 0.0, 1.0],
+        terminated_at=None,
+    )
+    wrapped = TennisEventRewardWrapper(
+        env,
+        TennisEventConfig(
+            net_cross_bonus=0.05,
+            successful_return_bonus=0.01,
+            deep_landing_bonus=0.03,
+            wide_landing_bonus=0.02,
+            attack_window_steps=2,
+            attack_conversion_bonus=0.2,
+            point_win_bonus=0.1,
+            max_step_shaping_abs=1.0,
+            agent_side="left",
+        ),
+    )
+
+    wrapped.reset()
+    _, reward_one, _, _, info_one = wrapped.step(0)
+    _, reward_two, _, _, info_two = wrapped.step(0)
+    _, reward_three, _, _, info_three = wrapped.step(0)
+
+    assert reward_one == pytest.approx(0.0)
+    assert reward_two == pytest.approx(0.11)
+    assert reward_three == pytest.approx(1.3)
+    assert info_two["tennis_events/attack_triggered"] == pytest.approx(1.0)
+    assert info_two["tennis_events/attack_window_started"] == pytest.approx(2.0)
+    assert info_two["tennis_events/attack_window_remaining"] == pytest.approx(1.0)
+    assert info_three["tennis_events/attack_conversion_bonus"] == pytest.approx(0.2)
+    assert info_three["tennis_events/attack_window_remaining"] == pytest.approx(0.0)
+
+
+def test_tennis_event_reward_wrapper_penalizes_failed_attack_conversion() -> None:
+    env = DummyStackedTennisEnv(
+        frames=[
+            _stacked_ball_frame(12, 12, 12, 12, y=42),
+            _stacked_ball_frame(20, 20, 20, 20, y=42),
+            _stacked_ball_frame(74, 74, 74, 74, y=8),
+            _stacked_ball_frame(74, 74, 74, 74, y=8),
+        ],
+        rewards=[0.0, 0.0, -1.0],
+        terminated_at=3,
+    )
+    wrapped = TennisEventRewardWrapper(
+        env,
+        TennisEventConfig(
+            net_cross_bonus=0.05,
+            deep_landing_bonus=0.03,
+            wide_landing_bonus=0.02,
+            attack_window_steps=2,
+            failed_attack_penalty=0.25,
+            point_loss_penalty=0.1,
+            max_step_shaping_abs=1.0,
+            agent_side="left",
+        ),
+    )
+
+    wrapped.reset()
+    _, _, _, _, _ = wrapped.step(0)
+    _, reward_two, _, _, info_two = wrapped.step(0)
+    _, reward_three, terminated, _, info_three = wrapped.step(0)
+
+    assert reward_two == pytest.approx(0.1)
+    assert terminated is True
+    assert reward_three == pytest.approx(-1.35)
+    assert info_three["tennis_events/attack_failure_penalty_applied"] == pytest.approx(-0.25)
+    assert info_three["tennis_events/point_outcome_bonus"] == pytest.approx(-0.1)
+    assert info_three["tennis_events/attack_window_remaining"] == pytest.approx(0.0)
+
+
+def test_tennis_event_reward_wrapper_requires_min_cross_delta() -> None:
+    env = DummyStackedTennisEnv(
+        frames=[
+            _stacked_ball_frame(41, 41, 41, 41),
+            _stacked_ball_frame(42, 42, 42, 42),
+        ],
+        rewards=[0.0],
+        terminated_at=None,
+    )
+    wrapped = TennisEventRewardWrapper(
+        env,
+        TennisEventConfig(
+            net_cross_bonus=0.1,
+            min_cross_delta_x_px=6.0,
+            cross_cooldown_steps=0,
+            max_step_shaping_abs=1.0,
+        ),
+    )
+
+    wrapped.reset()
+    _, reward, _, _, info = wrapped.step(0)
+
+    assert reward == pytest.approx(0.0)
+    assert info["tennis_events/net_cross_bonus"] == pytest.approx(0.0)
+
+
+def test_tennis_event_reward_wrapper_respects_cross_cooldown() -> None:
+    env = DummyStackedTennisEnv(
+        frames=[
+            _stacked_ball_frame(10, 10, 10, 10),
+            _stacked_ball_frame(60, 60, 60, 60),
+            _stacked_ball_frame(20, 20, 20, 20),
+            _stacked_ball_frame(60, 60, 60, 60),
+        ],
+        rewards=[0.0, 0.0, 0.0],
+        terminated_at=None,
+    )
+    wrapped = TennisEventRewardWrapper(
+        env,
+        TennisEventConfig(
+            net_cross_bonus=0.1,
+            min_cross_delta_x_px=6.0,
+            cross_cooldown_steps=2,
+            max_step_shaping_abs=1.0,
+        ),
+    )
+
+    wrapped.reset()
+    _, reward_one, _, _, info_one = wrapped.step(0)
+    _, reward_two, _, _, info_two = wrapped.step(0)
+    _, reward_three, _, _, info_three = wrapped.step(0)
+
+    assert reward_one == pytest.approx(0.1)
+    assert reward_two == pytest.approx(0.0)
+    assert reward_three == pytest.approx(0.1)
+    assert info_one["tennis_events/net_cross_bonus"] == pytest.approx(0.1)
+    assert info_two["tennis_events/net_cross_bonus"] == pytest.approx(0.0)
+    assert info_three["tennis_events/net_cross_bonus"] == pytest.approx(0.1)
+
+
+def test_tennis_event_reward_wrapper_caps_per_step_shaping_and_emits_info_metrics() -> None:
+    env = DummyStackedTennisEnv(
+        frames=[
+            _stacked_ball_frame(10, 10, 10, 10),
+            _stacked_ball_frame(70, 70, 70, 70),
+        ],
+        rewards=[0.0],
+        terminated_at=None,
+    )
+    wrapped = TennisEventRewardWrapper(
+        env,
+        TennisEventConfig(
+            rally_survival_bonus=0.1,
+            net_cross_bonus=0.2,
+            successful_return_bonus=0.2,
+            max_step_shaping_abs=0.25,
+            min_cross_delta_x_px=6.0,
+            cross_cooldown_steps=0,
+            emit_info_metrics=True,
+        ),
+    )
+
+    wrapped.reset()
+    _, reward, _, _, info = wrapped.step(0)
+
+    assert reward == pytest.approx(0.25)
+    assert info["tennis_events/shaping_total"] == pytest.approx(0.25)
+    assert info["tennis_events/rally_bonus"] == pytest.approx(0.1)
+    assert info["tennis_events/net_cross_bonus"] == pytest.approx(0.2)
+    assert info["tennis_events/return_bonus"] == pytest.approx(0.2)
+    assert info["tennis_events/ball_detected_ratio"] == pytest.approx(1.0)
+
+
+def test_tennis_event_reward_wrapper_can_disable_info_metrics() -> None:
+    env = DummyStackedTennisEnv(
+        frames=[
+            _stacked_ball_frame(10, 10, 10, 10),
+            _stacked_ball_frame(70, 70, 70, 70),
+        ],
+        rewards=[0.0],
+        terminated_at=None,
+    )
+    wrapped = TennisEventRewardWrapper(
+        env,
+        TennisEventConfig(
+            net_cross_bonus=0.2,
+            min_cross_delta_x_px=6.0,
+            cross_cooldown_steps=0,
+            max_step_shaping_abs=1.0,
+            emit_info_metrics=False,
+        ),
+    )
+
+    wrapped.reset()
+    _, _, _, _, info = wrapped.step(0)
+
+    assert not any(key.startswith("tennis_events/") for key in info)
 
 
 def test_resolve_atari_wrapper_config_uses_tags_and_eval_mode() -> None:

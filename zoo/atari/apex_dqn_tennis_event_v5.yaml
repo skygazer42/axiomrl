@@ -1,0 +1,6 @@
+# Deprecated on 2026-04-15 after unstable regression versus v4.
+# Use apex_dqn_tennis_event_v5_1 for the next Tennis event-shaping run.
+name: apex_dqn_tennis_event_v5
+config: configs/apex_dqn/tennis_event_v5.yaml
+algorithm: apex_dqn
+env_id: ALE/Tennis-v5

@@ -1,0 +1,4 @@
+name: apex_dqn_tennis_event_offense_v5
+config: configs/apex_dqn/tennis_event_offense_v5.yaml
+algorithm: apex_dqn
+env_id: ALE/Tennis-v5

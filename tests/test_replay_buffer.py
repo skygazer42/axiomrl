@@ -46,3 +46,22 @@ def test_replay_buffer_state_roundtrip(tmp_path: Path) -> None:
     sample = restored.sample(1)
     assert sample["actions"].item() == 1
     assert sample["rewards"].item() == pytest.approx(1.0)
+
+
+def test_replay_buffer_state_dict_moves_tensor_payloads_to_cpu() -> None:
+    buffer = ReplayBuffer(capacity=4, obs_shape=(4,), action_shape=(), device="cpu")
+    buffer.add(
+        obs=torch.ones(4),
+        actions=1,
+        rewards=1.0,
+        next_obs=torch.ones(4) * 2,
+        dones=0.0,
+    )
+
+    state = buffer.state_dict()
+
+    assert state["obs"].device.type == "cpu"
+    assert state["actions"].device.type == "cpu"
+    assert state["rewards"].device.type == "cpu"
+    assert state["next_obs"].device.type == "cpu"
+    assert state["dones"].device.type == "cpu"

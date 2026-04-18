@@ -157,6 +157,20 @@ def test_tennis_focus_manifest_lists_expected_presets() -> None:
     ]
 
 
+def test_tennis_focus_v2_manifest_lists_expected_presets() -> None:
+    manifest_path = REPO_ROOT / "zoo" / "atari" / "tennis_focus_v2.yaml"
+    payload = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+
+    assert payload["suite"] == "atari"
+    assert payload["protocol"]["name"] == "atari_default_v1"
+    assert [preset["name"] for preset in payload["presets"]] == [
+        "apex_dqn_tennis_stable_lr",
+        "apex_dqn_tennis_event_v2",
+        "rainbow_dqn_tennis_no_early_stop",
+        "rainbow_dqn_tennis_event_v2",
+    ]
+
+
 def test_tennis_offense_focus_manifest_lists_expected_presets() -> None:
     manifest_path = REPO_ROOT / "zoo" / "atari" / "tennis_offense_focus.yaml"
     payload = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
@@ -232,6 +246,8 @@ def test_packaged_tennis_tuning_stage1_preset_inherits_manifest_protocol_default
         ("rainbow_dqn_tennis_event_shaped", "rainbow_dqn"),
         ("apex_dqn_tennis_event_offense", "apex_dqn"),
         ("rainbow_dqn_tennis_event_offense", "rainbow_dqn"),
+        ("apex_dqn_tennis_event_v2", "apex_dqn"),
+        ("rainbow_dqn_tennis_event_v2", "rainbow_dqn"),
     ],
 )
 def test_packaged_tennis_event_shaped_preset_inherits_manifest_protocol_defaults(
@@ -249,6 +265,192 @@ def test_packaged_tennis_event_shaped_preset_inherits_manifest_protocol_defaults
     assert config.env_kwargs["training"]["repeat_action_probability"] == pytest.approx(0.0)
     assert config.env_kwargs["evaluation"]["repeat_action_probability"] == pytest.approx(0.25)
     assert "tennis_events" in config.env_kwargs["training"]["wrappers"]
+
+
+@pytest.mark.parametrize(
+    ("preset_name", "expected_algo"),
+    [
+        ("apex_dqn_tennis_event_v2", "apex_dqn"),
+        ("rainbow_dqn_tennis_event_v2", "rainbow_dqn"),
+    ],
+)
+def test_packaged_tennis_event_v2_preset_has_stop_loss_and_v2_wrapper_defaults(
+    monkeypatch, tmp_path: Path, preset_name: str, expected_algo: str
+) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    config = load_config(f"zoo/atari/{preset_name}.yaml")
+
+    assert config.algo == expected_algo
+    assert config.total_timesteps == 100000000
+    early_stopping = config.algo_kwargs["early_stopping"]
+    assert early_stopping["metric"] == "eval_return_mean"
+    assert early_stopping["mode"] == "max"
+    assert early_stopping["min_steps"] == 20000000
+    assert early_stopping["patience"] == 12
+    assert early_stopping["min_delta"] == pytest.approx(0.5)
+    tennis_events = config.env_kwargs["training"]["wrappers"]["tennis_events"]
+    assert tennis_events["min_cross_delta_x_px"] == pytest.approx(6.0)
+    assert tennis_events["cross_cooldown_steps"] == 2
+    assert tennis_events["max_step_shaping_abs"] == pytest.approx(0.25)
+    assert tennis_events["emit_info_metrics"] is True
+
+
+def test_packaged_tennis_event_v5_preset_has_outcome_anchoring_and_fast_eval(
+    monkeypatch, tmp_path: Path
+) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    config = load_config("zoo/atari/apex_dqn_tennis_event_v5.yaml")
+
+    assert config.algo == "apex_dqn"
+    assert config.total_timesteps == 100000000
+    assert int(config.algo_kwargs["eval_interval"]) == 100000
+    assert config.env_kwargs["training"]["repeat_action_probability"] == pytest.approx(0.0)
+    assert config.env_kwargs["evaluation"]["repeat_action_probability"] == pytest.approx(0.0)
+    tennis_events = config.env_kwargs["training"]["wrappers"]["tennis_events"]
+    assert tennis_events["point_win_bonus"] == pytest.approx(0.5)
+    assert tennis_events["point_loss_penalty"] == pytest.approx(0.5)
+    assert tennis_events["net_cross_bonus"] == pytest.approx(0.0)
+
+
+def test_packaged_tennis_event_v5_1_preset_restores_v4_dense_shaping_with_mild_win_anchor(
+    monkeypatch, tmp_path: Path
+) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    config = load_config("zoo/atari/apex_dqn_tennis_event_v5_1.yaml")
+
+    assert config.algo == "apex_dqn"
+    assert config.total_timesteps == 100000000
+    assert int(config.algo_kwargs["eval_interval"]) == 100000
+    assert config.env_kwargs["training"]["repeat_action_probability"] == pytest.approx(0.0)
+    assert config.env_kwargs["evaluation"]["repeat_action_probability"] == pytest.approx(0.0)
+    tennis_events = config.env_kwargs["training"]["wrappers"]["tennis_events"]
+    assert tennis_events["successful_return_bonus"] == pytest.approx(0.06)
+    assert tennis_events["failure_penalty"] == pytest.approx(-0.4)
+    assert tennis_events["point_win_bonus"] == pytest.approx(0.04)
+    assert tennis_events["point_loss_penalty"] == pytest.approx(0.0)
+    assert tennis_events["deep_landing_bonus"] == pytest.approx(0.005)
+
+
+def test_packaged_tennis_event_offense_v2_preset_preserves_v5_1_stability_and_adds_offense_pressure(
+    monkeypatch, tmp_path: Path
+) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    config = load_config("zoo/atari/apex_dqn_tennis_event_offense_v2.yaml")
+
+    assert config.algo == "apex_dqn"
+    assert config.total_timesteps == 100000000
+    assert int(config.algo_kwargs["eval_interval"]) == 100000
+    assert config.env_kwargs["training"]["repeat_action_probability"] == pytest.approx(0.0)
+    assert config.env_kwargs["evaluation"]["repeat_action_probability"] == pytest.approx(0.0)
+    tennis_events = config.env_kwargs["training"]["wrappers"]["tennis_events"]
+    assert tennis_events["successful_return_bonus"] == pytest.approx(0.06)
+    assert tennis_events["failure_penalty"] == pytest.approx(-0.4)
+    assert tennis_events["net_cross_bonus"] == pytest.approx(0.005)
+    assert tennis_events["point_win_bonus"] == pytest.approx(0.06)
+    assert tennis_events["deep_landing_bonus"] == pytest.approx(0.015)
+    assert tennis_events["wide_landing_bonus"] == pytest.approx(0.01)
+
+
+def test_packaged_tennis_event_offense_v3_preset_shifts_from_rally_control_toward_winning_points(
+    monkeypatch, tmp_path: Path
+) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    config = load_config("zoo/atari/apex_dqn_tennis_event_offense_v3.yaml")
+
+    assert config.algo == "apex_dqn"
+    assert config.total_timesteps == 100000000
+    assert int(config.algo_kwargs["eval_interval"]) == 100000
+    assert config.env_kwargs["training"]["repeat_action_probability"] == pytest.approx(0.0)
+    assert config.env_kwargs["evaluation"]["repeat_action_probability"] == pytest.approx(0.0)
+    tennis_events = config.env_kwargs["training"]["wrappers"]["tennis_events"]
+    assert tennis_events["successful_return_bonus"] == pytest.approx(0.05)
+    assert tennis_events["failure_penalty"] == pytest.approx(-0.4)
+    assert tennis_events["net_cross_bonus"] == pytest.approx(0.008)
+    assert tennis_events["point_win_bonus"] == pytest.approx(0.12)
+    assert tennis_events["point_loss_penalty"] == pytest.approx(0.0)
+    assert tennis_events["deep_landing_bonus"] == pytest.approx(0.025)
+    assert tennis_events["wide_landing_bonus"] == pytest.approx(0.015)
+    assert tennis_events["max_step_shaping_abs"] == pytest.approx(0.1)
+
+
+def test_packaged_tennis_event_offense_v4_preset_separates_point_wins_from_generic_returns(
+    monkeypatch, tmp_path: Path
+) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    config = load_config("zoo/atari/apex_dqn_tennis_event_offense_v4.yaml")
+
+    assert config.algo == "apex_dqn"
+    assert config.total_timesteps == 100000000
+    assert int(config.algo_kwargs["eval_interval"]) == 100000
+    assert config.env_kwargs["training"]["repeat_action_probability"] == pytest.approx(0.0)
+    assert config.env_kwargs["evaluation"]["repeat_action_probability"] == pytest.approx(0.0)
+    tennis_events = config.env_kwargs["training"]["wrappers"]["tennis_events"]
+    assert tennis_events["successful_return_bonus"] == pytest.approx(0.03)
+    assert tennis_events["failure_penalty"] == pytest.approx(-0.08)
+    assert tennis_events["net_cross_bonus"] == pytest.approx(0.01)
+    assert tennis_events["point_win_bonus"] == pytest.approx(0.16)
+    assert tennis_events["point_loss_penalty"] == pytest.approx(0.02)
+    assert tennis_events["deep_landing_bonus"] == pytest.approx(0.035)
+    assert tennis_events["wide_landing_bonus"] == pytest.approx(0.025)
+    assert tennis_events["max_step_shaping_abs"] == pytest.approx(0.16)
+
+
+def test_packaged_tennis_event_offense_v5_preset_rewards_attack_conversion_over_neutral_rallies(
+    monkeypatch, tmp_path: Path
+) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    config = load_config("zoo/atari/apex_dqn_tennis_event_offense_v5.yaml")
+
+    assert config.algo == "apex_dqn"
+    assert config.total_timesteps == 100000000
+    assert int(config.algo_kwargs["eval_interval"]) == 100000
+    assert config.env_kwargs["training"]["repeat_action_probability"] == pytest.approx(0.0)
+    assert config.env_kwargs["evaluation"]["repeat_action_probability"] == pytest.approx(0.0)
+    tennis_events = config.env_kwargs["training"]["wrappers"]["tennis_events"]
+    assert tennis_events["successful_return_bonus"] == pytest.approx(0.0)
+    assert tennis_events["failure_penalty"] == pytest.approx(-0.02)
+    assert tennis_events["net_cross_bonus"] == pytest.approx(0.005)
+    assert tennis_events["point_win_bonus"] == pytest.approx(0.14)
+    assert tennis_events["point_loss_penalty"] == pytest.approx(0.03)
+    assert tennis_events["deep_landing_bonus"] == pytest.approx(0.005)
+    assert tennis_events["wide_landing_bonus"] == pytest.approx(0.005)
+    assert tennis_events["attack_window_steps"] == 12
+    assert tennis_events["attack_conversion_bonus"] == pytest.approx(0.1)
+    assert tennis_events["failed_attack_penalty"] == pytest.approx(0.03)
+    assert tennis_events["max_step_shaping_abs"] == pytest.approx(0.24)
+
+
+def test_packaged_tennis_event_offense_v5_1_preset_keeps_attack_conversion_but_reduces_instability_pressure(
+    monkeypatch, tmp_path: Path
+) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    config = load_config("zoo/atari/apex_dqn_tennis_event_offense_v5_1.yaml")
+
+    assert config.algo == "apex_dqn"
+    assert config.total_timesteps == 100000000
+    assert int(config.algo_kwargs["eval_interval"]) == 100000
+    assert config.env_kwargs["training"]["repeat_action_probability"] == pytest.approx(0.0)
+    assert config.env_kwargs["evaluation"]["repeat_action_probability"] == pytest.approx(0.0)
+    tennis_events = config.env_kwargs["training"]["wrappers"]["tennis_events"]
+    assert tennis_events["successful_return_bonus"] == pytest.approx(0.01)
+    assert tennis_events["failure_penalty"] == pytest.approx(-0.01)
+    assert tennis_events["net_cross_bonus"] == pytest.approx(0.005)
+    assert tennis_events["point_win_bonus"] == pytest.approx(0.1)
+    assert tennis_events["point_loss_penalty"] == pytest.approx(0.02)
+    assert tennis_events["deep_landing_bonus"] == pytest.approx(0.004)
+    assert tennis_events["wide_landing_bonus"] == pytest.approx(0.004)
+    assert tennis_events["attack_window_steps"] == 12
+    assert tennis_events["attack_conversion_bonus"] == pytest.approx(0.05)
+    assert tennis_events["failed_attack_penalty"] == pytest.approx(0.01)
+    assert tennis_events["max_step_shaping_abs"] == pytest.approx(0.16)
 
 
 def test_zoo_cli_can_resolve_packaged_manifest_outside_repo_root(monkeypatch, tmp_path: Path) -> None:
