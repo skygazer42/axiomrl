@@ -5,9 +5,9 @@ from typing import Any
 import torch
 from torch.nn import functional as F
 
-from rl_training.algorithms.base import UpdateResult
-from rl_training.algorithms.dreamer import Dreamer
-from rl_training.models.mow import MoWModel
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.algorithms.dreamer import Dreamer
+from axiomrl.models.mow import MoWModel
 
 
 class MoW(Dreamer):
@@ -66,8 +66,12 @@ class MoW(Dreamer):
             "mow_reconstruction_loss": float(reconstruction_loss.detach().cpu().item()),
             "mow_reward_loss": float(reward_loss.detach().cpu().item()),
             "mow_gate_entropy": float(gate_entropy.detach().cpu().item()),
-            "mow_dynamics_gate_entropy": float(self.mow_model.gate_entropy(dynamics_gate_probs).mean().detach().cpu().item()),
-            "mow_reward_gate_entropy": float(self.mow_model.gate_entropy(reward_gate_probs).mean().detach().cpu().item()),
+            "mow_dynamics_gate_entropy": float(
+                self.mow_model.gate_entropy(dynamics_gate_probs).mean().detach().cpu().item()
+            ),
+            "mow_reward_gate_entropy": float(
+                self.mow_model.gate_entropy(reward_gate_probs).mean().detach().cpu().item()
+            ),
             "mow_num_experts": float(self.mow_model.num_experts),
         }
         return UpdateResult(metrics=metrics, num_gradient_steps=1)
@@ -103,14 +107,20 @@ class MoW(Dreamer):
 
             values, critic_gate_probs = self.mow_model.value_with_gates(features)
             value_terms.append(values)
-            gate_entropies.append(0.5 * (self.mow_model.gate_entropy(actor_gate_probs) + self.mow_model.gate_entropy(critic_gate_probs)))
+            gate_entropies.append(
+                0.5 * (self.mow_model.gate_entropy(actor_gate_probs) + self.mow_model.gate_entropy(critic_gate_probs))
+            )
 
             with torch.no_grad():
                 next_features, dynamics_gate_probs = self.mow_model.dynamics_step_with_gates(features, actions)
                 predicted_rewards, reward_gate_probs = self.mow_model.predict_reward_with_gates(next_features)
                 reward_terms.append(predicted_rewards)
                 gate_entropies.append(
-                    0.5 * (self.mow_model.gate_entropy(dynamics_gate_probs) + self.mow_model.gate_entropy(reward_gate_probs))
+                    0.5
+                    * (
+                        self.mow_model.gate_entropy(dynamics_gate_probs)
+                        + self.mow_model.gate_entropy(reward_gate_probs)
+                    )
                 )
                 features = next_features.detach()
 
@@ -146,8 +156,12 @@ class MoW(Dreamer):
             "mow_actor_loss": float(actor_loss.detach().cpu().item()),
             "mow_critic_loss": float(critic_loss.detach().cpu().item()),
             "mow_imagination_horizon": float(horizon),
-            "mow_imagination_reward_mean": float(torch.stack(reward_terms, dim=0).mean().detach().cpu().item()) if reward_terms else 0.0,
-            "mow_gate_entropy": float(torch.stack(gate_entropies, dim=0).mean().detach().cpu().item()) if gate_entropies else 0.0,
+            "mow_imagination_reward_mean": float(torch.stack(reward_terms, dim=0).mean().detach().cpu().item())
+            if reward_terms
+            else 0.0,
+            "mow_gate_entropy": float(torch.stack(gate_entropies, dim=0).mean().detach().cpu().item())
+            if gate_entropies
+            else 0.0,
             "mow_num_experts": float(self.mow_model.num_experts),
         }
         return UpdateResult(metrics=metrics, num_gradient_steps=1)

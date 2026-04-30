@@ -1,7 +1,7 @@
 import torch
 
-from rl_training.algorithms.d4pg import D4PG, d4pg_loss
-from rl_training.models.mlp_d4pg import MLPD4PGModel
+from axiomrl.algorithms.d4pg import D4PG, d4pg_loss
+from axiomrl.models.mlp_d4pg import MLPD4PGModel
 
 
 def test_mlp_d4pg_model_outputs_bounded_actions_and_distribution_logits() -> None:

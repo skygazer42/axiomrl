@@ -5,7 +5,7 @@ from collections.abc import Sequence
 import torch
 from torch import nn
 
-from rl_training.models.mlp_q_network import _build_mlp
+from axiomrl.models.mlp_q_network import _build_mlp
 
 
 class MLPDuelingQNetwork(nn.Module):

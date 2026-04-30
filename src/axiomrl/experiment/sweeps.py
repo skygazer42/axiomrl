@@ -3,8 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from rl_training.experiment.config import TrainConfig, resolve_benchmark_seed_values
-from rl_training.runtime.types import MetricDict
+from axiomrl.experiment.config import TrainConfig, resolve_benchmark_seed_values
+from axiomrl.runtime.types import MetricDict
 
 
 @dataclass(frozen=True, slots=True)

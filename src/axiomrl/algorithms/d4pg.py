@@ -6,9 +6,9 @@ from typing import Any
 import torch
 from torch.nn import functional as F
 
-from rl_training.algorithms.base import UpdateResult
-from rl_training.algorithms.c51_dqn import _project_distribution
-from rl_training.models.mlp_d4pg import MLPD4PGModel
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.algorithms.c51_dqn import _project_distribution
+from axiomrl.models.mlp_d4pg import MLPD4PGModel
 
 
 def _d4pg_loss_terms(batch: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:

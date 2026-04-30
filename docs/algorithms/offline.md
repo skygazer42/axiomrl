@@ -79,7 +79,7 @@ algo_kwargs:
 ### Python API 示例
 
 ```python
-from rl_training.core import IQL
+from axiomrl.core import IQL
 
 model = IQL(
     env_id="Hopper-v4",
@@ -139,7 +139,7 @@ algo_kwargs:
 ### Python API 示例
 
 ```python
-from rl_training.core import CQL
+from axiomrl.core import CQL
 
 model = CQL(
     env_id="Walker2d-v4",
@@ -194,7 +194,7 @@ algo_kwargs:
 ### Python API 示例
 
 ```python
-from rl_training.core import BC
+from axiomrl.core import BC
 
 model = BC(
     env_id="Hopper-v4",
@@ -252,7 +252,7 @@ algo_kwargs:
 ### Python API 示例
 
 ```python
-from rl_training.experimental import BCQ
+from axiomrl.experimental import BCQ
 
 model = BCQ(
     env_id="HalfCheetah-v4",
@@ -311,7 +311,7 @@ algo_kwargs:
 ### Python API 示例
 
 ```python
-from rl_training.experimental import BEAR
+from axiomrl.experimental import BEAR
 
 model = BEAR(
     env_id="Ant-v4",
@@ -369,7 +369,7 @@ algo_kwargs:
 ### Python API 示例
 
 ```python
-from rl_training.experimental import CRR
+from axiomrl.experimental import CRR
 
 model = CRR(
     env_id="Walker2d-v4",
@@ -426,7 +426,7 @@ algo_kwargs:
 ### Python API 示例
 
 ```python
-from rl_training.experimental import TD3BC
+from axiomrl.experimental import TD3BC
 
 model = TD3BC(
     env_id="Hopper-v4",
@@ -482,7 +482,7 @@ algo_kwargs:
 ### Python API 示例
 
 ```python
-from rl_training.experimental import AWAC
+from axiomrl.experimental import AWAC
 
 model = AWAC(
     env_id="AdroitHandPen-v1",
@@ -539,7 +539,7 @@ algo_kwargs:
 ### Python API 示例
 
 ```python
-from rl_training.experimental import ReBRAC
+from axiomrl.experimental import ReBRAC
 
 model = ReBRAC(
     env_id="HalfCheetah-v4",
@@ -594,7 +594,7 @@ algo_kwargs:
 ### Python API 示例
 
 ```python
-from rl_training.experimental import XQL
+from axiomrl.experimental import XQL
 
 model = XQL(
     env_id="Ant-v4",
@@ -650,7 +650,7 @@ algo_kwargs:
 ### Python API 示例
 
 ```python
-from rl_training.experimental import EDAC
+from axiomrl.experimental import EDAC
 
 model = EDAC(
     env_id="Walker2d-v4",
@@ -708,7 +708,7 @@ algo_kwargs:
 ### Python API 示例
 
 ```python
-from rl_training.experimental import CalQL
+from axiomrl.experimental import CalQL
 
 model = CalQL(
     env_id="AntMaze-large-diverse-v2",
@@ -768,7 +768,7 @@ algo_kwargs:
 ### Python API 示例
 
 ```python
-from rl_training.experimental import DecisionTransformer
+from axiomrl.experimental import DecisionTransformer
 
 model = DecisionTransformer(
     env_id="Hopper-v4",

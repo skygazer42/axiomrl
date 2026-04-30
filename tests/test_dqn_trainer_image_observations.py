@@ -6,9 +6,9 @@ import gymnasium as gym
 import numpy as np
 import pytest
 
-from rl_training.experiment.config import TrainConfig
-from rl_training.runtime.dqn_trainer import train_dqn
-from rl_training.runtime.workflows import evaluate_checkpoint
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.runtime.dqn_trainer import train_dqn
+from axiomrl.runtime.workflows import evaluate_checkpoint
 
 
 class DummyPixelEnv(gym.Env):
@@ -114,4 +114,3 @@ def test_dqn_family_train_and_evaluate_with_image_observations(
     metrics = evaluate_checkpoint(result.checkpoint_path, num_episodes=1)
 
     assert "eval_return_mean" in metrics
-

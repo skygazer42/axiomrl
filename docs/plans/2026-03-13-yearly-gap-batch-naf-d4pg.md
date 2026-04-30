@@ -6,7 +6,7 @@
 
 **Architecture:** Keep the package shape stable. Reuse the existing continuous-control replay-buffer runtime lane instead of inventing a new execution model. `NAF` gets its own value-based continuous-control model and trainer on top of the current replay infrastructure. `D4PG` reuses the current `DDPG/TD3` continuous-control actor path plus the existing categorical projection ideas from `C51`, while staying explicit as its own non-distributed distributional actor-critic path. Years that require asynchronous or distributed runtime redesign stay documented but deferred.
 
-**Tech Stack:** Python 3.10, PyTorch, Gymnasium, pytest, existing `rl_training` config/checkpoint/API stack.
+**Tech Stack:** Python 3.10, PyTorch, Gymnasium, pytest, existing `axiomrl` config/checkpoint/API stack.
 
 ---
 
@@ -59,18 +59,18 @@ Expected: import or symbol failures for missing `NAF` implementation.
 ### Task 3: Implement NAF end-to-end
 
 **Files:**
-- Create: `src/rl_training/models/mlp_naf.py`
-- Create: `src/rl_training/algorithms/naf.py`
-- Create: `src/rl_training/runtime/naf_trainer.py`
+- Create: `src/axiomrl/models/mlp_naf.py`
+- Create: `src/axiomrl/algorithms/naf.py`
+- Create: `src/axiomrl/runtime/naf_trainer.py`
 - Create: `examples/naf_pendulum_reference.py`
 - Create: `configs/naf/pendulum.yaml`
-- Create: `src/rl_training/assets/configs/naf/pendulum.yaml`
-- Modify: `src/rl_training/models/__init__.py`
-- Modify: `src/rl_training/algorithms/__init__.py`
-- Modify: `src/rl_training/api/algorithms.py`
-- Modify: `src/rl_training/api/__init__.py`
-- Modify: `src/rl_training/__init__.py`
-- Modify: `src/rl_training/experiment/registry.py`
+- Create: `src/axiomrl/assets/configs/naf/pendulum.yaml`
+- Modify: `src/axiomrl/models/__init__.py`
+- Modify: `src/axiomrl/algorithms/__init__.py`
+- Modify: `src/axiomrl/api/algorithms.py`
+- Modify: `src/axiomrl/api/__init__.py`
+- Modify: `src/axiomrl/__init__.py`
+- Modify: `src/axiomrl/experiment/registry.py`
 - Modify: `README.md`
 
 **Step 1: Add the model**
@@ -132,18 +132,18 @@ Expected: import or symbol failures for missing `D4PG` implementation.
 ### Task 5: Implement D4PG end-to-end
 
 **Files:**
-- Create: `src/rl_training/models/mlp_d4pg.py`
-- Create: `src/rl_training/algorithms/d4pg.py`
-- Create: `src/rl_training/runtime/d4pg_trainer.py`
+- Create: `src/axiomrl/models/mlp_d4pg.py`
+- Create: `src/axiomrl/algorithms/d4pg.py`
+- Create: `src/axiomrl/runtime/d4pg_trainer.py`
 - Create: `examples/d4pg_pendulum_reference.py`
 - Create: `configs/d4pg/pendulum.yaml`
-- Create: `src/rl_training/assets/configs/d4pg/pendulum.yaml`
-- Modify: `src/rl_training/models/__init__.py`
-- Modify: `src/rl_training/algorithms/__init__.py`
-- Modify: `src/rl_training/api/algorithms.py`
-- Modify: `src/rl_training/api/__init__.py`
-- Modify: `src/rl_training/__init__.py`
-- Modify: `src/rl_training/experiment/registry.py`
+- Create: `src/axiomrl/assets/configs/d4pg/pendulum.yaml`
+- Modify: `src/axiomrl/models/__init__.py`
+- Modify: `src/axiomrl/algorithms/__init__.py`
+- Modify: `src/axiomrl/api/algorithms.py`
+- Modify: `src/axiomrl/api/__init__.py`
+- Modify: `src/axiomrl/__init__.py`
+- Modify: `src/axiomrl/experiment/registry.py`
 - Modify: `README.md`
 
 **Step 1: Add the model**

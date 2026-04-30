@@ -4,14 +4,14 @@ import numpy as np
 import pytest
 import torch
 
-from rl_training.data import (
+from axiomrl.data import (
     TransitionDataset,
     compute_discounted_returns_to_go,
     load_transition_dataset,
     mix_transition_datasets,
 )
-from rl_training.experiment.config import TrainConfig
-from rl_training.runtime.iql_trainer import _build_offline_dataset
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.runtime.iql_trainer import _build_offline_dataset
 
 
 def test_transition_dataset_can_be_created_from_mapping() -> None:

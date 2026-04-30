@@ -1,7 +1,7 @@
 import torch
 
-from rl_training.algorithms.tqc import TQC, _truncate_quantiles, tqc_loss
-from rl_training.models.mlp_tqc import MLPTQCModel
+from axiomrl.algorithms.tqc import TQC, _truncate_quantiles, tqc_loss
+from axiomrl.models.mlp_tqc import MLPTQCModel
 
 
 def test_mlp_tqc_model_samples_bounded_actions_and_quantiles() -> None:
@@ -14,7 +14,9 @@ def test_mlp_tqc_model_samples_bounded_actions_and_quantiles() -> None:
     )
 
     sampled = model.sample_actions(torch.zeros((4, 3), dtype=torch.float32))
-    quantiles = model.quantile_values(torch.zeros((4, 3), dtype=torch.float32), torch.zeros((4, 1), dtype=torch.float32))
+    quantiles = model.quantile_values(
+        torch.zeros((4, 3), dtype=torch.float32), torch.zeros((4, 1), dtype=torch.float32)
+    )
 
     assert sampled.actions.shape == (4, 1)
     assert sampled.logprobs.shape == (4,)

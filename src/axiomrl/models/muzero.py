@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from collections.abc import Sequence
+from dataclasses import dataclass
 
 import torch
 from torch import nn
 
-from rl_training.models.cnn.nature import NatureCNN
+from axiomrl.models.cnn.nature import NatureCNN
 
 
 def _build_mlp(
@@ -133,9 +133,7 @@ class MuZeroModel(nn.Module):
         if action_tensor.ndim != 1:
             raise ValueError(f"expected action shape (batch,), got {tuple(action_tensor.shape)!r}")
         if int(action_tensor.shape[0]) != int(hidden_tensor.shape[0]):
-            raise ValueError(
-                f"expected action batch {int(hidden_tensor.shape[0])}, got {int(action_tensor.shape[0])}"
-            )
+            raise ValueError(f"expected action batch {int(hidden_tensor.shape[0])}, got {int(action_tensor.shape[0])}")
 
         action_emb = self.action_embedding(action_tensor)
         dynamics_input = torch.cat([hidden_tensor, action_emb], dim=-1)
@@ -151,4 +149,3 @@ class MuZeroModel(nn.Module):
             policy_logits=policy_logits,
             value=value,
         )
-

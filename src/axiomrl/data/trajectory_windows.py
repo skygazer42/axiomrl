@@ -4,7 +4,7 @@ from typing import Any
 
 import torch
 
-from rl_training.data.offline_dataset import TransitionDataset
+from axiomrl.data.offline_dataset import TransitionDataset
 
 _FIELD_LENGTH_ERROR = "all fields must have the same length"
 

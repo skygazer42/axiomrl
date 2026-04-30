@@ -8,8 +8,8 @@ from typing import Any
 
 import yaml
 
-from rl_training.experiment.benchmarking import resolve_score_normalization_settings
-from rl_training.resources import find_packaged_asset
+from axiomrl.experiment.benchmarking import resolve_score_normalization_settings
+from axiomrl.resources import find_packaged_asset
 
 MANIFEST_DRIFT_TYPE_CHOICES = ("unknown-preset", "protocol-mismatch")
 MANIFEST_DRIFT_TYPE_TO_SUMMARY_FIELD = {
@@ -106,13 +106,7 @@ def find_manifest_for_preset(
         candidates: list[Path] = []
         if benchmark_candidate.exists():
             candidates.append(benchmark_candidate)
-        candidates.extend(
-            sorted(
-                candidate
-                for candidate in parent.glob("*.yaml")
-                if candidate != benchmark_candidate
-            )
-        )
+        candidates.extend(sorted(candidate for candidate in parent.glob("*.yaml") if candidate != benchmark_candidate))
         for candidate in candidates:
             manifest = load_manifest(candidate)
             if _manifest_matches_preset(manifest, preset_path=resolved_preset_path, preset_payload=preset_payload):
@@ -289,7 +283,9 @@ def _attach_manifest_metadata(
     preset_metadata = _resolve_manifest_preset_metadata(preset_lookup, preset_name=record.get("preset_name"))
     enriched["preset_metadata"] = preset_metadata
     enriched["preset_config"] = preset_metadata.get("config") if isinstance(preset_metadata, Mapping) else None
-    enriched["preset_description"] = preset_metadata.get("description") if isinstance(preset_metadata, Mapping) else None
+    enriched["preset_description"] = (
+        preset_metadata.get("description") if isinstance(preset_metadata, Mapping) else None
+    )
     if "manifest_alignment_status" not in enriched:
         alignment_fields = _resolve_manifest_alignment_fields(
             record,
@@ -495,9 +491,7 @@ def _build_manifest_alignment_summary(reports: list[dict[str, Any]]) -> dict[str
     total_runs = len(reports)
     aligned_runs = sum(1 for report in reports if report.get("manifest_alignment_status") == "aligned")
     unknown_preset_runs = sum(1 for report in reports if report.get("manifest_preset_known") is False)
-    protocol_mismatch_runs = sum(
-        1 for report in reports if report.get("manifest_protocol_matches_manifest") is False
-    )
+    protocol_mismatch_runs = sum(1 for report in reports if report.get("manifest_protocol_matches_manifest") is False)
     drifted_runs = total_runs - aligned_runs
     drifted_presets = sorted(
         {

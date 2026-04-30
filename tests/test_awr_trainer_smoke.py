@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from rl_training.experiment.config import TrainConfig
-from rl_training.runtime.awr_trainer import train_awr
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.runtime.awr_trainer import train_awr
 
 
 def test_train_awr_writes_checkpoint_and_metrics(tmp_path: Path) -> None:

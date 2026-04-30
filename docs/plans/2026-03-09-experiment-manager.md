@@ -13,7 +13,7 @@
 ### Task 1: Add an algorithm registry
 
 **Files:**
-- Create: `src/rl_training/experiment/registry.py`
+- Create: `src/axiomrl/experiment/registry.py`
 - Create: `tests/test_experiment_manager.py`
 
 **Step 1: Write the failing test**
@@ -38,8 +38,8 @@ Expected: PASS
 ### Task 2: Add a concrete experiment manager
 
 **Files:**
-- Create: `src/rl_training/experiment/default_manager.py`
-- Modify: `src/rl_training/experiment/__init__.py`
+- Create: `src/axiomrl/experiment/default_manager.py`
+- Modify: `src/axiomrl/experiment/__init__.py`
 - Modify: `tests/test_experiment_manager.py`
 
 **Step 1: Extend the failing test**

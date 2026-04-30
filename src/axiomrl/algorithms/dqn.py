@@ -6,11 +6,11 @@ from typing import Any
 import torch
 from torch.nn import functional as F
 
-from rl_training.algorithms.base import UpdateResult
-from rl_training.models.mlp_dueling_noisy_q_network import MLPDuelingNoisyQNetwork
-from rl_training.models.mlp_dueling_q_network import MLPDuelingQNetwork
-from rl_training.models.mlp_noisy_q_network import MLPNoisyQNetwork
-from rl_training.models.mlp_q_network import MLPQNetwork
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.models.mlp_dueling_noisy_q_network import MLPDuelingNoisyQNetwork
+from axiomrl.models.mlp_dueling_q_network import MLPDuelingQNetwork
+from axiomrl.models.mlp_noisy_q_network import MLPNoisyQNetwork
+from axiomrl.models.mlp_q_network import MLPQNetwork
 
 
 def _dqn_loss_terms(batch: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
@@ -35,7 +35,9 @@ def _epsilon_greedy_action_probs(q_values: torch.Tensor, *, epsilon: float) -> t
     action_dim = q_values.shape[-1]
     greedy_actions = q_values.argmax(dim=-1, keepdim=True)
     probs = torch.full_like(q_values, fill_value=float(epsilon) / float(action_dim))
-    probs.scatter_add_(1, greedy_actions, torch.full_like(greedy_actions, fill_value=1.0 - float(epsilon), dtype=probs.dtype))
+    probs.scatter_add_(
+        1, greedy_actions, torch.full_like(greedy_actions, fill_value=1.0 - float(epsilon), dtype=probs.dtype)
+    )
     return probs
 
 
@@ -475,7 +477,9 @@ class PersistentAdvantageLearningDQN(DQN):
         next_action_values = next_target_q_values.gather(1, actions.long().unsqueeze(-1)).squeeze(-1)
         next_action_gap = (next_state_values - next_action_values) * (1.0 - dones)
         persistent_gap = torch.maximum(current_action_gap, next_action_gap)
-        return rewards + self.gamma * next_state_values * (1.0 - dones) - self.persistent_advantage_alpha * persistent_gap
+        return (
+            rewards + self.gamma * next_state_values * (1.0 - dones) - self.persistent_advantage_alpha * persistent_gap
+        )
 
 
 class MunchausenDQN(DQN):
@@ -526,7 +530,9 @@ class MunchausenDQN(DQN):
     ) -> torch.Tensor:
         del obs
         current_log_policy = _soft_action_log_probs(q_values, temperature=self.entropy_temperature)
-        munchausen_bonus = self.munchausen_alpha * current_log_policy.gather(1, actions.long().unsqueeze(-1)).squeeze(-1).clamp(
+        munchausen_bonus = self.munchausen_alpha * current_log_policy.gather(1, actions.long().unsqueeze(-1)).squeeze(
+            -1
+        ).clamp(
             min=self.munchausen_clip_min,
             max=0.0,
         )

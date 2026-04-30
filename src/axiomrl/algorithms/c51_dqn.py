@@ -6,8 +6,8 @@ from typing import Any
 import torch
 from torch.nn import functional as F
 
-from rl_training.algorithms.base import UpdateResult
-from rl_training.models.mlp_c51_q_network import MLPC51QNetwork
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.models.mlp_c51_q_network import MLPC51QNetwork
 
 
 def _c51_loss_terms(batch: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
@@ -186,4 +186,3 @@ class C51DQN:
     def set_eval_mode(self) -> None:
         self.q_network.eval()
         self.target_network.eval()
-

@@ -4,9 +4,9 @@ import gymnasium as gym
 import numpy as np
 import pytest
 
-from rl_training.envs import apply_reward_wrappers, resolve_reward_preset, resolve_reward_wrapper_config
-from rl_training.envs.factory import build_env
-from rl_training.experiment.config import TrainConfig
+from axiomrl.envs import apply_reward_wrappers, resolve_reward_preset, resolve_reward_wrapper_config
+from axiomrl.envs.factory import build_env
+from axiomrl.experiment.config import TrainConfig
 
 
 class DummyRewardEnv(gym.Env):

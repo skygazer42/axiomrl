@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+  <title>Unified API</title>
+  <path d="M8 4 C5.5 4 4.5 5.5 4.5 8 V10.5 C4.5 11.5 4 12 3 12 C4 12 4.5 12.5 4.5 13.5 V16 C4.5 18.5 5.5 20 8 20"/>
+  <path d="M16 4 C18.5 4 19.5 5.5 19.5 8 V10.5 C19.5 11.5 20 12 21 12 C20 12 19.5 12.5 19.5 13.5 V16 C19.5 18.5 18.5 20 16 20"/>
+  <path d="M9.5 12 L14.5 12"/>
+</svg>

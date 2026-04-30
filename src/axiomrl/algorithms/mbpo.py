@@ -4,10 +4,10 @@ from typing import Any
 
 import torch
 
-from rl_training.algorithms.base import UpdateResult
-from rl_training.algorithms.sac import SAC
-from rl_training.models.mlp_mopo import MLPMOPOEnsembleModel
-from rl_training.models.mlp_sac import MLPSACModel
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.algorithms.sac import SAC
+from axiomrl.models.mlp_mopo import MLPMOPOEnsembleModel
+from axiomrl.models.mlp_sac import MLPSACModel
 
 
 def _mbpo_model_loss_terms(batch: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
@@ -106,4 +106,3 @@ class MBPO:
     def set_eval_mode(self) -> None:
         self.policy_algorithm.set_eval_mode()
         self.dynamics_model.eval()
-

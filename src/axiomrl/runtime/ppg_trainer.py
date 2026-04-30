@@ -7,27 +7,27 @@ import gymnasium as gym
 import numpy as np
 import torch
 
-from rl_training.algorithms.ppg import PPG
-from rl_training.data.rollout_buffer import RolloutBuffer
-from rl_training.envs.factory import make_vector_env
-from rl_training.experiment.checkpointing import CheckpointState
-from rl_training.experiment.config import TrainConfig
-from rl_training.models.cnn import CNNPPGModel
-from rl_training.models.mlp_ppg import MLPPPGModel
-from rl_training.runtime.callbacks import Callback, CallbackList
-from rl_training.runtime.collector import CollectResult
-from rl_training.runtime.controls import resolve_clip_coefficient, resolve_entropy_coefficient
-from rl_training.runtime.evaluation_support import evaluate_discrete_episodes
-from rl_training.runtime.resume_state import (
+from axiomrl.algorithms.ppg import PPG
+from axiomrl.data.rollout_buffer import RolloutBuffer
+from axiomrl.envs.factory import make_vector_env
+from axiomrl.experiment.checkpointing import CheckpointState
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.models.cnn import CNNPPGModel
+from axiomrl.models.mlp_ppg import MLPPPGModel
+from axiomrl.runtime.callbacks import Callback, CallbackList
+from axiomrl.runtime.collector import CollectResult
+from axiomrl.runtime.controls import resolve_clip_coefficient, resolve_entropy_coefficient
+from axiomrl.runtime.evaluation_support import evaluate_discrete_episodes
+from axiomrl.runtime.resume_state import (
     capture_global_random_state,
     capture_vector_env_resume_state,
     restore_global_random_state,
     restore_vector_env_resume_state,
 )
-from rl_training.runtime.run_utils import save_training_checkpoint
-from rl_training.runtime.session import create_training_session
-from rl_training.runtime.trainer import TrainerState, TrainResult
-from rl_training.runtime.types import MetricDict
+from axiomrl.runtime.run_utils import save_training_checkpoint
+from axiomrl.runtime.session import create_training_session
+from axiomrl.runtime.trainer import TrainerState, TrainResult
+from axiomrl.runtime.types import MetricDict
 
 
 def _infer_spaces(envs: gym.vector.VectorEnv) -> tuple[tuple[int, ...], int]:
@@ -102,7 +102,9 @@ def _restore_auxiliary_chunks(
     if checkpoint_state is None or checkpoint_state.buffer_state is None:
         return [], []
 
-    aux_obs_chunks = [torch.as_tensor(chunk, device=device) for chunk in checkpoint_state.buffer_state.get("aux_obs_chunks", [])]
+    aux_obs_chunks = [
+        torch.as_tensor(chunk, device=device) for chunk in checkpoint_state.buffer_state.get("aux_obs_chunks", [])
+    ]
     aux_return_chunks = [
         torch.as_tensor(chunk, dtype=torch.float32, device=device)
         for chunk in checkpoint_state.buffer_state.get("aux_return_chunks", [])

@@ -1,8 +1,8 @@
 import gymnasium as gym
 import numpy as np
 
-from rl_training.data import HERReplayBuffer
-from rl_training.envs import POINT_GOAL_ENV_ID, register_builtin_goal_envs
+from axiomrl.data import HERReplayBuffer
+from axiomrl.envs import POINT_GOAL_ENV_ID, register_builtin_goal_envs
 
 
 class _NeverTerminateGoalEnv(gym.Env):

@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
 
-from rl_training.runtime.types import MetricDict
+from axiomrl.runtime.types import MetricDict
 
 
 @dataclass(slots=True)
@@ -32,5 +32,4 @@ class TrainerState:
 
 
 class Trainer(Protocol):
-    def train(self) -> TrainResult:
-        ...
+    def train(self) -> TrainResult: ...

@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from rl_training.experiment.config import TrainConfig
-from rl_training.runtime.mbpo_trainer import train_mbpo
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.runtime.mbpo_trainer import train_mbpo
 
 
 def test_train_mbpo_writes_checkpoint_and_metrics(tmp_path: Path) -> None:
@@ -42,4 +42,3 @@ def test_train_mbpo_writes_checkpoint_and_metrics(tmp_path: Path) -> None:
     assert result.checkpoint_path.exists()
     assert result.metrics["global_step"] >= 128
     assert "eval_return_mean" in result.metrics
-

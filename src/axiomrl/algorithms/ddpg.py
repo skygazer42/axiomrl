@@ -6,8 +6,8 @@ from typing import Any
 import torch
 from torch.nn import functional as F
 
-from rl_training.algorithms.base import UpdateResult
-from rl_training.models.mlp_ddpg import MLPDDPGModel
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.models.mlp_ddpg import MLPDDPGModel
 
 
 def _ddpg_loss_terms(batch: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:

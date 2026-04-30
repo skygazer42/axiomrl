@@ -84,9 +84,9 @@ Expected:
 
 **Files:**
 - Create: `configs/apex_dqn/tennis_shaped.yaml`
-- Create: `src/rl_training/assets/configs/apex_dqn/tennis_shaped.yaml`
+- Create: `src/axiomrl/assets/configs/apex_dqn/tennis_shaped.yaml`
 - Create: `zoo/atari/apex_dqn_tennis_shaped.yaml`
-- Create: `src/rl_training/assets/zoo/atari/apex_dqn_tennis_shaped.yaml`
+- Create: `src/axiomrl/assets/zoo/atari/apex_dqn_tennis_shaped.yaml`
 
 **Step 1: Base from the current surviving control**
 
@@ -120,9 +120,9 @@ Expected:
 
 **Files:**
 - Create: `configs/rainbow_dqn/tennis_shaped.yaml`
-- Create: `src/rl_training/assets/configs/rainbow_dqn/tennis_shaped.yaml`
+- Create: `src/axiomrl/assets/configs/rainbow_dqn/tennis_shaped.yaml`
 - Create: `zoo/atari/rainbow_dqn_tennis_shaped.yaml`
-- Create: `src/rl_training/assets/zoo/atari/rainbow_dqn_tennis_shaped.yaml`
+- Create: `src/axiomrl/assets/zoo/atari/rainbow_dqn_tennis_shaped.yaml`
 
 **Step 1: Base from the current surviving control**
 
@@ -155,7 +155,7 @@ Expected:
 
 **Files:**
 - Create: `zoo/atari/tennis_focus.yaml`
-- Create: `src/rl_training/assets/zoo/atari/tennis_focus.yaml`
+- Create: `src/axiomrl/assets/zoo/atari/tennis_focus.yaml`
 - Modify: `tests/test_zoo_presets.py`
 
 **Step 1: Implement the manifest**
@@ -200,8 +200,8 @@ Use isolated output roots such as:
 Run:
 
 ```bash
-./.env/bin/python -s -m rl_training.cli train --config zoo/atari/apex_dqn_tennis_shaped.yaml --output-dir /data/ax/axiomrl/.worktrees/tennis-rainbow/runs/tennis-apex-shaped
-./.env/bin/python -s -m rl_training.cli train --config zoo/atari/rainbow_dqn_tennis_shaped.yaml --output-dir /data/ax/axiomrl/.worktrees/tennis-rainbow/runs/tennis-rainbow-shaped
+./.env/bin/python -s -m axiomrl.cli train --config zoo/atari/apex_dqn_tennis_shaped.yaml --output-dir /data/ax/axiomrl/.worktrees/tennis-rainbow/runs/tennis-apex-shaped
+./.env/bin/python -s -m axiomrl.cli train --config zoo/atari/rainbow_dqn_tennis_shaped.yaml --output-dir /data/ax/axiomrl/.worktrees/tennis-rainbow/runs/tennis-rainbow-shaped
 ```
 
 **Step 3: Verify startup**

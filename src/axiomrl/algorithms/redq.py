@@ -6,8 +6,8 @@ from typing import Any
 import torch
 from torch.nn import functional as F
 
-from rl_training.algorithms.base import UpdateResult
-from rl_training.models.mlp_redq import MLPREDQModel
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.models.mlp_redq import MLPREDQModel
 
 
 def _sample_target_critic_indices(
@@ -79,8 +79,12 @@ class REDQ:
         self.model = model
         self.policy = model
         self.target_model = copy.deepcopy(model)
-        self.actor_optimizer = torch.optim.Adam(self.model.actor_parameters(), lr=float(learning_rate), weight_decay=0.0)
-        self.critic_optimizer = torch.optim.Adam(self.model.critic_parameters(), lr=float(learning_rate), weight_decay=0.0)
+        self.actor_optimizer = torch.optim.Adam(
+            self.model.actor_parameters(), lr=float(learning_rate), weight_decay=0.0
+        )
+        self.critic_optimizer = torch.optim.Adam(
+            self.model.critic_parameters(), lr=float(learning_rate), weight_decay=0.0
+        )
         self.gamma = float(gamma)
         self.alpha = float(alpha)
         self.tau = float(tau)
@@ -109,9 +113,7 @@ class REDQ:
             )
             target_subset = target_q_ensemble.index_select(dim=1, index=subset_indices)
             min_target_q = target_subset.min(dim=1).values
-            target_q_values = rewards + self.gamma * (1.0 - dones) * (
-                min_target_q - self.alpha * next_policy.logprobs
-            )
+            target_q_values = rewards + self.gamma * (1.0 - dones) * (min_target_q - self.alpha * next_policy.logprobs)
 
         self.critic_optimizer.zero_grad(set_to_none=True)
         critic_terms = _redq_loss_terms(

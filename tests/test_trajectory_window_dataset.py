@@ -1,7 +1,7 @@
 import torch
 
-from rl_training.data.offline_dataset import TransitionDataset
-from rl_training.data.trajectory_windows import TrajectoryWindowDataset
+from axiomrl.data.offline_dataset import TransitionDataset
+from axiomrl.data.trajectory_windows import TrajectoryWindowDataset
 
 
 def test_trajectory_window_dataset_builds_padded_episode_windows() -> None:

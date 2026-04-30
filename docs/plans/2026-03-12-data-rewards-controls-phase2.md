@@ -2,7 +2,7 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Make `rl_training` materially more usable for real training by adding external offline dataset loading, generic reward transforms, and early-stopping/evaluation controls before the next major algorithm wave lands.
+**Goal:** Make `axiomrl` materially more usable for real training by adding external offline dataset loading, generic reward transforms, and early-stopping/evaluation controls before the next major algorithm wave lands.
 
 **Architecture:** Keep backward compatibility with the current config layout by extending `algo_kwargs` and `env_kwargs.wrappers` instead of inventing a second config system. Build shared modules first, then reuse them from existing offline trainers and env factories so later algorithms such as `BC`, `AWAC`, and `HER` can plug into the same infrastructure.
 
@@ -13,12 +13,12 @@
 ### Task 1: Add external transition dataset loading and reward processing
 
 **Files:**
-- Modify: `src/rl_training/data/offline_dataset.py`
-- Create: `src/rl_training/data/dataset_loaders.py`
-- Modify: `src/rl_training/data/__init__.py`
-- Modify: `src/rl_training/runtime/iql_trainer.py`
-- Modify: `src/rl_training/runtime/cql_trainer.py`
-- Modify: `src/rl_training/runtime/td3_bc_trainer.py`
+- Modify: `src/axiomrl/data/offline_dataset.py`
+- Create: `src/axiomrl/data/dataset_loaders.py`
+- Modify: `src/axiomrl/data/__init__.py`
+- Modify: `src/axiomrl/runtime/iql_trainer.py`
+- Modify: `src/axiomrl/runtime/cql_trainer.py`
+- Modify: `src/axiomrl/runtime/td3_bc_trainer.py`
 - Create: `tests/test_dataset_loaders.py`
 - Modify: `tests/test_offline_dataset.py`
 
@@ -53,9 +53,9 @@ Deferred until the user allows testing.
 ### Task 2: Add generic reward transform wrappers to env creation
 
 **Files:**
-- Create: `src/rl_training/envs/rewards.py`
-- Modify: `src/rl_training/envs/factory.py`
-- Modify: `src/rl_training/envs/__init__.py`
+- Create: `src/axiomrl/envs/rewards.py`
+- Modify: `src/axiomrl/envs/factory.py`
+- Modify: `src/axiomrl/envs/__init__.py`
 - Create: `tests/test_reward_wrappers.py`
 - Modify: `tests/test_envs.py`
 
@@ -90,12 +90,12 @@ Deferred until the user allows testing.
 ### Task 3: Add evaluation cadence and early stopping controls for offline trainers
 
 **Files:**
-- Modify: `src/rl_training/runtime/trainer.py`
-- Modify: `src/rl_training/runtime/callbacks.py`
-- Create: `src/rl_training/runtime/controls.py`
-- Modify: `src/rl_training/runtime/iql_trainer.py`
-- Modify: `src/rl_training/runtime/cql_trainer.py`
-- Modify: `src/rl_training/runtime/td3_bc_trainer.py`
+- Modify: `src/axiomrl/runtime/trainer.py`
+- Modify: `src/axiomrl/runtime/callbacks.py`
+- Create: `src/axiomrl/runtime/controls.py`
+- Modify: `src/axiomrl/runtime/iql_trainer.py`
+- Modify: `src/axiomrl/runtime/cql_trainer.py`
+- Modify: `src/axiomrl/runtime/td3_bc_trainer.py`
 - Create: `tests/test_training_controls.py`
 - Modify: `tests/test_callbacks.py`
 

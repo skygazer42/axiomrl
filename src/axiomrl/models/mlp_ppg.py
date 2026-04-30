@@ -6,7 +6,7 @@ import torch
 from torch import nn
 from torch.distributions import Categorical
 
-from rl_training.policies.base import PolicyOutput
+from axiomrl.policies.base import PolicyOutput
 
 
 def _build_backbone(

@@ -6,10 +6,10 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from rl_training.algorithms._advantage_utils import normalize_advantages
-from rl_training.algorithms.base import UpdateResult
-from rl_training.models.cnn import CNNActorCritic
-from rl_training.models.mlp_actor_critic import MLPActorCritic
+from axiomrl.algorithms._advantage_utils import normalize_advantages
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.models.cnn import CNNActorCritic
+from axiomrl.models.mlp_actor_critic import MLPActorCritic
 
 
 def compute_vtrace_targets(
@@ -47,9 +47,7 @@ def compute_vtrace_targets(
         next_values = bootstrap if step == time_steps - 1 else values[step + 1]
         delta = clipped_rhos[step] * (rewards[step] + float(gamma) * next_non_terminal * next_values - values[step])
         vtrace_targets[step] = (
-            values[step]
-            + delta
-            + float(gamma) * next_non_terminal * clipped_cs[step] * (next_vs - next_values)
+            values[step] + delta + float(gamma) * next_non_terminal * clipped_cs[step] * (next_vs - next_values)
         )
         next_vs = vtrace_targets[step]
 
@@ -155,10 +153,7 @@ class IMPALA:
         bootstrap_value = torch.as_tensor(batch["bootstrap_value"], dtype=torch.float32, device=obs.device)
 
         if obs.ndim not in (3, 5):
-            raise ValueError(
-                "expected obs to have shape [T, B, obs_dim] or [T, B, C, H, W], "
-                f"got {tuple(obs.shape)!r}"
-            )
+            raise ValueError(f"expected obs to have shape [T, B, obs_dim] or [T, B, C, H, W], got {tuple(obs.shape)!r}")
         if actions.ndim != 2:
             raise ValueError(f"expected actions to have shape [T, B], got {tuple(actions.shape)!r}")
 

@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 import gymnasium as gym
 
-from rl_training.envs.atari import ChannelFirstObservation
+from axiomrl.envs.atari import ChannelFirstObservation
 
 
 @dataclass(frozen=True, slots=True)
@@ -22,7 +22,7 @@ def _coerce_resize_shape(value: object) -> tuple[int, int] | None:
         return None
     if isinstance(value, int):
         return (value, value)
-    if isinstance(value, Sequence) and not isinstance(value, (str, bytes)) and len(value) == 2:
+    if isinstance(value, Sequence) and not isinstance(value, str | bytes) and len(value) == 2:
         return (int(value[0]), int(value[1]))
     raise TypeError(f"expected pixel resize_shape to be an int, pair, or null, got {type(value)!r}")
 

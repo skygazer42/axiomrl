@@ -6,7 +6,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from rl_training.models.cnn.nature import NatureCNN
+from axiomrl.models.cnn.nature import NatureCNN
 
 
 def _build_mlp(
@@ -103,4 +103,3 @@ class CNNGAILDiscriminator(nn.Module):
         one_hot = F.one_hot(action_tensor, num_classes=self.action_dim).to(dtype=torch.float32)
         inputs = torch.cat([features, one_hot], dim=-1)
         return self.network(inputs).squeeze(-1)
-

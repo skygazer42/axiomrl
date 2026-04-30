@@ -1,8 +1,8 @@
 from pathlib import Path
 
-from rl_training.experiment.config import TrainConfig
-from rl_training.runtime.impala_trainer import train_impala
-from rl_training.runtime.workflows import evaluate_checkpoint
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.runtime.impala_trainer import train_impala
+from axiomrl.runtime.workflows import evaluate_checkpoint
 
 
 def test_train_impala_writes_checkpoint_and_metrics(tmp_path: Path) -> None:

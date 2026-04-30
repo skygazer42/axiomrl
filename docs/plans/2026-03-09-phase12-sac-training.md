@@ -13,7 +13,7 @@
 ### Task 1: Add a smoke-tested SAC training path
 
 **Files:**
-- Create: `src/rl_training/runtime/sac_trainer.py`
+- Create: `src/axiomrl/runtime/sac_trainer.py`
 - Create: `tests/test_sac_trainer_smoke.py`
 
 **Step 1: Write the failing test**
@@ -39,8 +39,8 @@ Expected: PASS
 ### Task 2: Wire SAC into workflows and CLI
 
 **Files:**
-- Modify: `src/rl_training/runtime/workflows.py`
-- Modify: `src/rl_training/cli.py`
+- Modify: `src/axiomrl/runtime/workflows.py`
+- Modify: `src/axiomrl/cli.py`
 - Modify: `tests/test_checkpoint_workflows.py`
 - Modify: `tests/test_cli.py`
 - Create: `configs/sac/pendulum.yaml`

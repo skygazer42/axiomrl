@@ -6,10 +6,9 @@ from dataclasses import dataclass
 import numpy as np
 import torch
 
-from rl_training.envs.factory import build_env
-from rl_training.experiment.config import TrainConfig
-from rl_training.runtime.evaluator import EvalResult
-
+from axiomrl.envs.factory import build_env
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.runtime.evaluator import EvalResult
 
 ActionFn = Callable[[torch.Tensor], object]
 

@@ -1,7 +1,7 @@
 import torch
 
-from rl_training.algorithms.iqn import IQN
-from rl_training.models.mlp_iqn_network import MLPIQNetwork
+from axiomrl.algorithms.iqn import IQN
+from axiomrl.models.mlp_iqn_network import MLPIQNetwork
 
 
 def test_mlp_iqn_network_forward_shape_and_tau_range() -> None:

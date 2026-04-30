@@ -42,32 +42,32 @@ multi-algorithm RL library once the phase-one architecture is proven.
 **Files:**
 - Create: `pyproject.toml`
 - Create: `README.md`
-- Create: `src/rl_training/__init__.py`
-- Create: `src/rl_training/version.py`
+- Create: `src/axiomrl/__init__.py`
+- Create: `src/axiomrl/version.py`
 - Create: `tests/test_package_smoke.py`
 
 **Step 1: Write the failing test**
 
 ```python
 def test_package_exports_version():
-    import rl_training
+    import axiomrl
 
-    assert rl_training.__version__ == "0.1.0"
+    assert axiomrl.__version__ == "0.1.0"
 ```
 
 **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_package_smoke.py -v`
-Expected: FAIL with `ModuleNotFoundError: No module named 'rl_training'`
+Expected: FAIL with `ModuleNotFoundError: No module named 'axiomrl'`
 
 **Step 3: Write minimal implementation**
 
 ```python
-# src/rl_training/version.py
+# src/axiomrl/version.py
 __version__ = "0.1.0"
 
-# src/rl_training/__init__.py
-from rl_training.version import __version__
+# src/axiomrl/__init__.py
+from axiomrl.version import __version__
 ```
 
 **Step 4: Run test to verify it passes**
@@ -78,15 +78,15 @@ Expected: PASS
 **Step 5: Commit**
 
 ```bash
-git add pyproject.toml README.md src/rl_training/__init__.py src/rl_training/version.py tests/test_package_smoke.py
+git add pyproject.toml README.md src/axiomrl/__init__.py src/axiomrl/version.py tests/test_package_smoke.py
 git commit -m "chore: bootstrap rl training package"
 ```
 
 ### Task 2: Add typed runtime config and run directory layout
 
 **Files:**
-- Create: `src/rl_training/config.py`
-- Create: `src/rl_training/runs.py`
+- Create: `src/axiomrl/config.py`
+- Create: `src/axiomrl/runs.py`
 - Create: `tests/test_config.py`
 
 **Step 1: Write the failing test**
@@ -94,8 +94,8 @@ git commit -m "chore: bootstrap rl training package"
 ```python
 from pathlib import Path
 
-from rl_training.config import TrainConfig
-from rl_training.runs import make_run_dir
+from axiomrl.config import TrainConfig
+from axiomrl.runs import make_run_dir
 
 
 def test_make_run_dir_uses_algo_env_seed(tmp_path: Path):
@@ -144,14 +144,14 @@ Expected: PASS
 **Step 5: Commit**
 
 ```bash
-git add src/rl_training/config.py src/rl_training/runs.py tests/test_config.py
+git add src/axiomrl/config.py src/axiomrl/runs.py tests/test_config.py
 git commit -m "feat: add runtime config and run directory layout"
 ```
 
 ### Task 3: Add environment factory and vectorized env support
 
 **Files:**
-- Create: `src/rl_training/envs.py`
+- Create: `src/axiomrl/envs.py`
 - Create: `tests/test_envs.py`
 
 **Step 1: Write the failing test**
@@ -159,8 +159,8 @@ git commit -m "feat: add runtime config and run directory layout"
 ```python
 import gymnasium as gym
 
-from rl_training.config import TrainConfig
-from rl_training.envs import make_vector_env
+from axiomrl.config import TrainConfig
+from axiomrl.envs import make_vector_env
 
 
 def test_make_vector_env_returns_sync_vector_env(tmp_path):
@@ -204,15 +204,15 @@ Expected: PASS
 **Step 5: Commit**
 
 ```bash
-git add src/rl_training/envs.py tests/test_envs.py
+git add src/axiomrl/envs.py tests/test_envs.py
 git commit -m "feat: add vector environment factory"
 ```
 
 ### Task 4: Add rollout buffer with GAE support
 
 **Files:**
-- Create: `src/rl_training/data/rollout_buffer.py`
-- Create: `src/rl_training/data/__init__.py`
+- Create: `src/axiomrl/data/rollout_buffer.py`
+- Create: `src/axiomrl/data/__init__.py`
 - Create: `tests/test_rollout_buffer.py`
 
 **Step 1: Write the failing test**
@@ -220,7 +220,7 @@ git commit -m "feat: add vector environment factory"
 ```python
 import torch
 
-from rl_training.data.rollout_buffer import RolloutBuffer
+from axiomrl.data.rollout_buffer import RolloutBuffer
 
 
 def test_rollout_buffer_computes_returns_and_advantages():
@@ -268,17 +268,17 @@ Expected: PASS
 **Step 5: Commit**
 
 ```bash
-git add src/rl_training/data/__init__.py src/rl_training/data/rollout_buffer.py tests/test_rollout_buffer.py
+git add src/axiomrl/data/__init__.py src/axiomrl/data/rollout_buffer.py tests/test_rollout_buffer.py
 git commit -m "feat: add rollout buffer with gae"
 ```
 
 ### Task 5: Implement PPO policy network and update step
 
 **Files:**
-- Create: `src/rl_training/algorithms/__init__.py`
-- Create: `src/rl_training/algorithms/ppo.py`
-- Create: `src/rl_training/models/__init__.py`
-- Create: `src/rl_training/models/mlp_actor_critic.py`
+- Create: `src/axiomrl/algorithms/__init__.py`
+- Create: `src/axiomrl/algorithms/ppo.py`
+- Create: `src/axiomrl/models/__init__.py`
+- Create: `src/axiomrl/models/mlp_actor_critic.py`
 - Create: `tests/test_ppo_update.py`
 
 **Step 1: Write the failing test**
@@ -286,7 +286,7 @@ git commit -m "feat: add rollout buffer with gae"
 ```python
 import torch
 
-from rl_training.algorithms.ppo import ppo_loss
+from axiomrl.algorithms.ppo import ppo_loss
 
 
 def test_ppo_loss_returns_named_metrics():
@@ -331,17 +331,17 @@ Expected: PASS
 **Step 5: Commit**
 
 ```bash
-git add src/rl_training/algorithms/__init__.py src/rl_training/algorithms/ppo.py src/rl_training/models/__init__.py src/rl_training/models/mlp_actor_critic.py tests/test_ppo_update.py
+git add src/axiomrl/algorithms/__init__.py src/axiomrl/algorithms/ppo.py src/axiomrl/models/__init__.py src/axiomrl/models/mlp_actor_critic.py tests/test_ppo_update.py
 git commit -m "feat: implement ppo loss and model"
 ```
 
 ### Task 6: Add trainer loop, logging, checkpoints, and evaluation
 
 **Files:**
-- Create: `src/rl_training/trainer.py`
-- Create: `src/rl_training/logging.py`
-- Create: `src/rl_training/checkpointing.py`
-- Create: `src/rl_training/eval.py`
+- Create: `src/axiomrl/trainer.py`
+- Create: `src/axiomrl/logging.py`
+- Create: `src/axiomrl/checkpointing.py`
+- Create: `src/axiomrl/eval.py`
 - Create: `tests/test_trainer_smoke.py`
 
 **Step 1: Write the failing test**
@@ -349,8 +349,8 @@ git commit -m "feat: implement ppo loss and model"
 ```python
 from pathlib import Path
 
-from rl_training.config import TrainConfig
-from rl_training.trainer import train_ppo
+from axiomrl.config import TrainConfig
+from axiomrl.trainer import train_ppo
 
 
 def test_train_ppo_writes_checkpoint(tmp_path: Path):
@@ -396,14 +396,14 @@ Expected: PASS
 **Step 5: Commit**
 
 ```bash
-git add src/rl_training/trainer.py src/rl_training/logging.py src/rl_training/checkpointing.py src/rl_training/eval.py tests/test_trainer_smoke.py
+git add src/axiomrl/trainer.py src/axiomrl/logging.py src/axiomrl/checkpointing.py src/axiomrl/eval.py tests/test_trainer_smoke.py
 git commit -m "feat: add ppo trainer loop and checkpointing"
 ```
 
 ### Task 7: Add CLI entrypoint and config-driven training
 
 **Files:**
-- Create: `src/rl_training/cli.py`
+- Create: `src/axiomrl/cli.py`
 - Create: `configs/ppo/cartpole.yaml`
 - Create: `scripts/train.py`
 - Create: `tests/test_cli.py`
@@ -413,7 +413,7 @@ git commit -m "feat: add ppo trainer loop and checkpointing"
 ```python
 from pathlib import Path
 
-from rl_training.cli import load_config
+from axiomrl.cli import load_config
 
 
 def test_load_config_reads_yaml(tmp_path: Path):
@@ -435,7 +435,7 @@ Implement:
 
 - YAML config loader
 - Tyro CLI for runtime overrides
-- `python -m rl_training.cli train --config configs/ppo/cartpole.yaml`
+- `python -m axiomrl.cli train --config configs/ppo/cartpole.yaml`
 - `scripts/train.py` wrapper for local development
 
 Keep the command surface small:
@@ -452,7 +452,7 @@ Expected: PASS
 **Step 5: Commit**
 
 ```bash
-git add src/rl_training/cli.py configs/ppo/cartpole.yaml scripts/train.py tests/test_cli.py
+git add src/axiomrl/cli.py configs/ppo/cartpole.yaml scripts/train.py tests/test_cli.py
 git commit -m "feat: add config-driven training cli"
 ```
 

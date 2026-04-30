@@ -6,10 +6,9 @@ import torch
 from torch import nn
 from torch.distributions import Categorical
 
-from rl_training.models.cnn.nature import NatureCNN
-from rl_training.models.mlp_actor_critic import _build_mlp
-from rl_training.policies.base import PolicyOutput
-
+from axiomrl.models.cnn.nature import NatureCNN
+from axiomrl.models.mlp_actor_critic import _build_mlp
+from axiomrl.policies.base import PolicyOutput
 
 LSTMState = tuple[torch.Tensor, torch.Tensor]
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from rl_training.experiment.registry_evaluators import (
+from axiomrl.experiment.registry_evaluators import (
     _evaluate_agent57,
     _evaluate_c51_dqn,
     _evaluate_dqn,
@@ -10,7 +10,7 @@ from rl_training.experiment.registry_evaluators import (
     _evaluate_qr_dqn,
     _evaluate_r2d2,
 )
-from rl_training.experiment.registry_predictors import (
+from axiomrl.experiment.registry_predictors import (
     _predict_agent57,
     _predict_c51_dqn,
     _predict_dqn,
@@ -20,12 +20,12 @@ from rl_training.experiment.registry_predictors import (
     _predict_qr_dqn,
     _predict_r2d2,
 )
-from rl_training.experiment.registry_types import AlgorithmSpec
-from rl_training.runtime.agent57_trainer import train_agent57
-from rl_training.runtime.apex_dqn_trainer import train_apex_dqn
-from rl_training.runtime.dqn_trainer import train_dqn
-from rl_training.runtime.drqn_trainer import train_drqn
-from rl_training.runtime.r2d2_trainer import train_r2d2
+from axiomrl.experiment.registry_types import AlgorithmSpec
+from axiomrl.runtime.agent57_trainer import train_agent57
+from axiomrl.runtime.apex_dqn_trainer import train_apex_dqn
+from axiomrl.runtime.dqn_trainer import train_dqn
+from axiomrl.runtime.drqn_trainer import train_drqn
+from axiomrl.runtime.r2d2_trainer import train_r2d2
 
 
 def _standard_dqn_spec(name: str) -> AlgorithmSpec:

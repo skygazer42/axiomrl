@@ -91,7 +91,7 @@ axiomrl train --config preset://cartpole_ppo --seed 123 --num_envs 8
 
 ### 注册表查找
 
-AxiomRL 维护一个全局算法注册表。`algo` 字段的值（如 `"PPO"`）会被映射到对应的算法类（如 `rl_training.core.PPO`）。查找顺序为：
+AxiomRL 维护一个全局算法注册表。`algo` 字段的值（如 `"PPO"`）会被映射到对应的算法类（如 `axiomrl.core.PPO`）。查找顺序为：
 
 1. Core 层
 2. Experimental 层

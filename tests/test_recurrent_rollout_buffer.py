@@ -1,7 +1,7 @@
 import pytest
 import torch
 
-from rl_training.data import RecurrentRolloutBuffer
+from axiomrl.data import RecurrentRolloutBuffer
 
 
 def test_recurrent_rollout_buffer_stores_hidden_state_and_computes_returns() -> None:

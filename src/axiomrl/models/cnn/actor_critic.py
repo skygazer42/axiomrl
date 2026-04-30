@@ -6,8 +6,8 @@ import torch
 from torch import nn
 from torch.distributions import Categorical
 
-from rl_training.models.cnn.nature import NatureCNN
-from rl_training.policies.base import PolicyOutput
+from axiomrl.models.cnn.nature import NatureCNN
+from axiomrl.policies.base import PolicyOutput
 
 
 def _build_head(

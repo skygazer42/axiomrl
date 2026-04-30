@@ -7,7 +7,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
-from rl_training.zoo.manifests import _build_payload_metadata_fields
+from axiomrl.zoo.manifests import _build_payload_metadata_fields
 
 
 def render_text_report(payload: Mapping[str, Any]) -> str:

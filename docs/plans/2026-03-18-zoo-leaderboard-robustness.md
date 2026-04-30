@@ -4,7 +4,7 @@
 
 **Goal:** Expose robust cross-seed benchmark summaries by adding median and interquartile-range aggregate fields, plus leaderboard modes that rank by robust central tendency or dispersion.
 
-**Architecture:** Extend aggregate benchmark rows in `src/rl_training/zoo_cli.py` with latest-metric `median` and `iqr` fields computed from ordered seed values using inclusive quartiles so small benchmark groups stay well-defined. Reuse those aggregate fields in the leaderboard alias layer by adding `median-*` and `iqr-*` modes where median sorts descending and IQR sorts ascending to surface both robust score level and cross-seed spread.
+**Architecture:** Extend aggregate benchmark rows in `src/axiomrl/zoo_cli.py` with latest-metric `median` and `iqr` fields computed from ordered seed values using inclusive quartiles so small benchmark groups stay well-defined. Reuse those aggregate fields in the leaderboard alias layer by adding `median-*` and `iqr-*` modes where median sorts descending and IQR sorts ascending to surface both robust score level and cross-seed spread.
 
 **Tech Stack:** Python 3.10+, argparse, existing zoo CLI/report serializers, pytest.
 
@@ -29,8 +29,8 @@ Expected: FAIL because the new aggregate fields and leaderboard aliases do not e
 ### Task 2: Implement robustness aggregation and ranking
 
 **Files:**
-- Modify: `src/rl_training/zoo_cli.py`
-- Modify: `src/rl_training/cli.py`
+- Modify: `src/axiomrl/zoo_cli.py`
+- Modify: `src/axiomrl/cli.py`
 
 **Step 1: Write minimal implementation**
 - Add helpers for median, inclusive quartiles, and IQR.
@@ -49,7 +49,7 @@ Expected: PASS.
 **Files:**
 - Modify: `README.md`
 - Modify: `zoo/README.md`
-- Modify: `src/rl_training/assets/zoo/README.md`
+- Modify: `src/axiomrl/assets/zoo/README.md`
 
 **Step 1: Add docs**
 - Show `--leaderboard-metric median-normalized` and `--leaderboard-metric iqr-normalized`.

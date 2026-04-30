@@ -4,7 +4,7 @@
 
 **Goal:** Add configurable `num_simulations` schedules to MuZero-family trainers so search budget can be annealed over training from YAML config without changing algorithm code.
 
-**Architecture:** Reuse the scheduler pattern already established in `src/rl_training/runtime/controls.py`. Add a shared resolver for `num_simulations`, then thread the active integer value into MuZero-style planning on every environment step and log it in metrics. Planning should support per-call overrides instead of mutating persistent algorithm config state.
+**Architecture:** Reuse the scheduler pattern already established in `src/axiomrl/runtime/controls.py`. Add a shared resolver for `num_simulations`, then thread the active integer value into MuZero-style planning on every environment step and log it in metrics. Planning should support per-call overrides instead of mutating persistent algorithm config state.
 
 **Tech Stack:** Python 3.10+, PyTorch, Gymnasium, existing MuZero-family runtime/trainers, pytest.
 
@@ -33,7 +33,7 @@
 ### Task 2: Implement shared simulation resolver
 
 **Files:**
-- Modify: `src/rl_training/runtime/controls.py`
+- Modify: `src/axiomrl/runtime/controls.py`
 
 **Step 1: Write minimal implementation**
 - Add `resolve_num_simulations(...)`.
@@ -49,10 +49,10 @@
 ### Task 3: Wire schedules into MuZero-family planning
 
 **Files:**
-- Modify: `src/rl_training/runtime/muzero_trainer.py`
-- Modify: `src/rl_training/runtime/efficientzero_trainer.py`
-- Modify: `src/rl_training/algorithms/muzero.py`
-- Modify: `src/rl_training/algorithms/gumbel_muzero.py`
+- Modify: `src/axiomrl/runtime/muzero_trainer.py`
+- Modify: `src/axiomrl/runtime/efficientzero_trainer.py`
+- Modify: `src/axiomrl/algorithms/muzero.py`
+- Modify: `src/axiomrl/algorithms/gumbel_muzero.py`
 
 **Step 1: Minimal wiring**
 - Resolve the scheduled `num_simulations` before each planning step.

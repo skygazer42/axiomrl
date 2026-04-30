@@ -1,235 +1,235 @@
 from __future__ import annotations
 
-from rl_training.experiment.registry_continuous_loaders import (
+from axiomrl.experiment.registry_continuous_loaders import (
     _load_awr_algorithm as _load_awr_algorithm,
 )
-from rl_training.experiment.registry_continuous_loaders import (
+from axiomrl.experiment.registry_continuous_loaders import (
     _load_cql_algorithm as _load_cql_algorithm,
 )
-from rl_training.experiment.registry_continuous_loaders import (
+from axiomrl.experiment.registry_continuous_loaders import (
     _load_crossq_algorithm as _load_crossq_algorithm,
 )
-from rl_training.experiment.registry_continuous_loaders import (
+from axiomrl.experiment.registry_continuous_loaders import (
     _load_curl_algorithm as _load_curl_algorithm,
 )
-from rl_training.experiment.registry_continuous_loaders import (
+from axiomrl.experiment.registry_continuous_loaders import (
     _load_d4pg_algorithm as _load_d4pg_algorithm,
 )
-from rl_training.experiment.registry_continuous_loaders import (
+from axiomrl.experiment.registry_continuous_loaders import (
     _load_ddpg_algorithm as _load_ddpg_algorithm,
 )
-from rl_training.experiment.registry_continuous_loaders import (
+from axiomrl.experiment.registry_continuous_loaders import (
     _load_drq_algorithm as _load_drq_algorithm,
 )
-from rl_training.experiment.registry_continuous_loaders import (
+from axiomrl.experiment.registry_continuous_loaders import (
     _load_drqv2_algorithm as _load_drqv2_algorithm,
 )
-from rl_training.experiment.registry_continuous_loaders import (
+from axiomrl.experiment.registry_continuous_loaders import (
     _load_edac_algorithm as _load_edac_algorithm,
 )
-from rl_training.experiment.registry_continuous_loaders import (
+from axiomrl.experiment.registry_continuous_loaders import (
     _load_iql_algorithm as _load_iql_algorithm,
 )
-from rl_training.experiment.registry_continuous_loaders import (
+from axiomrl.experiment.registry_continuous_loaders import (
     _load_marwil_algorithm as _load_marwil_algorithm,
 )
-from rl_training.experiment.registry_continuous_loaders import (
+from axiomrl.experiment.registry_continuous_loaders import (
     _load_naf_algorithm as _load_naf_algorithm,
 )
-from rl_training.experiment.registry_continuous_loaders import (
+from axiomrl.experiment.registry_continuous_loaders import (
     _load_redq_algorithm as _load_redq_algorithm,
 )
-from rl_training.experiment.registry_continuous_loaders import (
+from axiomrl.experiment.registry_continuous_loaders import (
     _load_rlpd_algorithm as _load_rlpd_algorithm,
 )
-from rl_training.experiment.registry_continuous_loaders import (
+from axiomrl.experiment.registry_continuous_loaders import (
     _load_sac_algorithm as _load_sac_algorithm,
 )
-from rl_training.experiment.registry_continuous_loaders import (
+from axiomrl.experiment.registry_continuous_loaders import (
     _load_td3_algorithm as _load_td3_algorithm,
 )
-from rl_training.experiment.registry_continuous_loaders import (
+from axiomrl.experiment.registry_continuous_loaders import (
     _load_td3_bc_algorithm as _load_td3_bc_algorithm,
 )
-from rl_training.experiment.registry_continuous_loaders import (
+from axiomrl.experiment.registry_continuous_loaders import (
     _load_tqc_algorithm as _load_tqc_algorithm,
 )
-from rl_training.experiment.registry_dqn_loaders import (
+from axiomrl.experiment.registry_dqn_loaders import (
     _build_dqn_algorithm_kwargs as _build_dqn_algorithm_kwargs,
 )
-from rl_training.experiment.registry_dqn_loaders import (
+from axiomrl.experiment.registry_dqn_loaders import (
     _build_image_dqn_loader as _build_image_dqn_loader,
 )
-from rl_training.experiment.registry_dqn_loaders import (
+from axiomrl.experiment.registry_dqn_loaders import (
     _build_vector_dqn_loader as _build_vector_dqn_loader,
 )
-from rl_training.experiment.registry_dqn_loaders import (
+from axiomrl.experiment.registry_dqn_loaders import (
     _load_c51_dqn_algorithm as _load_c51_dqn_algorithm,
 )
-from rl_training.experiment.registry_dqn_loaders import (
+from axiomrl.experiment.registry_dqn_loaders import (
     _load_dqn_algorithm as _load_dqn_algorithm,
 )
-from rl_training.experiment.registry_dqn_loaders import (
+from axiomrl.experiment.registry_dqn_loaders import (
     _load_fqf_algorithm as _load_fqf_algorithm,
 )
-from rl_training.experiment.registry_dqn_loaders import (
+from axiomrl.experiment.registry_dqn_loaders import (
     _load_iqn_algorithm as _load_iqn_algorithm,
 )
-from rl_training.experiment.registry_dqn_loaders import (
+from axiomrl.experiment.registry_dqn_loaders import (
     _load_qr_dqn_algorithm as _load_qr_dqn_algorithm,
 )
-from rl_training.experiment.registry_dqn_loaders import (
+from axiomrl.experiment.registry_dqn_loaders import (
     _resolve_vector_dqn_algorithm_class as _resolve_vector_dqn_algorithm_class,
 )
-from rl_training.experiment.registry_offline_loaders import (
+from axiomrl.experiment.registry_offline_loaders import (
     _load_awac_algorithm as _load_awac_algorithm,
 )
-from rl_training.experiment.registry_offline_loaders import (
+from axiomrl.experiment.registry_offline_loaders import (
     _load_bcq_algorithm as _load_bcq_algorithm,
 )
-from rl_training.experiment.registry_offline_loaders import (
+from axiomrl.experiment.registry_offline_loaders import (
     _load_bear_algorithm as _load_bear_algorithm,
 )
-from rl_training.experiment.registry_offline_loaders import (
+from axiomrl.experiment.registry_offline_loaders import (
     _load_cal_ql_algorithm as _load_cal_ql_algorithm,
 )
-from rl_training.experiment.registry_offline_loaders import (
+from axiomrl.experiment.registry_offline_loaders import (
     _load_crr_algorithm as _load_crr_algorithm,
 )
-from rl_training.experiment.registry_offline_loaders import (
+from axiomrl.experiment.registry_offline_loaders import (
     _load_rebrac_algorithm as _load_rebrac_algorithm,
 )
-from rl_training.experiment.registry_offline_loaders import (
+from axiomrl.experiment.registry_offline_loaders import (
     _load_xql_algorithm as _load_xql_algorithm,
 )
-from rl_training.experiment.registry_policy_loaders import (
+from axiomrl.experiment.registry_policy_loaders import (
     _load_a2c_algorithm as _load_a2c_algorithm,
 )
-from rl_training.experiment.registry_policy_loaders import (
+from axiomrl.experiment.registry_policy_loaders import (
     _load_appo_algorithm as _load_appo_algorithm,
 )
-from rl_training.experiment.registry_policy_loaders import (
+from axiomrl.experiment.registry_policy_loaders import (
     _load_ars_algorithm as _load_ars_algorithm,
 )
-from rl_training.experiment.registry_policy_loaders import (
+from axiomrl.experiment.registry_policy_loaders import (
     _load_bc_algorithm as _load_bc_algorithm,
 )
-from rl_training.experiment.registry_policy_loaders import (
+from axiomrl.experiment.registry_policy_loaders import (
     _load_decision_transformer_algorithm as _load_decision_transformer_algorithm,
 )
-from rl_training.experiment.registry_policy_loaders import (
+from axiomrl.experiment.registry_policy_loaders import (
     _load_gail_algorithm as _load_gail_algorithm,
 )
-from rl_training.experiment.registry_policy_loaders import (
+from axiomrl.experiment.registry_policy_loaders import (
     _load_impala_algorithm as _load_impala_algorithm,
 )
-from rl_training.experiment.registry_policy_loaders import (
+from axiomrl.experiment.registry_policy_loaders import (
     _load_openai_es_algorithm as _load_openai_es_algorithm,
 )
-from rl_training.experiment.registry_policy_loaders import (
+from axiomrl.experiment.registry_policy_loaders import (
     _load_ppg_algorithm as _load_ppg_algorithm,
 )
-from rl_training.experiment.registry_policy_loaders import (
+from axiomrl.experiment.registry_policy_loaders import (
     _load_ppo_algorithm as _load_ppo_algorithm,
 )
-from rl_training.experiment.registry_policy_loaders import (
+from axiomrl.experiment.registry_policy_loaders import (
     _load_trpo_algorithm as _load_trpo_algorithm,
 )
-from rl_training.experiment.registry_recurrent_loaders import (
+from axiomrl.experiment.registry_recurrent_loaders import (
     _load_agent57_algorithm as _load_agent57_algorithm,
 )
-from rl_training.experiment.registry_recurrent_loaders import (
+from axiomrl.experiment.registry_recurrent_loaders import (
     _load_drqn_algorithm as _load_drqn_algorithm,
 )
-from rl_training.experiment.registry_recurrent_loaders import (
+from axiomrl.experiment.registry_recurrent_loaders import (
     _load_r2d2_algorithm as _load_r2d2_algorithm,
 )
-from rl_training.experiment.registry_recurrent_loaders import (
+from axiomrl.experiment.registry_recurrent_loaders import (
     _load_recurrent_ppo_algorithm as _load_recurrent_ppo_algorithm,
 )
-from rl_training.experiment.registry_specialized_loaders import (
+from axiomrl.experiment.registry_specialized_loaders import (
     _load_discrete_sac_algorithm as _load_discrete_sac_algorithm,
 )
-from rl_training.experiment.registry_specialized_loaders import (
+from axiomrl.experiment.registry_specialized_loaders import (
     _load_dreamer_algorithm as _load_dreamer_algorithm,
 )
-from rl_training.experiment.registry_specialized_loaders import (
+from axiomrl.experiment.registry_specialized_loaders import (
     _load_efficientzero_algorithm as _load_efficientzero_algorithm,
 )
-from rl_training.experiment.registry_specialized_loaders import (
+from axiomrl.experiment.registry_specialized_loaders import (
     _load_gumbel_muzero_algorithm as _load_gumbel_muzero_algorithm,
 )
-from rl_training.experiment.registry_specialized_loaders import (
+from axiomrl.experiment.registry_specialized_loaders import (
     _load_her_algorithm as _load_her_algorithm,
 )
-from rl_training.experiment.registry_specialized_loaders import (
+from axiomrl.experiment.registry_specialized_loaders import (
     _load_mbpo_algorithm as _load_mbpo_algorithm,
 )
-from rl_training.experiment.registry_specialized_loaders import (
+from axiomrl.experiment.registry_specialized_loaders import (
     _load_mopo_algorithm as _load_mopo_algorithm,
 )
-from rl_training.experiment.registry_specialized_loaders import (
+from axiomrl.experiment.registry_specialized_loaders import (
     _load_muzero_algorithm as _load_muzero_algorithm,
 )
-from rl_training.experiment.registry_specialized_loaders import (
+from axiomrl.experiment.registry_specialized_loaders import (
     _load_pets_algorithm as _load_pets_algorithm,
 )
-from rl_training.experiment.registry_support import (
+from axiomrl.experiment.registry_support import (
     _format_action_output as _registry_format_action_output,
 )
-from rl_training.experiment.registry_support import (
+from axiomrl.experiment.registry_support import (
     _prepare_observation as _registry_prepare_observation,
 )
-from rl_training.experiment.registry_types import AlgorithmSpec
-from rl_training.runtime.agent57_trainer import train_agent57
-from rl_training.runtime.apex_dqn_trainer import train_apex_dqn
-from rl_training.runtime.awac_trainer import train_awac
-from rl_training.runtime.awr_trainer import train_awr
-from rl_training.runtime.bc_trainer import train_bc
-from rl_training.runtime.bcq_trainer import train_bcq
-from rl_training.runtime.bear_trainer import train_bear
-from rl_training.runtime.cal_ql_trainer import train_cal_ql
-from rl_training.runtime.cql_trainer import train_cql
-from rl_training.runtime.crossq_trainer import train_crossq
-from rl_training.runtime.crr_trainer import train_crr
-from rl_training.runtime.curl_trainer import train_curl
-from rl_training.runtime.d4pg_trainer import train_d4pg
-from rl_training.runtime.ddpg_trainer import train_ddpg
-from rl_training.runtime.decision_transformer_trainer import (
+from axiomrl.experiment.registry_types import AlgorithmSpec
+from axiomrl.runtime.agent57_trainer import train_agent57
+from axiomrl.runtime.apex_dqn_trainer import train_apex_dqn
+from axiomrl.runtime.awac_trainer import train_awac
+from axiomrl.runtime.awr_trainer import train_awr
+from axiomrl.runtime.bc_trainer import train_bc
+from axiomrl.runtime.bcq_trainer import train_bcq
+from axiomrl.runtime.bear_trainer import train_bear
+from axiomrl.runtime.cal_ql_trainer import train_cal_ql
+from axiomrl.runtime.cql_trainer import train_cql
+from axiomrl.runtime.crossq_trainer import train_crossq
+from axiomrl.runtime.crr_trainer import train_crr
+from axiomrl.runtime.curl_trainer import train_curl
+from axiomrl.runtime.d4pg_trainer import train_d4pg
+from axiomrl.runtime.ddpg_trainer import train_ddpg
+from axiomrl.runtime.decision_transformer_trainer import (
     train_decision_transformer,
 )
-from rl_training.runtime.discrete_sac_trainer import train_discrete_sac
-from rl_training.runtime.dqn_trainer import train_dqn
-from rl_training.runtime.dreamer_trainer import train_dreamer
-from rl_training.runtime.drq_trainer import train_drq
-from rl_training.runtime.drqn_trainer import train_drqn
-from rl_training.runtime.drqv2_trainer import train_drqv2
-from rl_training.runtime.edac_trainer import train_edac
-from rl_training.runtime.efficientzero_trainer import train_efficientzero
-from rl_training.runtime.her_trainer import train_her
-from rl_training.runtime.iql_trainer import train_iql
-from rl_training.runtime.marwil_trainer import train_marwil
-from rl_training.runtime.mbpo_trainer import train_mbpo
-from rl_training.runtime.mopo_trainer import train_mopo
-from rl_training.runtime.muzero_trainer import train_muzero
-from rl_training.runtime.naf_trainer import train_naf
-from rl_training.runtime.pets_trainer import train_pets
-from rl_training.runtime.r2d2_trainer import train_r2d2
-from rl_training.runtime.rebrac_trainer import train_rebrac
-from rl_training.runtime.recurrent_ppo_trainer import train_recurrent_ppo
-from rl_training.runtime.redq_trainer import train_redq
-from rl_training.runtime.rlpd_trainer import train_rlpd
-from rl_training.runtime.sac_trainer import train_sac
-from rl_training.runtime.td3_bc_trainer import train_td3_bc
-from rl_training.runtime.td3_trainer import train_td3
-from rl_training.runtime.tqc_trainer import train_tqc
-from rl_training.runtime.xql_trainer import train_xql
+from axiomrl.runtime.discrete_sac_trainer import train_discrete_sac
+from axiomrl.runtime.dqn_trainer import train_dqn
+from axiomrl.runtime.dreamer_trainer import train_dreamer
+from axiomrl.runtime.drq_trainer import train_drq
+from axiomrl.runtime.drqn_trainer import train_drqn
+from axiomrl.runtime.drqv2_trainer import train_drqv2
+from axiomrl.runtime.edac_trainer import train_edac
+from axiomrl.runtime.efficientzero_trainer import train_efficientzero
+from axiomrl.runtime.her_trainer import train_her
+from axiomrl.runtime.iql_trainer import train_iql
+from axiomrl.runtime.marwil_trainer import train_marwil
+from axiomrl.runtime.mbpo_trainer import train_mbpo
+from axiomrl.runtime.mopo_trainer import train_mopo
+from axiomrl.runtime.muzero_trainer import train_muzero
+from axiomrl.runtime.naf_trainer import train_naf
+from axiomrl.runtime.pets_trainer import train_pets
+from axiomrl.runtime.r2d2_trainer import train_r2d2
+from axiomrl.runtime.rebrac_trainer import train_rebrac
+from axiomrl.runtime.recurrent_ppo_trainer import train_recurrent_ppo
+from axiomrl.runtime.redq_trainer import train_redq
+from axiomrl.runtime.rlpd_trainer import train_rlpd
+from axiomrl.runtime.sac_trainer import train_sac
+from axiomrl.runtime.td3_bc_trainer import train_td3_bc
+from axiomrl.runtime.td3_trainer import train_td3
+from axiomrl.runtime.tqc_trainer import train_tqc
+from axiomrl.runtime.xql_trainer import train_xql
 
 _format_action_output = _registry_format_action_output
 _prepare_observation = _registry_prepare_observation
 
-from rl_training.experiment.registry_actor_critic_specs import ACTOR_CRITIC_SPECS
-from rl_training.experiment.registry_evaluators import (
+from axiomrl.experiment.registry_actor_critic_specs import ACTOR_CRITIC_SPECS
+from axiomrl.experiment.registry_evaluators import (
     _evaluate_a2c,
     _evaluate_agent57,
     _evaluate_appo,
@@ -293,9 +293,9 @@ from rl_training.experiment.registry_evaluators import (
     _evaluate_twisted,
     _evaluate_xql,
 )
-from rl_training.experiment.registry_offline_specs import OFFLINE_SPECS
-from rl_training.experiment.registry_on_policy_specs import ON_POLICY_SPECS
-from rl_training.experiment.registry_predictors import (
+from axiomrl.experiment.registry_offline_specs import OFFLINE_SPECS
+from axiomrl.experiment.registry_on_policy_specs import ON_POLICY_SPECS
+from axiomrl.experiment.registry_predictors import (
     _predict_a2c,
     _predict_agent57,
     _predict_appo,
@@ -359,8 +359,8 @@ from rl_training.experiment.registry_predictors import (
     _predict_twisted,
     _predict_xql,
 )
-from rl_training.experiment.registry_value_based_specs import VALUE_BASED_SPECS
-from rl_training.experiment.registry_world_model_specs import WORLD_MODEL_SPECS
+from axiomrl.experiment.registry_value_based_specs import VALUE_BASED_SPECS
+from axiomrl.experiment.registry_world_model_specs import WORLD_MODEL_SPECS
 
 # Preserve registry_core attribute compatibility for on-policy evaluator/predictor helpers
 # that are now consumed through the split ON_POLICY_SPECS module.

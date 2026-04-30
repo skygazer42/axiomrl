@@ -5,8 +5,8 @@ from collections.abc import Sequence
 import torch
 from torch import nn
 
-from rl_training.models.cnn.nature import NatureCNN
-from rl_training.models.cnn.q_network import _build_head
+from axiomrl.models.cnn.nature import NatureCNN
+from axiomrl.models.cnn.q_network import _build_head
 
 
 class CNNSPRQNetwork(nn.Module):

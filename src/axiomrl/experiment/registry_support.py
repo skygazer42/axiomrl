@@ -4,8 +4,8 @@ import gymnasium as gym
 import numpy as np
 import torch
 
-from rl_training.experiment.config import TrainConfig
-from rl_training.envs.factory import build_env
+from axiomrl.envs.factory import build_env
+from axiomrl.experiment.config import TrainConfig
 
 
 def _infer_discrete_env_spaces(config: TrainConfig) -> tuple[tuple[int, ...], int]:

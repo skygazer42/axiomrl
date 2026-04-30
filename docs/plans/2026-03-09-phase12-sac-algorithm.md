@@ -13,8 +13,8 @@
 ### Task 1: Add the SAC model layer
 
 **Files:**
-- Create: `src/rl_training/models/mlp_sac.py`
-- Modify: `src/rl_training/models/__init__.py`
+- Create: `src/axiomrl/models/mlp_sac.py`
+- Modify: `src/axiomrl/models/__init__.py`
 - Create: `tests/test_sac_update.py`
 
 **Step 1: Write the failing test**
@@ -41,8 +41,8 @@ Expected: PASS
 ### Task 2: Add the SAC algorithm layer
 
 **Files:**
-- Create: `src/rl_training/algorithms/sac.py`
-- Modify: `src/rl_training/algorithms/__init__.py`
+- Create: `src/axiomrl/algorithms/sac.py`
+- Modify: `src/axiomrl/algorithms/__init__.py`
 - Modify: `tests/test_sac_update.py`
 
 **Step 1: Extend the failing test**

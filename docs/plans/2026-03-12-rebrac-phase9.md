@@ -6,7 +6,7 @@
 
 **Architecture:** Reuse the current `TD3+BC` offline runtime family instead of creating another trainer stack. Implement `ReBRAC` as a behavior-regularized TD3-style learner on top of `MLPTD3Model`, packaged configs, managed API wiring, and checkpoint/eval/predict paths, while extending `TransitionDataset` with optional `next_actions` so the learner can regularize bootstrapped targets without redesigning the whole data layer.
 
-**Tech Stack:** Python, PyTorch, Gymnasium, existing `rl_training` offline dataset and experiment infrastructure
+**Tech Stack:** Python, PyTorch, Gymnasium, existing `axiomrl` offline dataset and experiment infrastructure
 
 ---
 
@@ -45,11 +45,11 @@ Record that tests are added but intentionally not executed until the user explic
 ### Task 2: Extend Offline Dataset Payloads For Next-State Behavior Actions
 
 **Files:**
-- Modify: `src/rl_training/data/offline_dataset.py`
-- Modify: `src/rl_training/data/dataset_loaders.py`
-- Modify: `src/rl_training/data/offline_mixers.py`
-- Modify: `src/rl_training/runtime/iql_trainer.py`
-- Modify: `src/rl_training/data/__init__.py`
+- Modify: `src/axiomrl/data/offline_dataset.py`
+- Modify: `src/axiomrl/data/dataset_loaders.py`
+- Modify: `src/axiomrl/data/offline_mixers.py`
+- Modify: `src/axiomrl/runtime/iql_trainer.py`
+- Modify: `src/axiomrl/data/__init__.py`
 - Modify: `tests/test_offline_dataset.py`
 - Modify: `tests/test_dataset_loaders.py`
 
@@ -73,8 +73,8 @@ Generate sequential random offline datasets with behavior-consistent `next_actio
 ### Task 3: Add The `ReBRAC` Learner
 
 **Files:**
-- Create: `src/rl_training/algorithms/rebrac.py`
-- Modify: `src/rl_training/algorithms/__init__.py`
+- Create: `src/axiomrl/algorithms/rebrac.py`
+- Modify: `src/axiomrl/algorithms/__init__.py`
 
 **Step 1: Reuse the existing TD3 model family**
 
@@ -100,8 +100,8 @@ Add a readable `rebrac_loss(...)` function and export `ReBRAC` / `ReBRACAlgorith
 ### Task 4: Add The Offline `ReBRAC` Trainer
 
 **Files:**
-- Create: `src/rl_training/runtime/rebrac_trainer.py`
-- Modify: `src/rl_training/experiment/registry.py`
+- Create: `src/axiomrl/runtime/rebrac_trainer.py`
+- Modify: `src/axiomrl/experiment/registry.py`
 
 **Step 1: Reuse the offline dataset stack**
 
@@ -124,11 +124,11 @@ Evaluate with the current deterministic continuous-action TD3 helper and expose 
 ### Task 5: Wire `ReBRAC` Into The Package Surface
 
 **Files:**
-- Modify: `src/rl_training/api/algorithms.py`
-- Modify: `src/rl_training/api/__init__.py`
-- Modify: `src/rl_training/__init__.py`
+- Modify: `src/axiomrl/api/algorithms.py`
+- Modify: `src/axiomrl/api/__init__.py`
+- Modify: `src/axiomrl/__init__.py`
 - Create: `configs/rebrac/pendulum.yaml`
-- Create: `src/rl_training/assets/configs/rebrac/pendulum.yaml`
+- Create: `src/axiomrl/assets/configs/rebrac/pendulum.yaml`
 - Modify: `README.md`
 
 **Step 1: Add the managed API entrypoint**

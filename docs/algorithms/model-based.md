@@ -56,7 +56,7 @@ algo_kwargs:
 #### Python API 示例
 
 ```python
-from rl_training.experimental import PETS
+from axiomrl.experimental import PETS
 
 model = PETS(
     env_id="Pusher-v4",
@@ -118,7 +118,7 @@ algo_kwargs:
 #### Python API 示例
 
 ```python
-from rl_training.experimental import MBPO
+from axiomrl.experimental import MBPO
 
 model = MBPO(
     env_id="HalfCheetah-v4",
@@ -176,7 +176,7 @@ algo_kwargs:
 #### Python API 示例
 
 ```python
-from rl_training.experimental import MOPO
+from axiomrl.experimental import MOPO
 
 model = MOPO(
     env_id="Hopper-v4",
@@ -244,7 +244,7 @@ algo_kwargs:
 #### Python API 示例
 
 ```python
-from rl_training.experimental import Dreamer
+from axiomrl.experimental import Dreamer
 
 model = Dreamer(
     env_id="dm_control/walker-walk",
@@ -305,7 +305,7 @@ algo_kwargs:
 #### Python API 示例
 
 ```python
-from rl_training.experimental import DreamerV3
+from axiomrl.experimental import DreamerV3
 
 model = DreamerV3(
     env_id="Minecraft-diamond",
@@ -362,7 +362,7 @@ algo_kwargs:
 #### Python API 示例
 
 ```python
-from rl_training.experimental import EADream
+from axiomrl.experimental import EADream
 
 model = EADream(
     env_id="dm_control/cheetah-run",
@@ -420,7 +420,7 @@ algo_kwargs:
 #### Python API 示例
 
 ```python
-from rl_training.experimental import PODreamer
+from axiomrl.experimental import PODreamer
 
 model = PODreamer(
     env_id="FlickeringCheetah-v0",
@@ -485,7 +485,7 @@ algo_kwargs:
 #### Python API 示例
 
 ```python
-from rl_training.experimental import MuZero
+from axiomrl.experimental import MuZero
 
 model = MuZero(
     env_id="Breakout-v5",
@@ -543,7 +543,7 @@ algo_kwargs:
 #### Python API 示例
 
 ```python
-from rl_training.experimental import EfficientZero
+from axiomrl.experimental import EfficientZero
 
 model = EfficientZero(
     env_id="Pong-v5",
@@ -597,7 +597,7 @@ algo_kwargs:
 #### Python API 示例
 
 ```python
-from rl_training.experimental import ScaleZero
+from axiomrl.experimental import ScaleZero
 
 model = ScaleZero(
     env_id="Breakout-v5",
@@ -654,7 +654,7 @@ algo_kwargs:
 #### Python API 示例
 
 ```python
-from rl_training.experimental import GumbelMuZero
+from axiomrl.experimental import GumbelMuZero
 
 model = GumbelMuZero(
     env_id="Go-9x9",
@@ -714,7 +714,7 @@ algo_kwargs:
 #### Python API 示例
 
 ```python
-from rl_training.experimental import DIAMOND
+from axiomrl.experimental import DIAMOND
 
 model = DIAMOND(
     env_id="Breakout-v5",
@@ -768,7 +768,7 @@ algo_kwargs:
 #### Python API 示例
 
 ```python
-from rl_training.experimental import HorizonImagination
+from axiomrl.experimental import HorizonImagination
 
 model = HorizonImagination(
     env_id="Seaquest-v5",
@@ -820,7 +820,7 @@ algo_kwargs:
 #### Python API 示例
 
 ```python
-from rl_training.experimental import JOWA
+from axiomrl.experimental import JOWA
 
 model = JOWA(
     env_id="Walker2d-v4",
@@ -874,7 +874,7 @@ algo_kwargs:
 #### Python API 示例
 
 ```python
-from rl_training.experimental import MOW
+from axiomrl.experimental import MOW
 
 model = MOW(
     env_id="dm_control/humanoid-walk",
@@ -929,7 +929,7 @@ algo_kwargs:
 #### Python API 示例
 
 ```python
-from rl_training.experimental import Twisted
+from axiomrl.experimental import Twisted
 
 model = Twisted(
     env_id="MsPacman-v5",
@@ -988,7 +988,7 @@ algo_kwargs:
 #### Python API 示例
 
 ```python
-from rl_training.experimental import HER
+from axiomrl.experimental import HER
 
 model = HER(
     env_id="FetchReach-v2",

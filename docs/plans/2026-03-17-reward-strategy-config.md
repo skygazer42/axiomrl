@@ -4,7 +4,7 @@
 
 **Goal:** Add declarative environment-level reward strategy configuration so training runs can shape scenario rewards from YAML without changing environment code.
 
-**Architecture:** Extend the existing reward wrapper pipeline in `src/rl_training/envs/rewards.py` instead of introducing a second config path. Keep current scalar transforms (`sign`, `scale`, `shift`, `clip`, named presets) backward compatible, add a `strategy` alias for presets, and add step-aware shaping for common RL workflows such as per-step penalties and success/failure bonuses driven by `info`.
+**Architecture:** Extend the existing reward wrapper pipeline in `src/axiomrl/envs/rewards.py` instead of introducing a second config path. Keep current scalar transforms (`sign`, `scale`, `shift`, `clip`, named presets) backward compatible, add a `strategy` alias for presets, and add step-aware shaping for common RL workflows such as per-step penalties and success/failure bonuses driven by `info`.
 
 **Tech Stack:** Python 3.10+, Gymnasium wrappers, existing env factory/config system, pytest.
 
@@ -27,8 +27,8 @@
 ### Task 2: Implement reward strategy parsing and wrappers
 
 **Files:**
-- Modify: `src/rl_training/envs/rewards.py`
-- Modify: `src/rl_training/envs/__init__.py`
+- Modify: `src/axiomrl/envs/rewards.py`
+- Modify: `src/axiomrl/envs/__init__.py`
 
 **Step 1: Write minimal implementation**
 - Extend `RewardTransformConfig` with step-aware shaping fields.

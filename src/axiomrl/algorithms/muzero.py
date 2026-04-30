@@ -1,16 +1,16 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field, replace
 import math
+from dataclasses import dataclass, field, replace
 from typing import Any
 
 import numpy as np
 import torch
 from torch.nn import functional as F
 
-from rl_training.algorithms.base import UpdateResult
-from rl_training.models.muzero import MuZeroModel
-from rl_training.policies.base import PolicyOutput
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.models.muzero import MuZeroModel
+from axiomrl.policies.base import PolicyOutput
 
 
 @dataclass(frozen=True, slots=True)
@@ -31,9 +31,7 @@ class MuZeroMCTSConfig:
         if self.root_dirichlet_alpha <= 0:
             raise ValueError(f"root_dirichlet_alpha must be > 0, got {self.root_dirichlet_alpha}")
         if not 0.0 <= self.root_exploration_fraction <= 1.0:
-            raise ValueError(
-                f"root_exploration_fraction must be in [0, 1], got {self.root_exploration_fraction}"
-            )
+            raise ValueError(f"root_exploration_fraction must be in [0, 1], got {self.root_exploration_fraction}")
 
 
 @dataclass(slots=True)
@@ -97,7 +95,9 @@ def run_muzero_mcts(
 ) -> tuple[np.ndarray, float]:
     model.eval()
     with torch.no_grad():
-        root_out = model.initial_inference(torch.as_tensor(obs, dtype=torch.float32, device=next(model.parameters()).device))
+        root_out = model.initial_inference(
+            torch.as_tensor(obs, dtype=torch.float32, device=next(model.parameters()).device)
+        )
 
     action_dim = int(model.action_dim)
     root = _Node(prior=1.0, reward=0.0, visit_count=0, value_sum=0.0, hidden_state=root_out.hidden_state)
@@ -135,11 +135,15 @@ def run_muzero_mcts(
                 if parent_hidden is None:
                     raise RuntimeError("MCTS encountered missing parent hidden state")
                 with torch.no_grad():
-                    recurrent = model.recurrent_inference(parent_hidden, torch.tensor([best_action], device=parent_hidden.device))
+                    recurrent = model.recurrent_inference(
+                        parent_hidden, torch.tensor([best_action], device=parent_hidden.device)
+                    )
                 node.hidden_state = recurrent.hidden_state
                 node.reward = float(recurrent.reward.squeeze(0).detach().cpu().item())
 
-                priors = torch.softmax(recurrent.policy_logits, dim=-1).squeeze(0).detach().cpu().numpy().astype(np.float32)
+                priors = (
+                    torch.softmax(recurrent.policy_logits, dim=-1).squeeze(0).detach().cpu().numpy().astype(np.float32)
+                )
                 _expand_node(node, action_dim=action_dim, priors=priors)
 
                 leaf_value = float(recurrent.value.squeeze(0).detach().cpu().item())
@@ -252,7 +256,9 @@ class MuZero:
             add_root_noise=False,
             deterministic=deterministic,
         )
-        return PolicyOutput(actions=torch.tensor([action], dtype=torch.int64), logprobs=None, values=None, entropy=None, state=None)
+        return PolicyOutput(
+            actions=torch.tensor([action], dtype=torch.int64), logprobs=None, values=None, entropy=None, state=None
+        )
 
     def update(self, batch: dict[str, Any], *, global_step: int) -> UpdateResult:
         del global_step
@@ -266,7 +272,6 @@ class MuZero:
         bootstrap_obs = torch.as_tensor(batch["bootstrap_obs"], dtype=torch.float32, device=obs.device)
 
         batch_size = int(obs.shape[0])
-        action_dim = int(target_policies.shape[-1])
         unroll_steps = int(actions.shape[1])
 
         # Valid state mask: state at t+k is invalid if done at any previous transition.
@@ -368,7 +373,9 @@ class MuZero:
                 num_simulations=int(mcts_payload.get("num_simulations", self.mcts_config.num_simulations)),
                 pb_c_base=float(mcts_payload.get("pb_c_base", self.mcts_config.pb_c_base)),
                 pb_c_init=float(mcts_payload.get("pb_c_init", self.mcts_config.pb_c_init)),
-                root_dirichlet_alpha=float(mcts_payload.get("root_dirichlet_alpha", self.mcts_config.root_dirichlet_alpha)),
+                root_dirichlet_alpha=float(
+                    mcts_payload.get("root_dirichlet_alpha", self.mcts_config.root_dirichlet_alpha)
+                ),
                 root_exploration_fraction=float(
                     mcts_payload.get("root_exploration_fraction", self.mcts_config.root_exploration_fraction)
                 ),

@@ -5,8 +5,8 @@ from collections.abc import Sequence
 import torch
 from torch import nn
 
-from rl_training.models.cnn.nature import NatureCNN
-from rl_training.models.mlp_noisy_q_network import NoisyLinear
+from axiomrl.models.cnn.nature import NatureCNN
+from axiomrl.models.mlp_noisy_q_network import NoisyLinear
 
 
 def _build_noisy_head(
@@ -87,4 +87,3 @@ class CNNDuelingNoisyQNetwork(nn.Module):
         random_actions = torch.randint(0, self.action_dim, greedy_actions.shape, device=greedy_actions.device)
         explore_mask = torch.rand(greedy_actions.shape, device=greedy_actions.device) < epsilon
         return torch.where(explore_mask, random_actions, greedy_actions)
-

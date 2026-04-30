@@ -4,7 +4,7 @@
 
 **Goal:** Add configurable entropy-coefficient schedules to trainer runtimes so exploration pressure can be ramped or annealed without changing algorithms.
 
-**Architecture:** Reuse `src/rl_training/runtime/schedules.py` and the existing controls pattern. Add one shared resolver in `src/rl_training/runtime/controls.py`, then wire it into PPO-style and Dreamer-style trainers by updating `algorithm.ent_coef` / `algorithm.entropy_coef` immediately before updates and surfacing the resolved value in logged metrics.
+**Architecture:** Reuse `src/axiomrl/runtime/schedules.py` and the existing controls pattern. Add one shared resolver in `src/axiomrl/runtime/controls.py`, then wire it into PPO-style and Dreamer-style trainers by updating `algorithm.ent_coef` / `algorithm.entropy_coef` immediately before updates and surfacing the resolved value in logged metrics.
 
 **Tech Stack:** Python 3.10+, PyTorch, Gymnasium, existing runtime trainer loops, pytest.
 
@@ -29,7 +29,7 @@
 ### Task 2: Implement shared entropy schedule resolver
 
 **Files:**
-- Modify: `src/rl_training/runtime/controls.py`
+- Modify: `src/axiomrl/runtime/controls.py`
 
 **Step 1: Write minimal implementation**
 - Add `resolve_entropy_coefficient(...)`.
@@ -46,15 +46,15 @@
 ### Task 3: Wire schedules into trainer loops
 
 **Files:**
-- Modify: `src/rl_training/runtime/ppo_trainer.py`
-- Modify: `src/rl_training/runtime/a2c_trainer.py`
-- Modify: `src/rl_training/runtime/impala_trainer.py`
-- Modify: `src/rl_training/runtime/ppg_trainer.py`
-- Modify: `src/rl_training/runtime/appo_trainer.py`
-- Modify: `src/rl_training/runtime/recurrent_ppo_trainer.py`
-- Modify: `src/rl_training/runtime/gail_trainer.py`
-- Modify: `src/rl_training/runtime/trpo_trainer.py`
-- Modify: `src/rl_training/runtime/dreamer_trainer.py`
+- Modify: `src/axiomrl/runtime/ppo_trainer.py`
+- Modify: `src/axiomrl/runtime/a2c_trainer.py`
+- Modify: `src/axiomrl/runtime/impala_trainer.py`
+- Modify: `src/axiomrl/runtime/ppg_trainer.py`
+- Modify: `src/axiomrl/runtime/appo_trainer.py`
+- Modify: `src/axiomrl/runtime/recurrent_ppo_trainer.py`
+- Modify: `src/axiomrl/runtime/gail_trainer.py`
+- Modify: `src/axiomrl/runtime/trpo_trainer.py`
+- Modify: `src/axiomrl/runtime/dreamer_trainer.py`
 
 **Step 1: Minimal wiring**
 - Resolve the scheduled coefficient from `global_step`.

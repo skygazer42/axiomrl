@@ -1,5 +1,5 @@
-from rl_training.cli import main
-from rl_training.version import __version__
+from axiomrl.cli import main
+from axiomrl.version import __version__
 
 
 def test_doctor_command_prints_environment_info(capsys) -> None:

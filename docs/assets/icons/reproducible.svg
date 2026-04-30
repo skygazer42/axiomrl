@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+  <title>Reproducible</title>
+  <path d="M20 12 A8 8 0 1 1 17.7 6.3"/>
+  <path d="M20 4 L20 8 L16 8"/>
+  <circle cx="12" cy="12" r="2.5"/>
+</svg>

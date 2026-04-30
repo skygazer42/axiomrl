@@ -18,7 +18,7 @@
 **Step 1: Use the existing failing smoke test**
 
 Run: `pytest -q tests/test_package_smoke.py`
-Expected: FAIL with `ModuleNotFoundError: No module named 'rl_training'`
+Expected: FAIL with `ModuleNotFoundError: No module named 'axiomrl'`
 
 **Step 2: Write minimal test harness support**
 
@@ -32,14 +32,14 @@ Expected: PASS
 ### Task 2: Add the environment factory package
 
 **Files:**
-- Create: `src/rl_training/envs/__init__.py`
-- Create: `src/rl_training/envs/factory.py`
+- Create: `src/axiomrl/envs/__init__.py`
+- Create: `src/axiomrl/envs/factory.py`
 - Modify: `pyproject.toml`
 
 **Step 1: Use the existing failing env test**
 
 Run: `pytest -q tests/test_envs.py`
-Expected: FAIL because `rl_training.envs.factory` does not exist
+Expected: FAIL because `axiomrl.envs.factory` does not exist
 
 **Step 2: Write minimal implementation**
 
@@ -57,7 +57,7 @@ Expected: PASS
 ### Task 3: Replace the rollout buffer protocol with a concrete PPO buffer
 
 **Files:**
-- Modify: `src/rl_training/data/rollout_buffer.py`
+- Modify: `src/axiomrl/data/rollout_buffer.py`
 
 **Step 1: Use the existing failing rollout buffer tests**
 

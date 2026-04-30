@@ -6,7 +6,7 @@ import torch
 from torch import nn
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
 
-from rl_training.models.mlp_td3 import _build_mlp
+from axiomrl.models.mlp_td3 import _build_mlp
 
 
 class MLPARSModel(nn.Module):

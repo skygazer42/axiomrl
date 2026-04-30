@@ -5,10 +5,10 @@ from pathlib import Path
 
 import pytest
 
-from rl_training.experiment.benchmarking import aggregate_numeric_metrics, resolve_score_normalization_config
-from rl_training.experiment.config import TrainConfig
-from rl_training.experiment.logging import RunLogger
-from rl_training.runtime.run_utils import create_training_run, save_training_checkpoint
+from axiomrl.experiment.benchmarking import aggregate_numeric_metrics, resolve_score_normalization_config
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.experiment.logging import RunLogger
+from axiomrl.runtime.run_utils import create_training_run, save_training_checkpoint
 
 
 def test_score_normalization_source_resolves_named_reference() -> None:

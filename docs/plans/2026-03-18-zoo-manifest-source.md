@@ -4,7 +4,7 @@
 
 **Goal:** Export manifest source metadata in zoo report and leaderboard outputs so downstream consumers can see both the requested manifest path and the actual file location that was loaded.
 
-**Architecture:** Keep the change export-only inside `src/rl_training/zoo_cli.py`. Refactor manifest loading to expose the resolved file path and source kind (`filesystem` vs `packaged_asset`), then thread a small `manifest_source` object into report and leaderboard payloads and flatten the same fields into CSV/text output.
+**Architecture:** Keep the change export-only inside `src/axiomrl/zoo_cli.py`. Refactor manifest loading to expose the resolved file path and source kind (`filesystem` vs `packaged_asset`), then thread a small `manifest_source` object into report and leaderboard payloads and flatten the same fields into CSV/text output.
 
 **Tech Stack:** Python 3.10+, pathlib, argparse, existing zoo CLI serializers, pytest.
 
@@ -29,7 +29,7 @@ Expected: FAIL because the payloads do not include `manifest_source` yet.
 ### Task 2: Implement manifest source export
 
 **Files:**
-- Modify: `src/rl_training/zoo_cli.py`
+- Modify: `src/axiomrl/zoo_cli.py`
 
 **Step 1: Write minimal implementation**
 - Add a helper that resolves the manifest path and reports whether it came from the filesystem or packaged assets.
@@ -47,7 +47,7 @@ Expected: PASS.
 **Files:**
 - Modify: `README.md`
 - Modify: `zoo/README.md`
-- Modify: `src/rl_training/assets/zoo/README.md`
+- Modify: `src/axiomrl/assets/zoo/README.md`
 
 **Step 1: Add docs**
 - Describe that machine-readable benchmark exports now include manifest source metadata showing the requested path and resolved asset/file path.

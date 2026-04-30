@@ -1,5 +1,5 @@
-from rl_training.runtime.trainer import TrainerState
-from rl_training.tuning.optuna_backend import OptunaPruningCallback
+from axiomrl.runtime.trainer import TrainerState
+from axiomrl.tuning.optuna_backend import OptunaPruningCallback
 
 
 class _FakeTrial:

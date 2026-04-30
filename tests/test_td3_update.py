@@ -1,7 +1,7 @@
 import torch
 
-from rl_training.algorithms.td3 import TD3, td3_loss
-from rl_training.models.mlp_td3 import MLPTD3Model
+from axiomrl.algorithms.td3 import TD3, td3_loss
+from axiomrl.models.mlp_td3 import MLPTD3Model
 
 
 def test_mlp_td3_model_actor_outputs_bounded_actions() -> None:

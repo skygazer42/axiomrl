@@ -1,12 +1,12 @@
 from pathlib import Path
 
-from rl_training.api import DQN, PPO
-from rl_training.experiment.config import TrainConfig
-from rl_training.runtime.collector import CollectResult
-from rl_training.runtime.controls import EarlyStoppingCallback, EarlyStoppingConfig
-from rl_training.runtime.trainer import TrainResult, TrainerState
-from rl_training.runtime.types import MetricDict
-from rl_training.algorithms.base import UpdateResult
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.api import DQN, PPO
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.runtime.collector import CollectResult
+from axiomrl.runtime.controls import EarlyStoppingCallback, EarlyStoppingConfig
+from axiomrl.runtime.trainer import TrainerState, TrainResult
+from axiomrl.runtime.types import MetricDict
 
 
 class RecordingCallback:

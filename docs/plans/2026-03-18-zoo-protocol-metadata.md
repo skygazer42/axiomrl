@@ -4,7 +4,7 @@
 
 **Goal:** Export manifest-derived benchmark protocol, score-normalization, and preset metadata alongside zoo report and leaderboard outputs.
 
-**Architecture:** Keep the change export-only inside `src/rl_training/zoo_cli.py`. Build lightweight manifest lookup helpers keyed by preset name/config, enrich per-run and aggregate payloads with protocol / score-normalization / preset metadata, and thread the same structured data through text, JSON, and CSV serializers without changing training or environment behavior.
+**Architecture:** Keep the change export-only inside `src/axiomrl/zoo_cli.py`. Build lightweight manifest lookup helpers keyed by preset name/config, enrich per-run and aggregate payloads with protocol / score-normalization / preset metadata, and thread the same structured data through text, JSON, and CSV serializers without changing training or environment behavior.
 
 **Tech Stack:** Python 3.10+, argparse, YAML manifest loader, existing zoo CLI serializers, pytest.
 
@@ -29,7 +29,7 @@ Expected: FAIL because the export payloads do not include the structured metadat
 ### Task 2: Implement manifest metadata export
 
 **Files:**
-- Modify: `src/rl_training/zoo_cli.py`
+- Modify: `src/axiomrl/zoo_cli.py`
 
 **Step 1: Write minimal implementation**
 - Add manifest lookup helpers that resolve preset entries from the manifest by preset name or config path.
@@ -47,7 +47,7 @@ Expected: PASS.
 **Files:**
 - Modify: `README.md`
 - Modify: `zoo/README.md`
-- Modify: `src/rl_training/assets/zoo/README.md`
+- Modify: `src/axiomrl/assets/zoo/README.md`
 
 **Step 1: Add docs**
 - Describe that machine-readable zoo benchmark outputs now expose full protocol metadata, score-normalization metadata, and preset metadata from the manifest.

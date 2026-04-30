@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import torch
 
-from rl_training.experiment.checkpointing import CheckpointState
-from rl_training.experiment.config import TrainConfig
-from rl_training.experiment.registry_core import (
+from axiomrl.experiment.checkpointing import CheckpointState
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.experiment.registry_core import (
     _load_a2c_algorithm,
     _load_agent57_algorithm,
     _load_appo_algorithm,
@@ -60,37 +60,37 @@ from rl_training.experiment.registry_core import (
     _load_trpo_algorithm,
     _load_xql_algorithm,
 )
-from rl_training.runtime.a2c_trainer import _evaluate_policy as _evaluate_a2c_policy
-from rl_training.runtime.appo_trainer import _evaluate_appo_policy
-from rl_training.runtime.ars_trainer import _evaluate_ars_policy
-from rl_training.runtime.bc_trainer import _evaluate_bc_policy
-from rl_training.runtime.bcq_trainer import _evaluate_bcq_policy
-from rl_training.runtime.crossq_trainer import _evaluate_crossq_policy
-from rl_training.runtime.curl_trainer import _evaluate_curl_policy
-from rl_training.runtime.d4pg_trainer import _evaluate_d4pg_policy
-from rl_training.runtime.ddpg_trainer import _evaluate_ddpg_policy
-from rl_training.runtime.decision_transformer_trainer import _evaluate_decision_transformer_policy
-from rl_training.runtime.discrete_sac_trainer import _evaluate_discrete_sac_policy
-from rl_training.runtime.dqn_trainer import _evaluate_q_policy
-from rl_training.runtime.drq_trainer import _evaluate_drq_policy
-from rl_training.runtime.drqn_trainer import _evaluate_drqn_policy
-from rl_training.runtime.drqv2_trainer import _evaluate_drqv2_policy
-from rl_training.runtime.her_trainer import _evaluate_her_policy
-from rl_training.runtime.impala_trainer import _evaluate_impala_policy
-from rl_training.runtime.iql_trainer import _evaluate_iql_policy
-from rl_training.runtime.muzero_trainer import _evaluate_muzero_policy
-from rl_training.runtime.naf_trainer import _evaluate_naf_policy
-from rl_training.runtime.openai_es_trainer import _evaluate_openai_es_policy
-from rl_training.runtime.pets_trainer import _evaluate_pets_policy
-from rl_training.runtime.ppg_trainer import _evaluate_ppg_policy
-from rl_training.runtime.ppo_trainer import _evaluate_policy
-from rl_training.runtime.r2d2_trainer import _evaluate_r2d2_policy
-from rl_training.runtime.recurrent_ppo_trainer import _evaluate_recurrent_policy
-from rl_training.runtime.redq_trainer import _evaluate_redq_policy
-from rl_training.runtime.sac_trainer import _evaluate_sac_policy
-from rl_training.runtime.td3_trainer import _evaluate_td3_policy
-from rl_training.runtime.tqc_trainer import _evaluate_tqc_policy
-from rl_training.runtime.types import MetricDict
+from axiomrl.runtime.a2c_trainer import _evaluate_policy as _evaluate_a2c_policy
+from axiomrl.runtime.appo_trainer import _evaluate_appo_policy
+from axiomrl.runtime.ars_trainer import _evaluate_ars_policy
+from axiomrl.runtime.bc_trainer import _evaluate_bc_policy
+from axiomrl.runtime.bcq_trainer import _evaluate_bcq_policy
+from axiomrl.runtime.crossq_trainer import _evaluate_crossq_policy
+from axiomrl.runtime.curl_trainer import _evaluate_curl_policy
+from axiomrl.runtime.d4pg_trainer import _evaluate_d4pg_policy
+from axiomrl.runtime.ddpg_trainer import _evaluate_ddpg_policy
+from axiomrl.runtime.decision_transformer_trainer import _evaluate_decision_transformer_policy
+from axiomrl.runtime.discrete_sac_trainer import _evaluate_discrete_sac_policy
+from axiomrl.runtime.dqn_trainer import _evaluate_q_policy
+from axiomrl.runtime.drq_trainer import _evaluate_drq_policy
+from axiomrl.runtime.drqn_trainer import _evaluate_drqn_policy
+from axiomrl.runtime.drqv2_trainer import _evaluate_drqv2_policy
+from axiomrl.runtime.her_trainer import _evaluate_her_policy
+from axiomrl.runtime.impala_trainer import _evaluate_impala_policy
+from axiomrl.runtime.iql_trainer import _evaluate_iql_policy
+from axiomrl.runtime.muzero_trainer import _evaluate_muzero_policy
+from axiomrl.runtime.naf_trainer import _evaluate_naf_policy
+from axiomrl.runtime.openai_es_trainer import _evaluate_openai_es_policy
+from axiomrl.runtime.pets_trainer import _evaluate_pets_policy
+from axiomrl.runtime.ppg_trainer import _evaluate_ppg_policy
+from axiomrl.runtime.ppo_trainer import _evaluate_policy
+from axiomrl.runtime.r2d2_trainer import _evaluate_r2d2_policy
+from axiomrl.runtime.recurrent_ppo_trainer import _evaluate_recurrent_policy
+from axiomrl.runtime.redq_trainer import _evaluate_redq_policy
+from axiomrl.runtime.sac_trainer import _evaluate_sac_policy
+from axiomrl.runtime.td3_trainer import _evaluate_td3_policy
+from axiomrl.runtime.tqc_trainer import _evaluate_tqc_policy
+from axiomrl.runtime.types import MetricDict
 
 
 def _evaluate_a2c(

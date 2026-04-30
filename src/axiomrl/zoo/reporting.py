@@ -4,7 +4,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
-from rl_training.zoo.manifests import (
+from axiomrl.zoo.manifests import (
     _attach_manifest_metadata,
     _build_manifest_alignment_summary,
     _build_manifest_metadata,
@@ -14,7 +14,7 @@ from rl_training.zoo.manifests import (
     _resolve_manifest_protocol_name,
     _resolve_manifest_score_normalization_metadata,
 )
-from rl_training.zoo.reporting_render import (
+from axiomrl.zoo.reporting_render import (
     emit_output,
     render_commands_output,
     render_csv_report,
@@ -22,8 +22,8 @@ from rl_training.zoo.reporting_render import (
     render_table_output,
     render_text_report,
 )
-from rl_training.zoo.reporting_runs import apply_top_k, filter_run_reports, iter_run_reports, sort_records
-from rl_training.zoo.reporting_stats import (
+from axiomrl.zoo.reporting_runs import apply_top_k, filter_run_reports, iter_run_reports, sort_records
+from axiomrl.zoo.reporting_stats import (
     aggregate_run_reports,
     attach_baseline_comparison_fields,
     build_baseline_summary,

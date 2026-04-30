@@ -6,14 +6,16 @@ from typing import Any
 import torch
 from torch.nn import functional as F
 
-from rl_training.algorithms.base import UpdateResult
-from rl_training.models.mlp_redq import MLPREDQModel
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.models.mlp_redq import MLPREDQModel
 
 
 def critic_diversity_loss(action_gradients: torch.Tensor | float) -> torch.Tensor:
     gradients = torch.as_tensor(action_gradients, dtype=torch.float32)
     if gradients.ndim != 3:
-        raise ValueError(f"expected action_gradients to have shape [batch, num_critics, action_dim], got {tuple(gradients.shape)}")
+        raise ValueError(
+            f"expected action_gradients to have shape [batch, num_critics, action_dim], got {tuple(gradients.shape)}"
+        )
     num_critics = int(gradients.shape[1])
     if num_critics < 2:
         raise ValueError(f"critic_diversity_loss requires at least 2 critics, got {num_critics}")
@@ -95,8 +97,12 @@ class EDAC:
         self.model = model
         self.policy = model
         self.target_model = copy.deepcopy(model)
-        self.actor_optimizer = torch.optim.Adam(self.model.actor_parameters(), lr=float(learning_rate), weight_decay=0.0)
-        self.critic_optimizer = torch.optim.Adam(self.model.critic_parameters(), lr=float(learning_rate), weight_decay=0.0)
+        self.actor_optimizer = torch.optim.Adam(
+            self.model.actor_parameters(), lr=float(learning_rate), weight_decay=0.0
+        )
+        self.critic_optimizer = torch.optim.Adam(
+            self.model.critic_parameters(), lr=float(learning_rate), weight_decay=0.0
+        )
         self.gamma = float(gamma)
         self.alpha = float(alpha)
         self.tau = float(tau)
@@ -134,10 +140,14 @@ class EDAC:
             min_target_q = target_q_ensemble.min(dim=1).values
             target_q_values = rewards + self.gamma * (1.0 - dones) * (min_target_q - self.alpha * next_policy.logprobs)
 
-        diversity = critic_diversity_loss(self._critic_action_gradients(obs, actions)) if self.eta > 0.0 else torch.zeros(
-            (),
-            dtype=torch.float32,
-            device=obs.device,
+        diversity = (
+            critic_diversity_loss(self._critic_action_gradients(obs, actions))
+            if self.eta > 0.0
+            else torch.zeros(
+                (),
+                dtype=torch.float32,
+                device=obs.device,
+            )
         )
         self.critic_optimizer.zero_grad(set_to_none=True)
         critic_terms = _edac_loss_terms(

@@ -8,9 +8,8 @@ from torch import nn
 from torch.distributions import Normal
 from torch.nn import functional as F
 
-from rl_training.models.cnn.nature import NatureCNN
-from rl_training.models.mlp_td3 import _build_mlp
-
+from axiomrl.models.cnn.nature import NatureCNN
+from axiomrl.models.mlp_td3 import _build_mlp
 
 LOG_STD_MIN = -5.0
 LOG_STD_MAX = 2.0

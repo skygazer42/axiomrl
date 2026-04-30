@@ -2,15 +2,15 @@ from __future__ import annotations
 
 import torch
 
-from rl_training.algorithms.agent57 import Agent57 as Agent57Algorithm
-from rl_training.algorithms.drqn import DRQN as DRQNAlgorithm
-from rl_training.algorithms.r2d2 import R2D2 as R2D2Algorithm
-from rl_training.contrib.recurrent_ppo import RecurrentPPOAlgorithm
-from rl_training.experiment.checkpointing import CheckpointState
-from rl_training.experiment.config import TrainConfig
-from rl_training.experiment.registry_support import _infer_discrete_env_spaces
-from rl_training.models.recurrent import LSTMActorCritic, LSTMQNetwork
-from rl_training.models.rnd import RNDModel
+from axiomrl.algorithms.agent57 import Agent57 as Agent57Algorithm
+from axiomrl.algorithms.drqn import DRQN as DRQNAlgorithm
+from axiomrl.algorithms.r2d2 import R2D2 as R2D2Algorithm
+from axiomrl.contrib.recurrent_ppo import RecurrentPPOAlgorithm
+from axiomrl.experiment.checkpointing import CheckpointState
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.experiment.registry_support import _infer_discrete_env_spaces
+from axiomrl.models.recurrent import LSTMActorCritic, LSTMQNetwork
+from axiomrl.models.rnd import RNDModel
 
 
 def _load_recurrent_ppo_algorithm(

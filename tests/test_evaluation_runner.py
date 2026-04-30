@@ -4,9 +4,9 @@ import gymnasium as gym
 import numpy as np
 import torch
 
-from rl_training.experiment.config import TrainConfig
-from rl_training.runtime import evaluation_runner as evaluation_runner_module
-from rl_training.runtime.evaluation_runner import EvaluationRunner
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.runtime import evaluation_runner as evaluation_runner_module
+from axiomrl.runtime.evaluation_runner import EvaluationRunner
 
 
 def test_evaluation_runner_returns_eval_result_for_discrete_policy(tmp_path: Path) -> None:

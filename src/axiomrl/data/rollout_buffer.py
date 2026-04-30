@@ -99,11 +99,17 @@ class RolloutBuffer:
         shuffle: bool,
     ) -> Iterator[dict[str, torch.Tensor]]:
         total_items = self.num_steps * self.num_envs
-        indices = torch.randperm(total_items, device=self.device) if shuffle else torch.arange(total_items, device=self.device)
+        indices = (
+            torch.randperm(total_items, device=self.device)
+            if shuffle
+            else torch.arange(total_items, device=self.device)
+        )
 
         flattened = {
             "obs": self.obs.reshape(total_items, *self.obs_shape),
-            "actions": self.actions.reshape(total_items, *self.action_shape) if self.action_shape else self.actions.reshape(total_items),
+            "actions": self.actions.reshape(total_items, *self.action_shape)
+            if self.action_shape
+            else self.actions.reshape(total_items),
             "rewards": self.rewards.reshape(total_items),
             "dones": self.dones.reshape(total_items),
             "values": self.values.reshape(total_items),

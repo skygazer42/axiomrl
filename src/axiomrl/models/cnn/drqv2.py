@@ -6,8 +6,8 @@ from dataclasses import dataclass
 import torch
 from torch import nn
 
-from rl_training.models.cnn.nature import NatureCNN
-from rl_training.models.mlp_td3 import _build_mlp
+from axiomrl.models.cnn.nature import NatureCNN
+from axiomrl.models.mlp_td3 import _build_mlp
 
 
 @dataclass(slots=True)

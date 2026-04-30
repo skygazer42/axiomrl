@@ -1,8 +1,8 @@
 import pytest
 import torch
 
-from rl_training.algorithms.cql import CQL, cql_loss
-from rl_training.models.mlp_sac import MLPSACModel
+from axiomrl.algorithms.cql import CQL, cql_loss
+from axiomrl.models.mlp_sac import MLPSACModel
 
 
 def test_cql_loss_returns_named_metrics() -> None:

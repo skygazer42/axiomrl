@@ -5,8 +5,8 @@ from typing import Any
 
 import torch
 
-from rl_training.algorithms.base import UpdateResult
-from rl_training.models.mlp_fqf_network import MLPFQFNetwork
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.models.mlp_fqf_network import MLPFQFNetwork
 
 
 def _quantile_huber_loss(
@@ -43,7 +43,9 @@ def _fqf_fraction_loss(
     taus: torch.Tensor,
 ) -> torch.Tensor:
     if quantile_hats.ndim != 2 or quantiles_tau.ndim != 2 or taus.ndim != 2:
-        raise ValueError("expected quantile tensors to have shape (batch, num_quantiles) and taus (batch, num_quantiles+1)")
+        raise ValueError(
+            "expected quantile tensors to have shape (batch, num_quantiles) and taus (batch, num_quantiles+1)"
+        )
     if int(quantiles_tau.shape[1]) + 2 != int(taus.shape[1]):
         raise ValueError("quantiles_tau must cover interior taus only")
 
@@ -152,9 +154,10 @@ class FQF:
 
         with torch.no_grad():
             next_out_online = self.q_network(next_obs)
-            next_q_values = (next_out_online.quantile_hats * (next_out_online.taus[:, 1:] - next_out_online.taus[:, :-1]).unsqueeze(1)).sum(
-                dim=-1
-            )
+            next_q_values = (
+                next_out_online.quantile_hats
+                * (next_out_online.taus[:, 1:] - next_out_online.taus[:, :-1]).unsqueeze(1)
+            ).sum(dim=-1)
             next_actions = next_q_values.argmax(dim=-1)
             next_target_quantiles_all = self.target_network.quantiles(next_obs, next_out_online.tau_hats)
             next_target_quantiles = next_target_quantiles_all.gather(
@@ -226,4 +229,3 @@ class FQF:
     def set_eval_mode(self) -> None:
         self.q_network.eval()
         self.target_network.eval()
-

@@ -4,7 +4,7 @@
 
 **Goal:** Make benchmark comparisons more robust by exposing cross-seed stability statistics and adding leaderboard modes that rank by seed-to-seed consistency.
 
-**Architecture:** Extend aggregate benchmark rows in `src/rl_training/zoo_cli.py` with latest-metric stability summaries across seeds, specifically `min`, `max`, and `std` for return and normalized score. Reuse those fields in the existing leaderboard metric alias layer by adding `stability-return` and `stability-normalized` modes that sort ascending on standard deviation so lower variance ranks higher while single-seed groups remain unrated (`None`) and fall to the end.
+**Architecture:** Extend aggregate benchmark rows in `src/axiomrl/zoo_cli.py` with latest-metric stability summaries across seeds, specifically `min`, `max`, and `std` for return and normalized score. Reuse those fields in the existing leaderboard metric alias layer by adding `stability-return` and `stability-normalized` modes that sort ascending on standard deviation so lower variance ranks higher while single-seed groups remain unrated (`None`) and fall to the end.
 
 **Tech Stack:** Python 3.10+, argparse, existing zoo CLI/report serializers, pytest.
 
@@ -29,8 +29,8 @@ Expected: FAIL because the new aggregate fields and stability aliases do not exi
 ### Task 2: Implement stability aggregation and ranking
 
 **Files:**
-- Modify: `src/rl_training/zoo_cli.py`
-- Modify: `src/rl_training/cli.py`
+- Modify: `src/axiomrl/zoo_cli.py`
+- Modify: `src/axiomrl/cli.py`
 
 **Step 1: Write minimal implementation**
 - Add helpers for aggregate `min` and `std` on numeric fields.
@@ -49,7 +49,7 @@ Expected: PASS.
 **Files:**
 - Modify: `README.md`
 - Modify: `zoo/README.md`
-- Modify: `src/rl_training/assets/zoo/README.md`
+- Modify: `src/axiomrl/assets/zoo/README.md`
 
 **Step 1: Add docs**
 - Show `--leaderboard-metric stability-normalized`.

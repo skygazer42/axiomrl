@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import math
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-import math
 
 import gymnasium as gym
 import numpy as np
@@ -157,7 +157,7 @@ def _extract_success_signal(info: object, success_keys: Sequence[str]) -> bool |
             if value.size == 0:
                 return None
             return bool(value.reshape(-1)[0])
-        if isinstance(value, Sequence) and not isinstance(value, (str, bytes)):
+        if isinstance(value, Sequence) and not isinstance(value, str | bytes):
             if len(value) == 0:
                 return None
             return bool(value[0])

@@ -1,6 +1,6 @@
-from rl_training.examples.dqn_breakout_atari_reference import main as dqn_breakout_atari_main
-from rl_training.examples.ppo_breakout_atari_reference import main as ppo_breakout_atari_main
-from rl_training.examples.recurrent_ppo_breakout_atari_reference import (
+from axiomrl.examples.dqn_breakout_atari_reference import main as dqn_breakout_atari_main
+from axiomrl.examples.ppo_breakout_atari_reference import main as ppo_breakout_atari_main
+from axiomrl.examples.recurrent_ppo_breakout_atari_reference import (
     main as recurrent_ppo_breakout_atari_main,
 )
 

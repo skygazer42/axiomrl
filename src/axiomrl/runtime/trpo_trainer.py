@@ -7,26 +7,26 @@ import gymnasium as gym
 import numpy as np
 import torch
 
-from rl_training.algorithms.trpo import TRPO
-from rl_training.data.rollout_buffer import RolloutBuffer
-from rl_training.envs.factory import make_vector_env
-from rl_training.experiment.checkpointing import CheckpointState
-from rl_training.experiment.config import TrainConfig
-from rl_training.models.mlp_actor_critic import MLPActorCritic
-from rl_training.runtime.callbacks import Callback
-from rl_training.runtime.collector import CollectResult
-from rl_training.runtime.controls import resolve_entropy_coefficient
-from rl_training.runtime.ppo_trainer import _evaluate_policy
-from rl_training.runtime.resume_state import (
+from axiomrl.algorithms.trpo import TRPO
+from axiomrl.data.rollout_buffer import RolloutBuffer
+from axiomrl.envs.factory import make_vector_env
+from axiomrl.experiment.checkpointing import CheckpointState
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.models.mlp_actor_critic import MLPActorCritic
+from axiomrl.runtime.callbacks import Callback
+from axiomrl.runtime.collector import CollectResult
+from axiomrl.runtime.controls import resolve_entropy_coefficient
+from axiomrl.runtime.ppo_trainer import _evaluate_policy
+from axiomrl.runtime.resume_state import (
     capture_global_random_state,
     capture_vector_env_resume_state,
     restore_global_random_state,
     restore_vector_env_resume_state,
 )
-from rl_training.runtime.run_utils import save_training_checkpoint
-from rl_training.runtime.session import create_training_session
-from rl_training.runtime.trainer import TrainResult
-from rl_training.runtime.types import MetricDict
+from axiomrl.runtime.run_utils import save_training_checkpoint
+from axiomrl.runtime.session import create_training_session
+from axiomrl.runtime.trainer import TrainResult
+from axiomrl.runtime.types import MetricDict
 
 
 def _infer_spaces(envs: gym.vector.VectorEnv) -> tuple[int, int]:
@@ -59,7 +59,9 @@ def train_trpo(
 
     num_steps = int(config.algo_kwargs.get("num_steps", 128))
     value_updates = int(config.algo_kwargs.get("value_updates", 5))
-    value_learning_rate = float(config.algo_kwargs.get("value_learning_rate", config.algo_kwargs.get("learning_rate", 1e-3)))
+    value_learning_rate = float(
+        config.algo_kwargs.get("value_learning_rate", config.algo_kwargs.get("learning_rate", 1e-3))
+    )
     max_kl = float(config.algo_kwargs.get("max_kl", 0.01))
     cg_iterations = int(config.algo_kwargs.get("cg_iterations", 10))
     cg_damping = float(config.algo_kwargs.get("cg_damping", 0.1))

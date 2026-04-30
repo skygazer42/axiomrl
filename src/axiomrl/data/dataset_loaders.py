@@ -6,7 +6,7 @@ from typing import Any
 
 import numpy as np
 
-from rl_training.data.offline_dataset import TransitionDataset
+from axiomrl.data.offline_dataset import TransitionDataset
 
 _UNTRUSTED_TORCH_DATASET_ERROR = (
     "dataset_kind='pt'/'pth'/'torch' is unsafe for untrusted datasets; "

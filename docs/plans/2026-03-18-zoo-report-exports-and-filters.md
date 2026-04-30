@@ -4,7 +4,7 @@
 
 **Goal:** Extend `axiomrl zoo --format report` so benchmark reports can be exported as JSON/CSV and filtered or sorted without a separate analysis script.
 
-**Architecture:** Keep the current text report behavior as the default. Add a report-output layer in `src/rl_training/zoo_cli.py` that transforms the existing per-run and aggregate summaries into either text, JSON, or CSV. Add lightweight filters for `algo` / `env_id` and sorting by common benchmark metrics before rendering. Keep the CLI backward compatible by making all new options optional.
+**Architecture:** Keep the current text report behavior as the default. Add a report-output layer in `src/axiomrl/zoo_cli.py` that transforms the existing per-run and aggregate summaries into either text, JSON, or CSV. Add lightweight filters for `algo` / `env_id` and sorting by common benchmark metrics before rendering. Keep the CLI backward compatible by making all new options optional.
 
 **Tech Stack:** Python 3.10+, stdlib `json` / `csv`, existing zoo CLI, pytest.
 
@@ -30,8 +30,8 @@ Expected: FAIL because report export/filter/sort options do not exist yet.
 ### Task 2: Implement report export/filter/sort pipeline
 
 **Files:**
-- Modify: `src/rl_training/zoo_cli.py`
-- Modify: `src/rl_training/cli.py`
+- Modify: `src/axiomrl/zoo_cli.py`
+- Modify: `src/axiomrl/cli.py`
 
 **Step 1: Write minimal implementation**
 - Add optional CLI flags:
@@ -55,7 +55,7 @@ Expected: PASS.
 **Files:**
 - Modify: `README.md`
 - Modify: `zoo/README.md`
-- Modify: `src/rl_training/assets/zoo/README.md`
+- Modify: `src/axiomrl/assets/zoo/README.md`
 
 **Step 1: Add docs**
 - Show JSON and CSV export examples.

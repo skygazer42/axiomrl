@@ -1,7 +1,7 @@
 import torch
 
-from rl_training.algorithms.crossq import CrossQ, crossq_loss
-from rl_training.models.mlp_crossq import MLPCrossQModel
+from axiomrl.algorithms.crossq import CrossQ, crossq_loss
+from axiomrl.models.mlp_crossq import MLPCrossQModel
 
 
 def test_crossq_loss_returns_named_metrics() -> None:

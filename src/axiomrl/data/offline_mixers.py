@@ -5,7 +5,7 @@ from collections.abc import Sequence
 import numpy as np
 import torch
 
-from rl_training.data.offline_dataset import TransitionDataset
+from axiomrl.data.offline_dataset import TransitionDataset
 
 
 def _sample_dataset_indices(

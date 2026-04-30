@@ -4,8 +4,8 @@ from typing import Any
 
 import torch
 
-from rl_training.algorithms.base import UpdateResult
-from rl_training.models.mlp_ars import MLPARSModel
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.models.mlp_ars import MLPARSModel
 
 
 def _ars_metric_terms(batch: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
@@ -67,7 +67,9 @@ class ARS:
         del global_step
         self.set_train_mode()
 
-        perturbations = torch.as_tensor(batch["perturbations"], dtype=torch.float32, device=self.model.flat_parameters().device)
+        perturbations = torch.as_tensor(
+            batch["perturbations"], dtype=torch.float32, device=self.model.flat_parameters().device
+        )
         positive_returns = torch.as_tensor(batch["positive_returns"], dtype=torch.float32, device=perturbations.device)
         negative_returns = torch.as_tensor(batch["negative_returns"], dtype=torch.float32, device=perturbations.device)
 
@@ -92,7 +94,9 @@ class ARS:
             unbiased=False,
         )
         reward_scale = torch.clamp(reward_std, min=1e-8)
-        search_direction = ((selected_positive_returns - selected_negative_returns).unsqueeze(-1) * selected_perturbations).mean(dim=0)
+        search_direction = (
+            (selected_positive_returns - selected_negative_returns).unsqueeze(-1) * selected_perturbations
+        ).mean(dim=0)
         update = (self.step_size / reward_scale) * search_direction
 
         parameters = self.model.flat_parameters()

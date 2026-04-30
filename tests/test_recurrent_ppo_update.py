@@ -1,7 +1,7 @@
 import torch
 
-from rl_training.contrib.recurrent_ppo import RecurrentPPOAlgorithm
-from rl_training.models import LSTMActorCritic
+from axiomrl.contrib.recurrent_ppo import RecurrentPPOAlgorithm
+from axiomrl.models import LSTMActorCritic
 
 
 def _make_batch() -> dict[str, torch.Tensor]:

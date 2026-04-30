@@ -4,7 +4,7 @@
 
 **Goal:** Make the Atari zoo benchmark self-describing and add a CLI report mode that summarizes benchmark-ready runs.
 
-**Architecture:** Extend `zoo/atari/benchmark.yaml` with suite-level protocol and score-normalization metadata. Update `src/rl_training/zoo_cli.py` to support a new `report` format that reads run `metadata.json` files from a runs directory and prints benchmark-relevant fields such as latest return, normalized score, and best checkpoint. Keep the existing `table` and `commands` output stable.
+**Architecture:** Extend `zoo/atari/benchmark.yaml` with suite-level protocol and score-normalization metadata. Update `src/axiomrl/zoo_cli.py` to support a new `report` format that reads run `metadata.json` files from a runs directory and prints benchmark-relevant fields such as latest return, normalized score, and best checkpoint. Keep the existing `table` and `commands` output stable.
 
 **Tech Stack:** Python 3.10+, YAML manifest parsing, JSON run metadata, existing zoo CLI, pytest.
 
@@ -27,9 +27,9 @@
 ### Task 2: Implement manifest metadata and report mode
 
 **Files:**
-- Modify: `src/rl_training/assets/zoo/atari/benchmark.yaml`
+- Modify: `src/axiomrl/assets/zoo/atari/benchmark.yaml`
 - Modify: `zoo/atari/benchmark.yaml`
-- Modify: `src/rl_training/zoo_cli.py`
+- Modify: `src/axiomrl/zoo_cli.py`
 
 **Step 1: Write minimal implementation**
 - Add suite-level `protocol` and `score_normalization` metadata.
@@ -43,7 +43,7 @@
 
 **Files:**
 - Modify: `README.md`
-- Modify: `src/rl_training/assets/zoo/README.md`
+- Modify: `src/axiomrl/assets/zoo/README.md`
 - Modify: `zoo/README.md`
 
 **Step 1: Add docs**

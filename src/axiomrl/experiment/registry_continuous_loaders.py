@@ -2,40 +2,40 @@ from __future__ import annotations
 
 import torch
 
-from rl_training.algorithms.awr import AWR as AWRAlgorithm
-from rl_training.algorithms.cql import CQL as CQLAlgorithm
-from rl_training.algorithms.crossq import CrossQ as CrossQAlgorithm
-from rl_training.algorithms.curl import CURL as CURLAlgorithm
-from rl_training.algorithms.d4pg import D4PG as D4PGAlgorithm
-from rl_training.algorithms.ddpg import DDPG as DDPGAlgorithm
-from rl_training.algorithms.drq import DrQ as DrQAlgorithm
-from rl_training.algorithms.drqv2 import DrQv2 as DrQv2Algorithm
-from rl_training.algorithms.edac import EDAC as EDACAlgorithm
-from rl_training.algorithms.iql import IQL as IQLAlgorithm
-from rl_training.algorithms.marwil import MARWIL as MARWILAlgorithm
-from rl_training.algorithms.naf import NAF as NAFAlgorithm
-from rl_training.algorithms.redq import REDQ as REDQAlgorithm
-from rl_training.algorithms.rlpd import RLPD as RLPDAlgorithm
-from rl_training.algorithms.sac import SAC as SACAlgorithm
-from rl_training.algorithms.td3 import TD3 as TD3Algorithm
-from rl_training.algorithms.td3_bc import TD3BC as TD3BCAlgorithm
-from rl_training.algorithms.tqc import TQC as TQCAlgorithm
-from rl_training.experiment.checkpointing import CheckpointState
-from rl_training.experiment.config import TrainConfig
-from rl_training.experiment.registry_support import (
+from axiomrl.algorithms.awr import AWR as AWRAlgorithm
+from axiomrl.algorithms.cql import CQL as CQLAlgorithm
+from axiomrl.algorithms.crossq import CrossQ as CrossQAlgorithm
+from axiomrl.algorithms.curl import CURL as CURLAlgorithm
+from axiomrl.algorithms.d4pg import D4PG as D4PGAlgorithm
+from axiomrl.algorithms.ddpg import DDPG as DDPGAlgorithm
+from axiomrl.algorithms.drq import DrQ as DrQAlgorithm
+from axiomrl.algorithms.drqv2 import DrQv2 as DrQv2Algorithm
+from axiomrl.algorithms.edac import EDAC as EDACAlgorithm
+from axiomrl.algorithms.iql import IQL as IQLAlgorithm
+from axiomrl.algorithms.marwil import MARWIL as MARWILAlgorithm
+from axiomrl.algorithms.naf import NAF as NAFAlgorithm
+from axiomrl.algorithms.redq import REDQ as REDQAlgorithm
+from axiomrl.algorithms.rlpd import RLPD as RLPDAlgorithm
+from axiomrl.algorithms.sac import SAC as SACAlgorithm
+from axiomrl.algorithms.td3 import TD3 as TD3Algorithm
+from axiomrl.algorithms.td3_bc import TD3BC as TD3BCAlgorithm
+from axiomrl.algorithms.tqc import TQC as TQCAlgorithm
+from axiomrl.experiment.checkpointing import CheckpointState
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.experiment.registry_support import (
     _infer_continuous_env_spaces,
     _infer_image_continuous_env_spaces,
 )
-from rl_training.models.cnn import CNNCURLModel, CNNDrQModel, CNNDrQv2Model
-from rl_training.models.mlp_crossq import MLPCrossQModel
-from rl_training.models.mlp_d4pg import MLPD4PGModel
-from rl_training.models.mlp_ddpg import MLPDDPGModel
-from rl_training.models.mlp_iql import MLPIQLModel
-from rl_training.models.mlp_naf import MLPNAFModel
-from rl_training.models.mlp_redq import MLPREDQModel
-from rl_training.models.mlp_sac import MLPSACModel
-from rl_training.models.mlp_td3 import MLPTD3Model
-from rl_training.models.mlp_tqc import MLPTQCModel
+from axiomrl.models.cnn import CNNCURLModel, CNNDrQModel, CNNDrQv2Model
+from axiomrl.models.mlp_crossq import MLPCrossQModel
+from axiomrl.models.mlp_d4pg import MLPD4PGModel
+from axiomrl.models.mlp_ddpg import MLPDDPGModel
+from axiomrl.models.mlp_iql import MLPIQLModel
+from axiomrl.models.mlp_naf import MLPNAFModel
+from axiomrl.models.mlp_redq import MLPREDQModel
+from axiomrl.models.mlp_sac import MLPSACModel
+from axiomrl.models.mlp_td3 import MLPTD3Model
+from axiomrl.models.mlp_tqc import MLPTQCModel
 
 
 def _load_iql_algorithm(

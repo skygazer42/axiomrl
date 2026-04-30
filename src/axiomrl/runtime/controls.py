@@ -3,13 +3,13 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass
 
-from rl_training.algorithms.base import UpdateResult
-from rl_training.experiment.config import TrainConfig
-from rl_training.runtime.callbacks import Callback
-from rl_training.runtime.collector import CollectResult
-from rl_training.runtime.schedules import resolve_schedule_value
-from rl_training.runtime.trainer import TrainResult, TrainerState
-from rl_training.runtime.types import MetricDict
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.runtime.callbacks import Callback
+from axiomrl.runtime.collector import CollectResult
+from axiomrl.runtime.schedules import resolve_schedule_value
+from axiomrl.runtime.trainer import TrainerState, TrainResult
+from axiomrl.runtime.types import MetricDict
 
 
 @dataclass(frozen=True, slots=True)
@@ -70,7 +70,11 @@ class EarlyStoppingCallback:
 
         current = float(metric_value)
         if self.config.target_value is not None:
-            reached_target = current >= self.config.target_value if self.config.mode == "max" else current <= self.config.target_value
+            reached_target = (
+                current >= self.config.target_value
+                if self.config.mode == "max"
+                else current <= self.config.target_value
+            )
             if reached_target:
                 trainer.request_stop(
                     f"early stopping target reached: {self.config.metric}={current:.6f} target={self.config.target_value:.6f}"

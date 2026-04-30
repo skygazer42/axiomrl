@@ -1,8 +1,8 @@
 import pytest
 import torch
 
-from rl_training.algorithms.bcq import BCQ, bcq_loss
-from rl_training.models.mlp_bcq import MLPBCQModel
+from axiomrl.algorithms.bcq import BCQ, bcq_loss
+from axiomrl.models.mlp_bcq import MLPBCQModel
 
 
 def test_bcq_loss_returns_named_metrics() -> None:

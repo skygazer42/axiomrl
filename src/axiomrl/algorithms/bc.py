@@ -5,8 +5,8 @@ from typing import Any
 import torch
 from torch.nn import functional as F
 
-from rl_training.algorithms.base import UpdateResult
-from rl_training.models.mlp_bc import MLPBCModel
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.models.mlp_bc import MLPBCModel
 
 
 def bc_loss(batch: dict[str, torch.Tensor | float]) -> dict[str, float]:

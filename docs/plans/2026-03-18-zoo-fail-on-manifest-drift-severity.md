@@ -29,8 +29,8 @@ Expected: FAIL because the CLI currently only supports all-or-nothing drift fail
 ### Task 2: Implement severity-threshold exits
 
 **Files:**
-- Modify: `src/rl_training/zoo_cli.py`
-- Modify: `src/rl_training/cli.py`
+- Modify: `src/axiomrl/zoo_cli.py`
+- Modify: `src/axiomrl/cli.py`
 
 **Step 1: Write minimal implementation**
 - Add `--fail-on-manifest-drift-severity {warning,error}` to the zoo CLI and top-level `axiomrl zoo`.
@@ -48,7 +48,7 @@ Expected: PASS.
 **Files:**
 - Modify: `README.md`
 - Modify: `zoo/README.md`
-- Modify: `src/rl_training/assets/zoo/README.md`
+- Modify: `src/axiomrl/assets/zoo/README.md`
 
 **Step 1: Add docs**
 - Document that `--fail-on-manifest-drift` means any drift, while `--fail-on-manifest-drift-severity error` only fails for `error` summaries.

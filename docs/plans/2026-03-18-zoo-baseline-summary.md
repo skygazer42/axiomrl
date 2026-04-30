@@ -4,7 +4,7 @@
 
 **Goal:** Export a concise baseline-aware benchmark summary that highlights the biggest movers and regressions relative to a named preset.
 
-**Architecture:** Reuse the existing preset-level baseline comparison fields in `src/rl_training/zoo_cli.py` to build a `baseline_summary` section for report and leaderboard payloads. Summaries rank aggregate preset rows by baseline-relative deltas, exclude the baseline preset itself, and expose the top movers/regressions for return and normalized score in text, JSON, and CSV outputs.
+**Architecture:** Reuse the existing preset-level baseline comparison fields in `src/axiomrl/zoo_cli.py` to build a `baseline_summary` section for report and leaderboard payloads. Summaries rank aggregate preset rows by baseline-relative deltas, exclude the baseline preset itself, and expose the top movers/regressions for return and normalized score in text, JSON, and CSV outputs.
 
 **Tech Stack:** Python 3.10+, argparse, existing zoo CLI/report serializers, pytest.
 
@@ -29,7 +29,7 @@ Expected: FAIL because the summary section does not exist yet.
 ### Task 2: Implement baseline summary export
 
 **Files:**
-- Modify: `src/rl_training/zoo_cli.py`
+- Modify: `src/axiomrl/zoo_cli.py`
 
 **Step 1: Write minimal implementation**
 - Add a helper that builds top-mover and top-regression lists from aggregate preset rows with baseline fields attached.
@@ -47,7 +47,7 @@ Expected: PASS.
 **Files:**
 - Modify: `README.md`
 - Modify: `zoo/README.md`
-- Modify: `src/rl_training/assets/zoo/README.md`
+- Modify: `src/axiomrl/assets/zoo/README.md`
 
 **Step 1: Add docs**
 - Describe the automatic top-movers/regressions summary when `--baseline-preset` is active.

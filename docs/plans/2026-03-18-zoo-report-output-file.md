@@ -29,8 +29,8 @@ Expected: FAIL because `--output` does not exist yet.
 ### Task 2: Implement output-file support
 
 **Files:**
-- Modify: `src/rl_training/zoo_cli.py`
-- Modify: `src/rl_training/cli.py`
+- Modify: `src/axiomrl/zoo_cli.py`
+- Modify: `src/axiomrl/cli.py`
 
 **Step 1: Write minimal implementation**
 - Add `--output`.
@@ -49,7 +49,7 @@ Expected: PASS.
 **Files:**
 - Modify: `README.md`
 - Modify: `zoo/README.md`
-- Modify: `src/rl_training/assets/zoo/README.md`
+- Modify: `src/axiomrl/assets/zoo/README.md`
 
 **Step 1: Add docs**
 - Show `--output benchmark_report.json` / `benchmark_report.csv`.

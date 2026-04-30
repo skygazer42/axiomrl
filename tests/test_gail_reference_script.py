@@ -18,4 +18,3 @@ def test_gail_reference_script_smoke_runs() -> None:
     )
 
     assert proc.returncode == 0, proc.stderr
-

@@ -5,15 +5,15 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from rl_training.algorithms.base import UpdateResult
-from rl_training.cli_config import serialize_train_config
-from rl_training.experiment.default_manager import DefaultExperimentManager
-from rl_training.runtime.callbacks import Callback
-from rl_training.runtime.collector import CollectResult
-from rl_training.runtime.trainer import TrainerState, TrainResult
-from rl_training.runtime.types import MetricDict
-from rl_training.tuning.config import SearchSpaceSpec, StudyConfig
-from rl_training.tuning.study import (
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.cli_config import serialize_train_config
+from axiomrl.experiment.default_manager import DefaultExperimentManager
+from axiomrl.runtime.callbacks import Callback
+from axiomrl.runtime.collector import CollectResult
+from axiomrl.runtime.trainer import TrainerState, TrainResult
+from axiomrl.runtime.types import MetricDict
+from axiomrl.tuning.config import SearchSpaceSpec, StudyConfig
+from axiomrl.tuning.study import (
     StudyResult,
     _append_trial_record,
     _apply_trial_params,
@@ -55,9 +55,7 @@ class OptunaPruningCallback(Callback):
             return
         self.trial.report(float(metric_value), trainer.global_step)
         if self.trial.should_prune():
-            trainer.request_stop(
-                f"optuna pruning requested on {self.metric} at global_step={trainer.global_step}"
-            )
+            trainer.request_stop(f"optuna pruning requested on {self.metric} at global_step={trainer.global_step}")
             raise self.prune_exception(
                 f"optuna pruning requested on {self.metric} at global_step={trainer.global_step}"
             )
@@ -106,10 +104,7 @@ def _distribution_from_spec(optuna: Any, spec: SearchSpaceSpec) -> object:
 
 
 def _replay_existing_trials(optuna: Any, study: object, config: StudyConfig, records: list[dict[str, Any]]) -> None:
-    distributions = {
-        path: _distribution_from_spec(optuna, spec)
-        for path, spec in config.search_space.items()
-    }
+    distributions = {path: _distribution_from_spec(optuna, spec) for path, spec in config.search_space.items()}
     for record in records:
         status = str(record.get("status", "failed"))
         params = record.get("params")

@@ -96,14 +96,8 @@ def main() -> int:
         latest_record = metrics[-1]
         recent5 = eval_values[-5:]
         recent10 = eval_values[-10:]
-        print(
-            "best_eval="
-            f"{_format_float(_eval_value(best_record))}@{int(best_record.get('step', 0))}"
-        )
-        print(
-            "latest_eval="
-            f"{_format_float(_eval_value(latest_record))}@{int(latest_record.get('step', 0))}"
-        )
+        print(f"best_eval={_format_float(_eval_value(best_record))}@{int(best_record.get('step', 0))}")
+        print(f"latest_eval={_format_float(_eval_value(latest_record))}@{int(latest_record.get('step', 0))}")
         print(f"recent5_avg={_format_float(_avg(recent5))}")
         print(f"recent10_avg={_format_float(_avg(recent10))}")
         print(f"positive_evals={sum(1 for value in eval_values if value > 0.0)}")

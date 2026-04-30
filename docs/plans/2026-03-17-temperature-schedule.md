@@ -4,7 +4,7 @@
 
 **Goal:** Add configurable search-temperature schedules to MuZero-family trainers so action-selection stochasticity can be annealed over training without editing algorithm code.
 
-**Architecture:** Reuse `src/rl_training/runtime/schedules.py` and the existing controls pattern in `src/rl_training/runtime/controls.py`. Add one shared resolver for `temperature`, then wire it into MuZero-style trainers by resolving the current temperature from `global_step`, feeding it into planning, and logging the active value in metrics.
+**Architecture:** Reuse `src/axiomrl/runtime/schedules.py` and the existing controls pattern in `src/axiomrl/runtime/controls.py`. Add one shared resolver for `temperature`, then wire it into MuZero-style trainers by resolving the current temperature from `global_step`, feeding it into planning, and logging the active value in metrics.
 
 **Tech Stack:** Python 3.10+, PyTorch, Gymnasium, existing MuZero-family runtimes, pytest.
 
@@ -33,7 +33,7 @@
 ### Task 2: Implement shared temperature resolver
 
 **Files:**
-- Modify: `src/rl_training/runtime/controls.py`
+- Modify: `src/axiomrl/runtime/controls.py`
 
 **Step 1: Write minimal implementation**
 - Add `resolve_temperature(...)`.
@@ -50,9 +50,9 @@
 ### Task 3: Wire schedules into MuZero-family runtimes
 
 **Files:**
-- Modify: `src/rl_training/runtime/muzero_trainer.py`
-- Modify: `src/rl_training/runtime/efficientzero_trainer.py`
-- Modify: `src/rl_training/algorithms/gumbel_muzero.py`
+- Modify: `src/axiomrl/runtime/muzero_trainer.py`
+- Modify: `src/axiomrl/runtime/efficientzero_trainer.py`
+- Modify: `src/axiomrl/algorithms/gumbel_muzero.py`
 
 **Step 1: Minimal wiring**
 - Resolve the scheduled temperature before each planning step.

@@ -1,8 +1,8 @@
 import pytest
 import torch
 
-from rl_training.algorithms.edac import EDAC, critic_diversity_loss, edac_loss
-from rl_training.models.mlp_redq import MLPREDQModel
+from axiomrl.algorithms.edac import EDAC, critic_diversity_loss, edac_loss
+from axiomrl.models.mlp_redq import MLPREDQModel
 
 
 def test_critic_diversity_loss_returns_zero_for_orthogonal_gradients() -> None:

@@ -6,9 +6,9 @@ import gymnasium as gym
 import numpy as np
 import pytest
 
-from rl_training.experiment.config import TrainConfig
-from rl_training.experiment.registry import get_algorithm_spec
-from rl_training.runtime.workflows import evaluate_checkpoint
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.experiment.registry import get_algorithm_spec
+from axiomrl.runtime.workflows import evaluate_checkpoint
 
 
 class DummyPixelEnv(gym.Env):

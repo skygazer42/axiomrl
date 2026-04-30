@@ -5,9 +5,9 @@ from typing import Any
 import torch
 from torch.nn import functional as F
 
-from rl_training.algorithms.base import UpdateResult
-from rl_training.algorithms.muzero import MuZero, MuZeroMCTSConfig
-from rl_training.models.muzero import MuZeroModel
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.algorithms.muzero import MuZero, MuZeroMCTSConfig
+from axiomrl.models.muzero import MuZeroModel
 
 
 class EfficientZero(MuZero):
@@ -66,10 +66,14 @@ class EfficientZero(MuZero):
             value_targets = torch.zeros((batch_size, unroll_steps + 1), dtype=torch.float32, device=device)
             value_targets[:, -1] = bootstrap_value
             for step in range(unroll_steps - 1, -1, -1):
-                value_targets[:, step] = rewards[:, step] + self.gamma * value_targets[:, step + 1] * (1.0 - dones[:, step])
+                value_targets[:, step] = rewards[:, step] + self.gamma * value_targets[:, step + 1] * (
+                    1.0 - dones[:, step]
+                )
 
             flat_target_obs = target_obs.reshape(batch_size * unroll_steps, *target_obs.shape[2:])
-            target_hidden = self.model.initial_inference(flat_target_obs).hidden_state.reshape(batch_size, unroll_steps, -1)
+            target_hidden = self.model.initial_inference(flat_target_obs).hidden_state.reshape(
+                batch_size, unroll_steps, -1
+            )
 
         initial = self.model.initial_inference(obs)
         pred_policy_logits = [initial.policy_logits]

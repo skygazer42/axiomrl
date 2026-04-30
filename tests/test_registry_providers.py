@@ -1,6 +1,6 @@
-from rl_training.experiment.registry import get_algorithm_spec, list_algorithm_specs
-from rl_training.experiment.registry_core import AlgorithmSpec
-from rl_training.experiment.registry_providers import (
+from axiomrl.experiment.registry import get_algorithm_spec, list_algorithm_specs
+from axiomrl.experiment.registry_core import AlgorithmSpec
+from axiomrl.experiment.registry_providers import (
     ACTOR_CRITIC_SPECS,
     ALL_SPEC_GROUPS,
     CONTRIB_SPECS,

@@ -21,12 +21,12 @@ Related documents:
 
 ## Goal
 
-Define how `rl_training` should evolve from a growing RL algorithm collection
+Define how `axiomrl` should evolve from a growing RL algorithm collection
 into an easy-to-adopt mainstream reinforcement learning package.
 
 This document answers a practical question:
 
-> What product shape gives `rl_training` the best chance of becoming a widely
+> What product shape gives `axiomrl` the best chance of becoming a widely
 > used RL deep learning package?
 
 ## External Product Anchors
@@ -56,7 +56,7 @@ References:
 
 ## Product Thesis
 
-`rl_training` should not try to win by adding the largest number of algorithm
+`axiomrl` should not try to win by adding the largest number of algorithm
 names. The fastest path to mainstream adoption is to make the package easy to
 install, easy to run, easy to trust, and easy to reproduce.
 
@@ -78,7 +78,7 @@ The package should evolve into three product layers:
 
 ### 1. Core
 
-The existing `rl_training` package remains the stable, documented surface for
+The existing `axiomrl` package remains the stable, documented surface for
 mainstream algorithms and common workflows:
 
 - train / eval / resume / checkpoint
@@ -92,7 +92,7 @@ operationally easy to explain.
 
 ### 2. Contrib
 
-A new `rl_training.contrib` layer should hold algorithms or execution styles
+A new `axiomrl.contrib` layer should hold algorithms or execution styles
 that are valuable, but add extra state or edge cases that would otherwise
 complicate the core contract.
 

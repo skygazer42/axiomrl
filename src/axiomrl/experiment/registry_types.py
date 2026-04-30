@@ -6,11 +6,10 @@ from dataclasses import dataclass
 import numpy as np
 import torch
 
-from rl_training.experiment.checkpointing import CheckpointState
-from rl_training.experiment.config import TrainConfig
-from rl_training.runtime.trainer import TrainResult
-from rl_training.runtime.types import MetricDict
-
+from axiomrl.experiment.checkpointing import CheckpointState
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.runtime.trainer import TrainResult
+from axiomrl.runtime.types import MetricDict
 
 TrainFn = Callable[..., TrainResult]
 EvaluateFn = Callable[[TrainConfig, CheckpointState, torch.device, int], MetricDict]

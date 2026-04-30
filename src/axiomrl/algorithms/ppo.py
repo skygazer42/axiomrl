@@ -6,9 +6,9 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from rl_training.algorithms._advantage_utils import normalize_advantages
-from rl_training.algorithms.base import UpdateResult
-from rl_training.models.mlp_actor_critic import MLPActorCritic
+from axiomrl.algorithms._advantage_utils import normalize_advantages
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.models.mlp_actor_critic import MLPActorCritic
 
 
 def _ppo_loss_terms(

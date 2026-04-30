@@ -1,5 +1,5 @@
-from rl_training import zoo_cli
-from rl_training.zoo import app, core, leaderboard, manifests, reporting
+from axiomrl import zoo_cli
+from axiomrl.zoo import app, core, leaderboard, manifests, reporting
 
 
 def test_zoo_cli_reexports_internal_module_entrypoints() -> None:
@@ -29,8 +29,8 @@ def test_zoo_core_reexports_internal_module_entrypoints() -> None:
 
 
 def test_zoo_core_functions_are_defined_in_split_modules() -> None:
-    assert core.resolve_manifest_source.__module__ == "rl_training.zoo.manifests"
-    assert core.build_report_payload.__module__ == "rl_training.zoo.reporting"
-    assert core.build_leaderboard_payload.__module__ == "rl_training.zoo.leaderboard"
-    assert core.build_parser.__module__ == "rl_training.zoo.app"
-    assert core.main.__module__ == "rl_training.zoo.app"
+    assert core.resolve_manifest_source.__module__ == "axiomrl.zoo.manifests"
+    assert core.build_report_payload.__module__ == "axiomrl.zoo.reporting"
+    assert core.build_leaderboard_payload.__module__ == "axiomrl.zoo.leaderboard"
+    assert core.build_parser.__module__ == "axiomrl.zoo.app"
+    assert core.main.__module__ == "axiomrl.zoo.app"

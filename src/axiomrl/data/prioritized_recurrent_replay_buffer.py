@@ -5,7 +5,7 @@ from typing import Any
 
 import torch
 
-from rl_training.data.recurrent_replay_buffer import RecurrentReplayBuffer
+from axiomrl.data.recurrent_replay_buffer import RecurrentReplayBuffer
 
 
 class PrioritizedRecurrentReplayBuffer(RecurrentReplayBuffer):

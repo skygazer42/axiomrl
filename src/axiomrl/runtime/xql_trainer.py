@@ -6,13 +6,13 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from rl_training.algorithms.xql import XQL
-from rl_training.experiment.checkpointing import CheckpointState
-from rl_training.experiment.config import TrainConfig
-from rl_training.models.mlp_iql import MLPIQLModel
-from rl_training.runtime.callbacks import Callback
-from rl_training.runtime.collector import CollectResult
-from rl_training.runtime.controls import (
+from axiomrl.algorithms.xql import XQL
+from axiomrl.experiment.checkpointing import CheckpointState
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.models.mlp_iql import MLPIQLModel
+from axiomrl.runtime.callbacks import Callback
+from axiomrl.runtime.collector import CollectResult
+from axiomrl.runtime.controls import (
     resolve_effective_total_updates,
     resolve_eval_interval,
     resolve_max_epochs,
@@ -20,13 +20,13 @@ from rl_training.runtime.controls import (
     should_run_evaluation,
     stop_reason_for_training_limits,
 )
-from rl_training.runtime.iql_trainer import _build_offline_dataset, _evaluate_iql_policy, _infer_env_spaces
-from rl_training.runtime.resume_state import capture_global_random_state, restore_global_random_state
-from rl_training.runtime.run_utils import save_training_checkpoint
-from rl_training.runtime.schedules import apply_learning_rate_scale, resolve_schedule_value
-from rl_training.runtime.session import create_training_session
-from rl_training.runtime.trainer import TrainResult
-from rl_training.runtime.types import MetricDict
+from axiomrl.runtime.iql_trainer import _build_offline_dataset, _evaluate_iql_policy, _infer_env_spaces
+from axiomrl.runtime.resume_state import capture_global_random_state, restore_global_random_state
+from axiomrl.runtime.run_utils import save_training_checkpoint
+from axiomrl.runtime.schedules import apply_learning_rate_scale, resolve_schedule_value
+from axiomrl.runtime.session import create_training_session
+from axiomrl.runtime.trainer import TrainResult
+from axiomrl.runtime.types import MetricDict
 
 
 def train_xql(
@@ -102,9 +102,7 @@ def train_xql(
         global_step = int(checkpoint_state.trainer_state.get("global_step", 0)) if checkpoint_state is not None else 0
         epoch = int(checkpoint_state.trainer_state.get("epoch", global_step)) if checkpoint_state is not None else 0
         update_count = (
-            int(checkpoint_state.trainer_state.get("update_count", global_step))
-            if checkpoint_state is not None
-            else 0
+            int(checkpoint_state.trainer_state.get("update_count", global_step)) if checkpoint_state is not None else 0
         )
         trainer_state.global_step = global_step
         trainer_state.epoch = epoch

@@ -4,10 +4,10 @@ from typing import Any
 
 import torch
 
-from rl_training.algorithms.base import UpdateResult
-from rl_training.algorithms.sac import SAC
-from rl_training.models.mlp_mopo import MLPMOPOEnsembleModel
-from rl_training.models.mlp_sac import MLPSACModel
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.algorithms.sac import SAC
+from axiomrl.models.mlp_mopo import MLPMOPOEnsembleModel
+from axiomrl.models.mlp_sac import MLPSACModel
 
 
 def _mopo_model_loss_terms(batch: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
@@ -62,7 +62,9 @@ class MOPO:
             alpha=float(alpha),
             tau=float(tau),
         )
-        self.model_optimizer = torch.optim.Adam(self.dynamics_model.ensemble_parameters(), lr=float(model_learning_rate), weight_decay=0.0)
+        self.model_optimizer = torch.optim.Adam(
+            self.dynamics_model.ensemble_parameters(), lr=float(model_learning_rate), weight_decay=0.0
+        )
         self.penalty_coef = float(penalty_coef)
 
     def update_model(self, batch: dict[str, Any], *, global_step: int) -> UpdateResult:

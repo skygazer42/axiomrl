@@ -6,14 +6,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
 
-from rl_training.experiment.benchmarking import aggregate_numeric_metrics
-from rl_training.experiment.sweeps import BenchmarkRunRecord, SeedSweepPlan
-from rl_training.runtime.trainer import TrainResult
+from axiomrl.experiment.benchmarking import aggregate_numeric_metrics
+from axiomrl.experiment.sweeps import BenchmarkRunRecord, SeedSweepPlan
+from axiomrl.runtime.trainer import TrainResult
 
 
 class Runner(Protocol):
-    def run(self) -> TrainResult:
-        ...
+    def run(self) -> TrainResult: ...
 
 
 @dataclass(slots=True)

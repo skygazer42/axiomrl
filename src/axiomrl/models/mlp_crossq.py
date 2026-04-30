@@ -7,7 +7,6 @@ import torch
 from torch import nn
 from torch.distributions import Normal
 
-
 LOG_STD_MIN = -5.0
 LOG_STD_MAX = 2.0
 ACTION_EPS = 1e-6

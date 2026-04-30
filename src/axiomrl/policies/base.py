@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
 from dataclasses import dataclass
-from typing import Iterator, Protocol
+from typing import Protocol
 
 
 @dataclass(slots=True)
@@ -14,11 +15,9 @@ class PolicyOutput:
 
 
 class Policy(Protocol):
-    def train(self, mode: bool = True) -> Policy:
-        ...
+    def train(self, mode: bool = True) -> Policy: ...
 
-    def eval(self) -> Policy:
-        ...
+    def eval(self) -> Policy: ...
 
     def act(
         self,
@@ -26,14 +25,10 @@ class Policy(Protocol):
         *,
         state: object | None = None,
         deterministic: bool = False,
-    ) -> PolicyOutput:
-        ...
+    ) -> PolicyOutput: ...
 
-    def parameters(self) -> Iterator[object]:
-        ...
+    def parameters(self) -> Iterator[object]: ...
 
-    def state_dict(self) -> dict:
-        ...
+    def state_dict(self) -> dict: ...
 
-    def load_state_dict(self, state_dict: dict) -> None:
-        ...
+    def load_state_dict(self, state_dict: dict) -> None: ...

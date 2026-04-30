@@ -1,11 +1,10 @@
-from rl_training.experiment.registry_providers.actor_critic import ACTOR_CRITIC_SPECS
-from rl_training.experiment.registry_providers.contrib import CONTRIB_SPECS
-from rl_training.experiment.registry_providers.goal_conditioned import GOAL_CONDITIONED_SPECS
-from rl_training.experiment.registry_providers.offline import OFFLINE_SPECS
-from rl_training.experiment.registry_providers.on_policy import ON_POLICY_SPECS
-from rl_training.experiment.registry_providers.value_based import VALUE_BASED_SPECS
-from rl_training.experiment.registry_providers.world_model import WORLD_MODEL_SPECS
-
+from axiomrl.experiment.registry_providers.actor_critic import ACTOR_CRITIC_SPECS
+from axiomrl.experiment.registry_providers.contrib import CONTRIB_SPECS
+from axiomrl.experiment.registry_providers.goal_conditioned import GOAL_CONDITIONED_SPECS
+from axiomrl.experiment.registry_providers.offline import OFFLINE_SPECS
+from axiomrl.experiment.registry_providers.on_policy import ON_POLICY_SPECS
+from axiomrl.experiment.registry_providers.value_based import VALUE_BASED_SPECS
+from axiomrl.experiment.registry_providers.world_model import WORLD_MODEL_SPECS
 
 ALL_SPEC_GROUPS = {
     "on_policy": ON_POLICY_SPECS,

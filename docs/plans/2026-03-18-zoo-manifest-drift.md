@@ -4,7 +4,7 @@
 
 **Goal:** Export manifest alignment / drift markers in zoo report and leaderboard outputs so benchmark consumers can see whether run metadata still matches the current manifest protocol and preset inventory.
 
-**Architecture:** Keep the change export-only inside `src/rl_training/zoo_cli.py`. Enrich run rows with manifest-alignment flags based on `preset_name` and `protocol_name`, aggregate those flags into per-group counters, and add a compact top-level `manifest_alignment_summary` computed from the full filtered run set before any `--top-k` truncation.
+**Architecture:** Keep the change export-only inside `src/axiomrl/zoo_cli.py`. Enrich run rows with manifest-alignment flags based on `preset_name` and `protocol_name`, aggregate those flags into per-group counters, and add a compact top-level `manifest_alignment_summary` computed from the full filtered run set before any `--top-k` truncation.
 
 **Tech Stack:** Python 3.10+, argparse, existing zoo CLI serializers, pytest.
 
@@ -29,7 +29,7 @@ Expected: FAIL because the payloads do not export manifest drift markers yet.
 ### Task 2: Implement manifest drift export
 
 **Files:**
-- Modify: `src/rl_training/zoo_cli.py`
+- Modify: `src/axiomrl/zoo_cli.py`
 
 **Step 1: Write minimal implementation**
 - Add helpers to classify each run as aligned, preset-unknown, protocol-mismatch, or both.
@@ -47,7 +47,7 @@ Expected: PASS.
 **Files:**
 - Modify: `README.md`
 - Modify: `zoo/README.md`
-- Modify: `src/rl_training/assets/zoo/README.md`
+- Modify: `src/axiomrl/assets/zoo/README.md`
 
 **Step 1: Add docs**
 - Describe that machine-readable benchmark exports now include manifest alignment / drift counts for preset and protocol mismatches.

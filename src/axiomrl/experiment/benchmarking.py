@@ -4,8 +4,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from math import sqrt
 
-from rl_training.runtime.types import MetricDict
-
+from axiomrl.runtime.types import MetricDict
 
 _HUMAN_RANDOM_SCORE_REFERENCES: dict[str, tuple[float, float]] = {
     "atari_breakout_reference": (1.7, 30.5),
@@ -114,7 +113,7 @@ def aggregate_numeric_metrics(rows: Sequence[Mapping[str, object]]) -> MetricDic
         values: list[float] = []
         for row in rows:
             value = row[key]
-            if isinstance(value, bool) or not isinstance(value, (int, float)):
+            if isinstance(value, bool) or not isinstance(value, int | float):
                 values = []
                 break
             values.append(float(value))

@@ -1,6 +1,6 @@
 import pytest
 
-from rl_training.data.n_step import NStepAccumulator
+from axiomrl.data.n_step import NStepAccumulator
 
 
 def test_n_step_accumulator_emits_transition_after_n_steps() -> None:

@@ -2,8 +2,8 @@ from pathlib import Path
 
 import pytest
 
-from rl_training.experiment.config import TrainConfig
-from rl_training.runtime.ppo_trainer import train_ppo
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.runtime.ppo_trainer import train_ppo
 
 
 def test_train_ppo_writes_checkpoint_and_metrics(tmp_path: Path) -> None:

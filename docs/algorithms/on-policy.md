@@ -53,7 +53,7 @@ algo_kwargs:
 ### Python API 示例
 
 ```python
-from rl_training.core import PPO
+from axiomrl.core import PPO
 
 model = PPO(
     env_id="CartPole-v1",
@@ -113,7 +113,7 @@ algo_kwargs:
 ### Python API 示例
 
 ```python
-from rl_training.core import A2C
+from axiomrl.core import A2C
 
 model = A2C(
     env_id="CartPole-v1",
@@ -172,7 +172,7 @@ algo_kwargs:
 ### Python API 示例
 
 ```python
-from rl_training.core import TRPO
+from axiomrl.core import TRPO
 
 model = TRPO(
     env_id="HalfCheetah-v4",
@@ -230,7 +230,7 @@ algo_kwargs:
 ### Python API 示例
 
 ```python
-from rl_training.experimental import IMPALA
+from axiomrl.experimental import IMPALA
 
 model = IMPALA(
     env_id="Pong-v5",
@@ -287,7 +287,7 @@ algo_kwargs:
 ### Python API 示例
 
 ```python
-from rl_training.experimental import APPO
+from axiomrl.experimental import APPO
 
 model = APPO(
     env_id="Breakout-v5",
@@ -345,7 +345,7 @@ algo_kwargs:
 ### Python API 示例
 
 ```python
-from rl_training.experimental import PPG
+from axiomrl.experimental import PPG
 
 model = PPG(
     env_id="ProcgenEnv-coinrun",
@@ -404,7 +404,7 @@ algo_kwargs:
 ### Python API 示例
 
 ```python
-from rl_training.experimental import GAIL
+from axiomrl.experimental import GAIL
 
 model = GAIL(
     env_id="Hopper-v4",
@@ -461,7 +461,7 @@ algo_kwargs:
 ### Python API 示例
 
 ```python
-from rl_training.experimental import MARWIL
+from axiomrl.experimental import MARWIL
 
 model = MARWIL(
     env_id="Hopper-v4",
@@ -517,7 +517,7 @@ algo_kwargs:
 ### Python API 示例
 
 ```python
-from rl_training.experimental import AWR
+from axiomrl.experimental import AWR
 
 model = AWR(
     env_id="Walker2d-v4",
@@ -574,7 +574,7 @@ algo_kwargs:
 ### Python API 示例
 
 ```python
-from rl_training.experimental import OpenAIES
+from axiomrl.experimental import OpenAIES
 
 model = OpenAIES(
     env_id="Humanoid-v4",
@@ -629,7 +629,7 @@ algo_kwargs:
 ### Python API 示例
 
 ```python
-from rl_training.experimental import ARS
+from axiomrl.experimental import ARS
 
 model = ARS(
     env_id="HalfCheetah-v4",
@@ -689,7 +689,7 @@ algo_kwargs:
 ### Python API 示例
 
 ```python
-from rl_training.contrib import RecurrentPPO
+from axiomrl.contrib import RecurrentPPO
 
 model = RecurrentPPO(
     env_id="MemoryMaze-9x9-v0",

@@ -4,7 +4,7 @@
 
 **Goal:** Expose uncertainty-aware benchmark summaries by adding standard error and 95% confidence-interval fields, plus leaderboard modes that rank tighter confidence bounds higher.
 
-**Architecture:** Extend aggregate benchmark rows in `src/rl_training/zoo_cli.py` with latest-metric `stderr` and `ci95` half-width fields derived from the existing sample standard deviation and seed count. Reuse those fields in the leaderboard metric alias layer by adding `confidence-return` and `confidence-normalized` modes that sort ascending on CI width so tighter cross-seed estimates rank higher while single-seed groups remain unrated (`None`) and fall to the end.
+**Architecture:** Extend aggregate benchmark rows in `src/axiomrl/zoo_cli.py` with latest-metric `stderr` and `ci95` half-width fields derived from the existing sample standard deviation and seed count. Reuse those fields in the leaderboard metric alias layer by adding `confidence-return` and `confidence-normalized` modes that sort ascending on CI width so tighter cross-seed estimates rank higher while single-seed groups remain unrated (`None`) and fall to the end.
 
 **Tech Stack:** Python 3.10+, argparse, existing zoo CLI/report serializers, pytest.
 
@@ -29,8 +29,8 @@ Expected: FAIL because the new aggregate fields and confidence aliases do not ex
 ### Task 2: Implement confidence aggregation and ranking
 
 **Files:**
-- Modify: `src/rl_training/zoo_cli.py`
-- Modify: `src/rl_training/cli.py`
+- Modify: `src/axiomrl/zoo_cli.py`
+- Modify: `src/axiomrl/cli.py`
 
 **Step 1: Write minimal implementation**
 - Add helpers for aggregate `stderr` and `ci95` from the existing sample standard deviation.
@@ -49,7 +49,7 @@ Expected: PASS.
 **Files:**
 - Modify: `README.md`
 - Modify: `zoo/README.md`
-- Modify: `src/rl_training/assets/zoo/README.md`
+- Modify: `src/axiomrl/assets/zoo/README.md`
 
 **Step 1: Add docs**
 - Show `--leaderboard-metric confidence-normalized`.

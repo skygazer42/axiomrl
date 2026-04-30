@@ -1,8 +1,8 @@
 from pathlib import Path
 from types import SimpleNamespace
 
-import rl_training.examples.dqn_breakout_atari_reference as dqn_reference
-import rl_training.examples.ppo_breakout_atari_reference as ppo_reference
+import axiomrl.examples.dqn_breakout_atari_reference as dqn_reference
+import axiomrl.examples.ppo_breakout_atari_reference as ppo_reference
 
 
 def test_dqn_breakout_reference_script_builds_atari_config(monkeypatch, tmp_path: Path) -> None:

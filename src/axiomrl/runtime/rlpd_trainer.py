@@ -9,36 +9,36 @@ import gymnasium as gym
 import numpy as np
 import torch
 
-from rl_training.algorithms.rlpd import RLPD
-from rl_training.data.offline_dataset import TransitionDataset
-from rl_training.data.replay_buffer import ReplayBuffer
-from rl_training.envs.factory import make_vector_env
-from rl_training.experiment.checkpointing import CheckpointState
-from rl_training.experiment.config import TrainConfig
-from rl_training.models.mlp_sac import MLPSACModel
-from rl_training.runtime.callbacks import Callback, CallbackList
-from rl_training.runtime.collector import CollectResult
-from rl_training.runtime.controls import (
+from axiomrl.algorithms.rlpd import RLPD
+from axiomrl.data.offline_dataset import TransitionDataset
+from axiomrl.data.replay_buffer import ReplayBuffer
+from axiomrl.envs.factory import make_vector_env
+from axiomrl.experiment.checkpointing import CheckpointState
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.models.mlp_sac import MLPSACModel
+from axiomrl.runtime.callbacks import Callback, CallbackList
+from axiomrl.runtime.collector import CollectResult
+from axiomrl.runtime.controls import (
     resolve_eval_interval,
     resolve_max_epochs,
     resolve_max_updates,
     should_run_periodic_eval,
     stop_reason_for_training_limits,
 )
-from rl_training.runtime.iql_trainer import _build_offline_dataset
-from rl_training.runtime.off_policy_trainer_utils import maybe_run_evaluation, store_vector_transitions
-from rl_training.runtime.resume_state import (
+from axiomrl.runtime.iql_trainer import _build_offline_dataset
+from axiomrl.runtime.off_policy_trainer_utils import maybe_run_evaluation, store_vector_transitions
+from axiomrl.runtime.resume_state import (
     capture_global_random_state,
     capture_vector_env_resume_state,
     restore_global_random_state,
     restore_vector_env_resume_state,
 )
-from rl_training.runtime.run_utils import save_training_checkpoint
-from rl_training.runtime.sac_trainer import _action_bounds, _evaluate_sac_policy, _infer_spaces, _scale_actions
-from rl_training.runtime.schedules import apply_learning_rate_scale, resolve_schedule_value
-from rl_training.runtime.session import create_training_session
-from rl_training.runtime.trainer import TrainerState, TrainResult
-from rl_training.runtime.types import MetricDict
+from axiomrl.runtime.run_utils import save_training_checkpoint
+from axiomrl.runtime.sac_trainer import _action_bounds, _evaluate_sac_policy, _infer_spaces, _scale_actions
+from axiomrl.runtime.schedules import apply_learning_rate_scale, resolve_schedule_value
+from axiomrl.runtime.session import create_training_session
+from axiomrl.runtime.trainer import TrainerState, TrainResult
+from axiomrl.runtime.types import MetricDict
 
 
 @dataclass

@@ -1,7 +1,7 @@
 import torch
 
-from rl_training.algorithms.a2c import A2C, a2c_loss
-from rl_training.models.mlp_actor_critic import MLPActorCritic
+from axiomrl.algorithms.a2c import A2C, a2c_loss
+from axiomrl.models.mlp_actor_critic import MLPActorCritic
 
 
 def test_a2c_loss_returns_named_metrics() -> None:

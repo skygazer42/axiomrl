@@ -101,4 +101,3 @@ class MLPDiscreteSACModel(nn.Module):
     def q_values(self, obs: object) -> tuple[torch.Tensor, torch.Tensor]:
         obs_tensor = self._prepare_obs(obs)
         return self.q1(obs_tensor), self.q2(obs_tensor)
-

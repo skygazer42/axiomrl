@@ -3,27 +3,22 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Protocol
 
-from rl_training.algorithms.base import UpdateResult
-from rl_training.runtime.collector import CollectResult
-from rl_training.runtime.trainer import TrainResult
-from rl_training.runtime.types import MetricDict
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.runtime.collector import CollectResult
+from axiomrl.runtime.trainer import TrainResult
+from axiomrl.runtime.types import MetricDict
 
 
 class Callback(Protocol):
-    def on_train_start(self, trainer: object) -> None:
-        ...
+    def on_train_start(self, trainer: object) -> None: ...
 
-    def on_collect_end(self, trainer: object, result: CollectResult) -> None:
-        ...
+    def on_collect_end(self, trainer: object, result: CollectResult) -> None: ...
 
-    def on_update_end(self, trainer: object, result: UpdateResult) -> None:
-        ...
+    def on_update_end(self, trainer: object, result: UpdateResult) -> None: ...
 
-    def on_eval_end(self, trainer: object, metrics: MetricDict) -> None:
-        ...
+    def on_eval_end(self, trainer: object, metrics: MetricDict) -> None: ...
 
-    def on_train_end(self, trainer: object, result: TrainResult) -> None:
-        ...
+    def on_train_end(self, trainer: object, result: TrainResult) -> None: ...
 
 
 class CallbackList:

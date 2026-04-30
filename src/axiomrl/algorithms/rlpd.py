@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import torch
 
-from rl_training.algorithms.sac import SAC, sac_loss
+from axiomrl.algorithms.sac import SAC, sac_loss
 
 
 def rlpd_loss(batch: dict[str, torch.Tensor | float]) -> dict[str, float]:
@@ -16,4 +16,3 @@ class RLPD(SAC):
     offline pretraining, and mixed offline/online updates. The learner itself
     intentionally reuses the current SAC update in this phase.
     """
-

@@ -2,9 +2,9 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Turn `rl_training` into a mainstream-style RL package for classic control and Atari by adding pixel-observation support, Atari presets, a `RecurrentPPO` contrib algorithm, a first `zoo/` layer, and the packaging/docs polish needed for real adoption.
+**Goal:** Turn `axiomrl` into a mainstream-style RL package for classic control and Atari by adding pixel-observation support, Atari presets, a `RecurrentPPO` contrib algorithm, a first `zoo/` layer, and the packaging/docs polish needed for real adoption.
 
-**Architecture:** Keep the existing `rl_training` core stable while extending it in three deliberate directions. First, teach the current env and trainer stack to support Atari wrappers and CNN encoders so existing DQN/PPO flows can train on image observations. Second, isolate recurrent PPO into `rl_training.contrib` so sequence state and hidden-state checkpoint semantics do not leak into every core policy path. Third, add a `zoo/` layer for benchmark presets, scripts, and docs, plus installable CLI metadata, so the new capability is visible and reproducible instead of being buried in ad hoc examples.
+**Architecture:** Keep the existing `axiomrl` core stable while extending it in three deliberate directions. First, teach the current env and trainer stack to support Atari wrappers and CNN encoders so existing DQN/PPO flows can train on image observations. Second, isolate recurrent PPO into `axiomrl.contrib` so sequence state and hidden-state checkpoint semantics do not leak into every core policy path. Third, add a `zoo/` layer for benchmark presets, scripts, and docs, plus installable CLI metadata, so the new capability is visible and reproducible instead of being buried in ad hoc examples.
 
 **Tech Stack:** Python 3.10, PyTorch, Gymnasium, ALE-compatible Atari environments, pytest, setuptools
 
@@ -43,12 +43,12 @@ Expected: PASS
 ### Task 2: Implement Atari wrappers and image-ready env factories
 
 **Files:**
-- Create: `src/rl_training/envs/atari.py`
-- Modify: `src/rl_training/envs/factory.py`
-- Modify: `src/rl_training/envs/__init__.py`
-- Create: `src/rl_training/models/cnn/__init__.py`
-- Create: `src/rl_training/models/cnn/nature.py`
-- Modify: `src/rl_training/models/__init__.py`
+- Create: `src/axiomrl/envs/atari.py`
+- Modify: `src/axiomrl/envs/factory.py`
+- Modify: `src/axiomrl/envs/__init__.py`
+- Create: `src/axiomrl/models/cnn/__init__.py`
+- Create: `src/axiomrl/models/cnn/nature.py`
+- Modify: `src/axiomrl/models/__init__.py`
 
 **Step 1: Write minimal implementation**
 
@@ -68,9 +68,9 @@ Expected: PASS
 **Files:**
 - Create: `tests/test_atari_dqn_trainer_smoke.py`
 - Create: `tests/test_atari_ppo_trainer_smoke.py`
-- Modify: `src/rl_training/runtime/dqn_trainer.py`
-- Modify: `src/rl_training/runtime/ppo_trainer.py`
-- Modify: `src/rl_training/experiment/registry.py`
+- Modify: `src/axiomrl/runtime/dqn_trainer.py`
+- Modify: `src/axiomrl/runtime/ppo_trainer.py`
+- Modify: `src/axiomrl/experiment/registry.py`
 - Modify: `tests/test_checkpoint_workflows.py`
 - Modify: `tests/test_experiment_manager.py`
 
@@ -160,23 +160,23 @@ Create the buffer and model primitives with the smallest sequence semantics requ
 Run: `PYTHONPATH=src pytest tests/test_recurrent_rollout_buffer.py tests/test_recurrent_ppo_update.py tests/test_recurrent_models.py tests/test_module_contracts.py -q`
 Expected: PASS
 
-### Task 6: Implement `RecurrentPPO` under `rl_training.contrib`
+### Task 6: Implement `RecurrentPPO` under `axiomrl.contrib`
 
 **Files:**
-- Create: `src/rl_training/data/recurrent_rollout_buffer.py`
-- Create: `src/rl_training/models/recurrent/__init__.py`
-- Create: `src/rl_training/models/recurrent/lstm_actor_critic.py`
-- Create: `src/rl_training/contrib/__init__.py`
-- Create: `src/rl_training/contrib/api.py`
-- Create: `src/rl_training/contrib/recurrent_ppo.py`
-- Modify: `src/rl_training/models/__init__.py`
+- Create: `src/axiomrl/data/recurrent_rollout_buffer.py`
+- Create: `src/axiomrl/models/recurrent/__init__.py`
+- Create: `src/axiomrl/models/recurrent/lstm_actor_critic.py`
+- Create: `src/axiomrl/contrib/__init__.py`
+- Create: `src/axiomrl/contrib/api.py`
+- Create: `src/axiomrl/contrib/recurrent_ppo.py`
+- Modify: `src/axiomrl/models/__init__.py`
 
 **Step 1: Write minimal implementation**
 
 Implement:
 - `RecurrentRolloutBuffer`
 - `LSTMActorCritic`
-- a managed `RecurrentPPO` API class in `rl_training.contrib`
+- a managed `RecurrentPPO` API class in `axiomrl.contrib`
 - enough serialization support for hidden-state-aware training checkpoints
 
 **Step 2: Run focused tests**
@@ -187,10 +187,10 @@ Expected: PASS
 ### Task 7: Add the recurrent PPO trainer, registry wiring, and checkpoint flows
 
 **Files:**
-- Create: `src/rl_training/runtime/recurrent_ppo_trainer.py`
-- Modify: `src/rl_training/experiment/registry.py`
-- Modify: `src/rl_training/cli.py`
-- Modify: `src/rl_training/runtime/workflows.py`
+- Create: `src/axiomrl/runtime/recurrent_ppo_trainer.py`
+- Modify: `src/axiomrl/experiment/registry.py`
+- Modify: `src/axiomrl/cli.py`
+- Modify: `src/axiomrl/runtime/workflows.py`
 - Modify: `tests/test_public_api.py`
 - Modify: `tests/test_package_api_exports.py`
 - Modify: `tests/test_checkpoint_workflows.py`
@@ -202,7 +202,7 @@ Expected: PASS
 
 Add end-to-end coverage for:
 - `algo: recurrent_ppo` train / eval / resume
-- `rl_training.contrib.RecurrentPPO(...).learn()`
+- `axiomrl.contrib.RecurrentPPO(...).learn()`
 - checkpoint load, prediction, and evaluation
 - example-script smoke execution
 
@@ -305,16 +305,16 @@ Expected: PASS
 Use small commits that match the phase boundaries above, for example:
 
 ```bash
-git add tests/test_atari_envs.py tests/test_nature_cnn.py src/rl_training/envs/atari.py src/rl_training/envs/factory.py src/rl_training/models/cnn src/rl_training/models/__init__.py
+git add tests/test_atari_envs.py tests/test_nature_cnn.py src/axiomrl/envs/atari.py src/axiomrl/envs/factory.py src/axiomrl/models/cnn src/axiomrl/models/__init__.py
 git commit -m "feat: add atari env pipeline and nature cnn"
 
-git add tests/test_atari_dqn_trainer_smoke.py tests/test_atari_ppo_trainer_smoke.py src/rl_training/runtime/dqn_trainer.py src/rl_training/runtime/ppo_trainer.py src/rl_training/experiment/registry.py
+git add tests/test_atari_dqn_trainer_smoke.py tests/test_atari_ppo_trainer_smoke.py src/axiomrl/runtime/dqn_trainer.py src/axiomrl/runtime/ppo_trainer.py src/axiomrl/experiment/registry.py
 git commit -m "feat: enable atari training for dqn and ppo"
 
-git add tests/test_recurrent_rollout_buffer.py tests/test_recurrent_models.py tests/test_recurrent_ppo_update.py src/rl_training/data/recurrent_rollout_buffer.py src/rl_training/models/recurrent src/rl_training/contrib
+git add tests/test_recurrent_rollout_buffer.py tests/test_recurrent_models.py tests/test_recurrent_ppo_update.py src/axiomrl/data/recurrent_rollout_buffer.py src/axiomrl/models/recurrent src/axiomrl/contrib
 git commit -m "feat: add recurrent ppo primitives"
 
-git add tests/test_recurrent_ppo_trainer_smoke.py tests/test_recurrent_ppo_reference_script.py src/rl_training/runtime/recurrent_ppo_trainer.py src/rl_training/experiment/registry.py src/rl_training/cli.py src/rl_training/runtime/workflows.py
+git add tests/test_recurrent_ppo_trainer_smoke.py tests/test_recurrent_ppo_reference_script.py src/axiomrl/runtime/recurrent_ppo_trainer.py src/axiomrl/experiment/registry.py src/axiomrl/cli.py src/axiomrl/runtime/workflows.py
 git commit -m "feat: wire recurrent ppo into contrib workflows"
 
 git add zoo scripts/benchmark_zoo.py tests/test_zoo_presets.py README.md pyproject.toml

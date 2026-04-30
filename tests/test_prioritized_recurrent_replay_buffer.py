@@ -1,6 +1,6 @@
 import torch
 
-from rl_training.data import PrioritizedRecurrentReplayBuffer
+from axiomrl.data import PrioritizedRecurrentReplayBuffer
 
 
 def test_prioritized_recurrent_replay_buffer_can_add_sample_and_update_priorities() -> None:

@@ -5,8 +5,8 @@ from typing import Any
 
 import torch
 
-from rl_training.algorithms.base import UpdateResult
-from rl_training.models.mlp_iqn_network import MLPIQNetwork
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.models.mlp_iqn_network import MLPIQNetwork
 
 
 def _quantile_huber_loss(

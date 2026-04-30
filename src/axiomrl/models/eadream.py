@@ -5,7 +5,7 @@ from collections.abc import Iterator, Sequence
 import torch
 from torch import nn
 
-from rl_training.models.dreamer import DreamerModel
+from axiomrl.models.dreamer import DreamerModel
 
 
 class EADreamModel(DreamerModel):

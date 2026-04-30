@@ -10,7 +10,7 @@ title: 项目结构详解
 
 ```
 axiomrl/
-├── src/rl_training/        # 主包源码
+├── src/axiomrl/        # 主包源码
 ├── configs/                # 88 个算法配置目录
 ├── examples/               # 42 个示例脚本
 ├── zoo/                    # 基准预设和清单
@@ -27,7 +27,7 @@ axiomrl/
 
 | 目录/文件 | 说明 |
 |---|---|
-| `src/rl_training/` | 项目主包，包含所有核心源码 |
+| `src/axiomrl/` | 项目主包，包含所有核心源码 |
 | `configs/` | 算法默认配置文件，共 88 个目录，每个目录对应一种算法 |
 | `examples/` | 示例脚本，共 42 个，展示各种使用场景 |
 | `zoo/` | Zoo 基准预设和清单文件，用于标准化基准测试 |
@@ -36,10 +36,10 @@ axiomrl/
 | `pyproject.toml` | 包元数据、依赖声明和工具配置 |
 | `Makefile` | 统一的开发命令入口 |
 
-## 主包结构 — `src/rl_training/`
+## 主包结构 — `src/axiomrl/`
 
 ```
-src/rl_training/
+src/axiomrl/
 ├── __init__.py
 ├── algorithms/             # 70+ 算法实现
 ├── api/                    # 公共 API 封装
@@ -80,13 +80,13 @@ src/rl_training/
 
 #### `core.py` — 稳定核心 API
 
-`rl_training.core` 命名空间的入口，提供受语义化版本保护的稳定接口。当前包含的稳定算法：
+`axiomrl.core` 命名空间的入口，提供受语义化版本保护的稳定接口。当前包含的稳定算法：
 
 - A2C, BC, CQL, DQN, DiscreteSAC, IQL, PPO, SAC, TD3, TRPO
 
 #### `experimental.py` — 实验性 API
 
-`rl_training.experimental` 命名空间的入口，包含尚在开发中的新特性。这些 API 可能在次版本（minor）中变更。
+`axiomrl.experimental` 命名空间的入口，包含尚在开发中的新特性。这些 API 可能在次版本（minor）中变更。
 
 #### `data/` — 数据管理
 

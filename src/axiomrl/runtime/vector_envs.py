@@ -6,7 +6,6 @@ from typing import Protocol
 
 import gymnasium as gym
 
-
 EnvFactory = Callable[[], gym.Env]
 
 _SUPPORTED_EXECUTION_BACKENDS = ("local_sync", "local_async")
@@ -15,8 +14,7 @@ _SUPPORTED_EXECUTION_BACKENDS = ("local_sync", "local_async")
 class WorkerBackend(Protocol):
     name: str
 
-    def make_vector_env(self, env_fns: Sequence[EnvFactory]) -> gym.vector.VectorEnv:
-        ...
+    def make_vector_env(self, env_fns: Sequence[EnvFactory]) -> gym.vector.VectorEnv: ...
 
 
 @dataclass(frozen=True, slots=True)

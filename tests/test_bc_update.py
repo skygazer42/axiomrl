@@ -1,7 +1,7 @@
 import torch
 
-from rl_training.algorithms.bc import BC
-from rl_training.models import MLPBCModel
+from axiomrl.algorithms.bc import BC
+from axiomrl.models import MLPBCModel
 
 
 def test_bc_update_returns_named_metrics() -> None:

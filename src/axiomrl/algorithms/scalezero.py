@@ -5,9 +5,9 @@ from typing import Any
 import torch
 from torch.nn import functional as F
 
-from rl_training.algorithms.base import UpdateResult
-from rl_training.algorithms.muzero import MuZero, MuZeroMCTSConfig
-from rl_training.models.scalezero import ScaleZeroModel
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.algorithms.muzero import MuZero, MuZeroMCTSConfig
+from axiomrl.models.scalezero import ScaleZeroModel
 
 
 class ScaleZero(MuZero):
@@ -67,7 +67,9 @@ class ScaleZero(MuZero):
             value_targets = torch.zeros((batch_size, unroll_steps + 1), dtype=torch.float32, device=device)
             value_targets[:, -1] = bootstrap_value
             for step in range(unroll_steps - 1, -1, -1):
-                value_targets[:, step] = rewards[:, step] + self.gamma * value_targets[:, step + 1] * (1.0 - dones[:, step])
+                value_targets[:, step] = rewards[:, step] + self.gamma * value_targets[:, step + 1] * (
+                    1.0 - dones[:, step]
+                )
 
         initial, initial_info = self.scalezero_model.initial_inference_with_info(obs)
         pred_policy_logits = [initial.policy_logits]
@@ -118,8 +120,12 @@ class ScaleZero(MuZero):
             "scalezero_policy_loss": float(policy_loss.detach().cpu().item()),
             "scalezero_value_loss": float(value_loss.detach().cpu().item()),
             "scalezero_reward_loss": float(reward_loss.detach().cpu().item()),
-            "scalezero_prediction_moe_entropy": float(torch.stack(prediction_gate_entropies).mean().detach().cpu().item()),
-            "scalezero_dynamics_moe_entropy": float(torch.stack(dynamics_gate_entropies).mean().detach().cpu().item()) if dynamics_gate_entropies else 0.0,
+            "scalezero_prediction_moe_entropy": float(
+                torch.stack(prediction_gate_entropies).mean().detach().cpu().item()
+            ),
+            "scalezero_dynamics_moe_entropy": float(torch.stack(dynamics_gate_entropies).mean().detach().cpu().item())
+            if dynamics_gate_entropies
+            else 0.0,
             "scalezero_moe_entropy": float(torch.stack(all_gate_entropies).mean().detach().cpu().item()),
             "scalezero_num_experts": float(self.scalezero_model.num_experts),
             "scalezero_value_mean": float(pred_value[:, 0].mean().detach().cpu().item()),

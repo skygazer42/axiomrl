@@ -1,7 +1,7 @@
 import torch
 
-from rl_training.algorithms.qr_dqn import QRDQN
-from rl_training.models.mlp_qr_q_network import MLPQRQNetwork
+from axiomrl.algorithms.qr_dqn import QRDQN
+from axiomrl.models.mlp_qr_q_network import MLPQRQNetwork
 
 
 def test_mlp_qr_q_network_forward_shape() -> None:

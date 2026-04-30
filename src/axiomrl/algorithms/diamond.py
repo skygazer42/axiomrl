@@ -6,9 +6,9 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from rl_training.algorithms.base import UpdateResult
-from rl_training.algorithms.dreamer import Dreamer
-from rl_training.models.dreamer import DreamerModel
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.algorithms.dreamer import Dreamer
+from axiomrl.models.dreamer import DreamerModel
 
 
 class _DiamondDenoiser(nn.Module):

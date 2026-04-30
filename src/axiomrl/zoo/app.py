@@ -5,7 +5,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
-from rl_training.zoo.leaderboard import (
+from axiomrl.zoo.leaderboard import (
     COMPARE_TO_CHOICES,
     LEADERBOARD_METRIC_CHOICES,
     SCORE_VIEW_CHOICES,
@@ -14,13 +14,13 @@ from rl_training.zoo.leaderboard import (
     _render_text_leaderboard,
     build_leaderboard_payload,
 )
-from rl_training.zoo.manifests import (
+from axiomrl.zoo.manifests import (
     MANIFEST_DRIFT_TYPE_CHOICES,
     MANIFEST_DRIFT_TYPE_TO_SUMMARY_FIELD,
     _default_manifest_path,
     load_manifest_with_source,
 )
-from rl_training.zoo.reporting import (
+from axiomrl.zoo.reporting import (
     _emit_output,
     _render_commands_output,
     _render_csv_report,
@@ -203,7 +203,7 @@ def _print_leaderboard(
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="List or print benchmark commands from the RL Training zoo.")
+    parser = argparse.ArgumentParser(description="List or print benchmark commands from the AxiomRL zoo.")
     parser.add_argument(
         "--manifest",
         default=str(_default_manifest_path()),

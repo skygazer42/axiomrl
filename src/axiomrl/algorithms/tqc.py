@@ -5,8 +5,8 @@ from typing import Any
 
 import torch
 
-from rl_training.algorithms.base import UpdateResult
-from rl_training.models.mlp_tqc import MLPTQCModel
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.models.mlp_tqc import MLPTQCModel
 
 
 def _quantile_huber_loss(
@@ -116,8 +116,12 @@ class TQC:
         self.model = model
         self.policy = model
         self.target_model = copy.deepcopy(model)
-        self.actor_optimizer = torch.optim.Adam(self.model.actor_parameters(), lr=float(learning_rate), weight_decay=0.0)
-        self.critic_optimizer = torch.optim.Adam(self.model.critic_parameters(), lr=float(learning_rate), weight_decay=0.0)
+        self.actor_optimizer = torch.optim.Adam(
+            self.model.actor_parameters(), lr=float(learning_rate), weight_decay=0.0
+        )
+        self.critic_optimizer = torch.optim.Adam(
+            self.model.critic_parameters(), lr=float(learning_rate), weight_decay=0.0
+        )
         self.gamma = float(gamma)
         self.alpha = float(alpha)
         self.tau = float(tau)

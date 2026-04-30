@@ -47,12 +47,12 @@ Skip commit in this session unless explicitly requested.
 **Files:**
 - Create: `configs/agent57/tennis_atari.yaml`
 - Create: `configs/efficientzero/tennis_atari.yaml`
-- Create: `src/rl_training/assets/configs/agent57/tennis_atari.yaml`
-- Create: `src/rl_training/assets/configs/efficientzero/tennis_atari.yaml`
+- Create: `src/axiomrl/assets/configs/agent57/tennis_atari.yaml`
+- Create: `src/axiomrl/assets/configs/efficientzero/tennis_atari.yaml`
 - Create: `zoo/atari/agent57_tennis.yaml`
 - Create: `zoo/atari/efficientzero_tennis.yaml`
-- Create: `src/rl_training/assets/zoo/atari/agent57_tennis.yaml`
-- Create: `src/rl_training/assets/zoo/atari/efficientzero_tennis.yaml`
+- Create: `src/axiomrl/assets/zoo/atari/agent57_tennis.yaml`
+- Create: `src/axiomrl/assets/zoo/atari/efficientzero_tennis.yaml`
 
 **Step 1: Write the failing test**
 
@@ -78,7 +78,7 @@ Skip commit in this session unless explicitly requested.
 
 **Files:**
 - Modify: `zoo/atari/tennis_benchmark.yaml`
-- Modify: `src/rl_training/assets/zoo/atari/tennis_benchmark.yaml`
+- Modify: `src/axiomrl/assets/zoo/atari/tennis_benchmark.yaml`
 
 **Step 1: Write the failing test**
 

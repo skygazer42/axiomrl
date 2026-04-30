@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from rl_training.experiment.config import TrainConfig
-from rl_training.runtime.bcq_trainer import train_bcq
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.runtime.bcq_trainer import train_bcq
 
 
 def test_train_bcq_writes_checkpoint_and_metrics(tmp_path: Path) -> None:

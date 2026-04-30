@@ -5,7 +5,7 @@ from collections.abc import Sequence
 import torch
 from torch import nn
 
-from rl_training.models.cnn.nature import NatureCNN
+from axiomrl.models.cnn.nature import NatureCNN
 
 
 def _build_head(

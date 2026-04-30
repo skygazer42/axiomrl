@@ -4,8 +4,8 @@ from typing import Any
 
 import torch
 
-from rl_training.algorithms.base import UpdateResult
-from rl_training.models.decision_transformer import DecisionTransformerModel
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.models.decision_transformer import DecisionTransformerModel
 
 
 def _masked_action_mse(

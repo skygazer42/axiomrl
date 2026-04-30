@@ -10,7 +10,7 @@ Related documents:
 
 ## Goal
 
-Define the product roadmap for `rl_training` so the repository is understood as
+Define the product roadmap for `axiomrl` so the repository is understood as
 a real reinforcement learning package with phased delivery, not as a one-off
 PPO script or a narrow learning exercise.
 
@@ -20,7 +20,7 @@ This document answers a simple question:
 
 ## Product Definition
 
-`rl_training` should become a Python-first reinforcement learning package that
+`axiomrl` should become a Python-first reinforcement learning package that
 supports multiple algorithm families, multiple execution patterns, and the
 operational tooling required for real experiments.
 
@@ -134,7 +134,7 @@ capable.
 Desired shape:
 
 ```python
-from rl_training.algorithms import PPO, DQN, SAC
+from axiomrl.algorithms import PPO, DQN, SAC
 
 algo = PPO(config)
 algo.learn()
@@ -297,5 +297,5 @@ The repository is on the right trajectory when:
 - the codebase remains readable enough that contributors can debug a full
   training path end to end
 
-That is the bar for treating `rl_training` as a real package rather than a toy
+That is the bar for treating `axiomrl` as a real package rather than a toy
 repository.

@@ -7,7 +7,7 @@ from typing import Any
 import gymnasium as gym
 import numpy as np
 
-from rl_training.envs.atari import ensure_atari_env_registered
+from axiomrl.envs.atari import ensure_atari_env_registered
 
 
 def _stack_samples(samples: list[np.ndarray]) -> np.ndarray:

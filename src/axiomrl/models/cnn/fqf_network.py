@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from collections.abc import Sequence
+from dataclasses import dataclass
 
 import torch
 from torch import nn
 
-from rl_training.models.cnn.nature import NatureCNN
+from axiomrl.models.cnn.nature import NatureCNN
 
 
 def _build_head(
@@ -185,4 +185,3 @@ class CNNFQFNetwork(nn.Module):
         random_actions = torch.randint(0, self.action_dim, greedy_actions.shape, device=greedy_actions.device)
         explore_mask = torch.rand(greedy_actions.shape, device=greedy_actions.device) < epsilon
         return torch.where(explore_mask, random_actions, greedy_actions)
-

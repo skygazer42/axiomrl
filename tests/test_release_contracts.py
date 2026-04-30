@@ -6,7 +6,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 def test_pyproject_declares_release_metadata_and_optional_installs() -> None:
     pyproject_text = (REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8")
 
-    assert 'setuptools>=77.0.3' in pyproject_text
+    assert "setuptools>=77.0.3" in pyproject_text
     assert 'version = "1.0.0"' in pyproject_text
     assert "Development Status :: 4 - Beta" in pyproject_text
     assert "Intended Audience :: Developers" in pyproject_text
@@ -40,7 +40,7 @@ def test_repository_declares_ci_and_publish_workflows() -> None:
     assert "pytest -q" in ci_text
     assert "twine check" in ci_text
     assert "pip install dist/*.whl" in ci_text
-    assert "import rl_training" in ci_text
+    assert "import axiomrl" in ci_text
     assert "axiomrl --help" in ci_text
     assert "workflow_dispatch" in publish_text
     assert "testpypi" in publish_text
@@ -55,11 +55,12 @@ def test_readme_documents_stable_core_and_version_policy() -> None:
     readme_text = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
 
     assert "Stable Core API" in readme_text
-    assert "rl_training.core" in readme_text
-    assert "rl_training.experimental" in readme_text
+    assert "axiomrl.core" in readme_text
+    assert "axiomrl.experimental" in readme_text
     assert "Semantic Versioning" in readme_text
     assert "deprecated" in readme_text.lower()
-    assert "docs/assets/" not in readme_text
+    assert "docs/assets/logo.svg" in readme_text
+    assert "docs/assets/logo-dark.svg" in readme_text
     assert "pip install axiomrl" in readme_text
     assert 'pip install -e ".[dev]"' in readme_text
     assert 'pip install -e ".[experimental]"' not in readme_text
@@ -213,13 +214,13 @@ def test_quality_gates_cover_split_public_api_test_modules() -> None:
 
 
 def test_repository_includes_split_registry_dqn_loader_module() -> None:
-    module_path = REPO_ROOT / "src" / "rl_training" / "experiment" / "registry_dqn_loaders.py"
+    module_path = REPO_ROOT / "src" / "axiomrl" / "experiment" / "registry_dqn_loaders.py"
 
     assert module_path.exists(), "missing split registry DQN loader module"
 
 
 def test_quality_gates_cover_split_registry_dqn_loader_module() -> None:
-    expected_name = "src/rl_training/experiment/registry_dqn_loaders.py"
+    expected_name = "src/axiomrl/experiment/registry_dqn_loaders.py"
     quality_gate_texts = {
         "pyproject": (REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"),
         "makefile": (REPO_ROOT / "Makefile").read_text(encoding="utf-8"),
@@ -232,13 +233,13 @@ def test_quality_gates_cover_split_registry_dqn_loader_module() -> None:
 
 
 def test_repository_includes_split_registry_continuous_loader_module() -> None:
-    module_path = REPO_ROOT / "src" / "rl_training" / "experiment" / "registry_continuous_loaders.py"
+    module_path = REPO_ROOT / "src" / "axiomrl" / "experiment" / "registry_continuous_loaders.py"
 
     assert module_path.exists(), "missing split registry continuous loader module"
 
 
 def test_quality_gates_cover_split_registry_continuous_loader_module() -> None:
-    expected_name = "src/rl_training/experiment/registry_continuous_loaders.py"
+    expected_name = "src/axiomrl/experiment/registry_continuous_loaders.py"
     quality_gate_texts = {
         "pyproject": (REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"),
         "makefile": (REPO_ROOT / "Makefile").read_text(encoding="utf-8"),
@@ -251,13 +252,13 @@ def test_quality_gates_cover_split_registry_continuous_loader_module() -> None:
 
 
 def test_repository_includes_split_registry_recurrent_loader_module() -> None:
-    module_path = REPO_ROOT / "src" / "rl_training" / "experiment" / "registry_recurrent_loaders.py"
+    module_path = REPO_ROOT / "src" / "axiomrl" / "experiment" / "registry_recurrent_loaders.py"
 
     assert module_path.exists(), "missing split registry recurrent loader module"
 
 
 def test_quality_gates_cover_split_registry_recurrent_loader_module() -> None:
-    expected_name = "src/rl_training/experiment/registry_recurrent_loaders.py"
+    expected_name = "src/axiomrl/experiment/registry_recurrent_loaders.py"
     quality_gate_texts = {
         "pyproject": (REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"),
         "makefile": (REPO_ROOT / "Makefile").read_text(encoding="utf-8"),
@@ -270,13 +271,13 @@ def test_quality_gates_cover_split_registry_recurrent_loader_module() -> None:
 
 
 def test_repository_includes_split_registry_policy_loader_module() -> None:
-    module_path = REPO_ROOT / "src" / "rl_training" / "experiment" / "registry_policy_loaders.py"
+    module_path = REPO_ROOT / "src" / "axiomrl" / "experiment" / "registry_policy_loaders.py"
 
     assert module_path.exists(), "missing split registry policy loader module"
 
 
 def test_quality_gates_cover_split_registry_policy_loader_module() -> None:
-    expected_name = "src/rl_training/experiment/registry_policy_loaders.py"
+    expected_name = "src/axiomrl/experiment/registry_policy_loaders.py"
     quality_gate_texts = {
         "pyproject": (REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"),
         "makefile": (REPO_ROOT / "Makefile").read_text(encoding="utf-8"),
@@ -289,13 +290,13 @@ def test_quality_gates_cover_split_registry_policy_loader_module() -> None:
 
 
 def test_repository_includes_split_registry_specialized_loader_module() -> None:
-    module_path = REPO_ROOT / "src" / "rl_training" / "experiment" / "registry_specialized_loaders.py"
+    module_path = REPO_ROOT / "src" / "axiomrl" / "experiment" / "registry_specialized_loaders.py"
 
     assert module_path.exists(), "missing split registry specialized loader module"
 
 
 def test_quality_gates_cover_split_registry_specialized_loader_module() -> None:
-    expected_name = "src/rl_training/experiment/registry_specialized_loaders.py"
+    expected_name = "src/axiomrl/experiment/registry_specialized_loaders.py"
     quality_gate_texts = {
         "pyproject": (REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"),
         "makefile": (REPO_ROOT / "Makefile").read_text(encoding="utf-8"),
@@ -308,13 +309,13 @@ def test_quality_gates_cover_split_registry_specialized_loader_module() -> None:
 
 
 def test_repository_includes_split_registry_offline_loader_module() -> None:
-    module_path = REPO_ROOT / "src" / "rl_training" / "experiment" / "registry_offline_loaders.py"
+    module_path = REPO_ROOT / "src" / "axiomrl" / "experiment" / "registry_offline_loaders.py"
 
     assert module_path.exists(), "missing split registry offline loader module"
 
 
 def test_quality_gates_cover_split_registry_offline_loader_module() -> None:
-    expected_name = "src/rl_training/experiment/registry_offline_loaders.py"
+    expected_name = "src/axiomrl/experiment/registry_offline_loaders.py"
     quality_gate_texts = {
         "pyproject": (REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"),
         "makefile": (REPO_ROOT / "Makefile").read_text(encoding="utf-8"),
@@ -327,13 +328,13 @@ def test_quality_gates_cover_split_registry_offline_loader_module() -> None:
 
 
 def test_repository_includes_split_registry_on_policy_specs_module() -> None:
-    module_path = REPO_ROOT / "src" / "rl_training" / "experiment" / "registry_on_policy_specs.py"
+    module_path = REPO_ROOT / "src" / "axiomrl" / "experiment" / "registry_on_policy_specs.py"
 
     assert module_path.exists(), "missing split registry on-policy specs module"
 
 
 def test_quality_gates_cover_split_registry_on_policy_specs_module() -> None:
-    expected_name = "src/rl_training/experiment/registry_on_policy_specs.py"
+    expected_name = "src/axiomrl/experiment/registry_on_policy_specs.py"
     quality_gate_texts = {
         "pyproject": (REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"),
         "makefile": (REPO_ROOT / "Makefile").read_text(encoding="utf-8"),
@@ -346,13 +347,13 @@ def test_quality_gates_cover_split_registry_on_policy_specs_module() -> None:
 
 
 def test_repository_includes_split_registry_offline_specs_module() -> None:
-    module_path = REPO_ROOT / "src" / "rl_training" / "experiment" / "registry_offline_specs.py"
+    module_path = REPO_ROOT / "src" / "axiomrl" / "experiment" / "registry_offline_specs.py"
 
     assert module_path.exists(), "missing split registry offline specs module"
 
 
 def test_quality_gates_cover_split_registry_offline_specs_module() -> None:
-    expected_name = "src/rl_training/experiment/registry_offline_specs.py"
+    expected_name = "src/axiomrl/experiment/registry_offline_specs.py"
     quality_gate_texts = {
         "pyproject": (REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"),
         "makefile": (REPO_ROOT / "Makefile").read_text(encoding="utf-8"),
@@ -365,13 +366,13 @@ def test_quality_gates_cover_split_registry_offline_specs_module() -> None:
 
 
 def test_repository_includes_split_registry_world_model_specs_module() -> None:
-    module_path = REPO_ROOT / "src" / "rl_training" / "experiment" / "registry_world_model_specs.py"
+    module_path = REPO_ROOT / "src" / "axiomrl" / "experiment" / "registry_world_model_specs.py"
 
     assert module_path.exists(), "missing split registry world-model specs module"
 
 
 def test_quality_gates_cover_split_registry_world_model_specs_module() -> None:
-    expected_name = "src/rl_training/experiment/registry_world_model_specs.py"
+    expected_name = "src/axiomrl/experiment/registry_world_model_specs.py"
     quality_gate_texts = {
         "pyproject": (REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"),
         "makefile": (REPO_ROOT / "Makefile").read_text(encoding="utf-8"),
@@ -384,13 +385,13 @@ def test_quality_gates_cover_split_registry_world_model_specs_module() -> None:
 
 
 def test_repository_includes_split_registry_actor_critic_specs_module() -> None:
-    module_path = REPO_ROOT / "src" / "rl_training" / "experiment" / "registry_actor_critic_specs.py"
+    module_path = REPO_ROOT / "src" / "axiomrl" / "experiment" / "registry_actor_critic_specs.py"
 
     assert module_path.exists(), "missing split registry actor-critic specs module"
 
 
 def test_quality_gates_cover_split_registry_actor_critic_specs_module() -> None:
-    expected_name = "src/rl_training/experiment/registry_actor_critic_specs.py"
+    expected_name = "src/axiomrl/experiment/registry_actor_critic_specs.py"
     quality_gate_texts = {
         "pyproject": (REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"),
         "makefile": (REPO_ROOT / "Makefile").read_text(encoding="utf-8"),
@@ -403,13 +404,13 @@ def test_quality_gates_cover_split_registry_actor_critic_specs_module() -> None:
 
 
 def test_repository_includes_split_registry_value_based_specs_module() -> None:
-    module_path = REPO_ROOT / "src" / "rl_training" / "experiment" / "registry_value_based_specs.py"
+    module_path = REPO_ROOT / "src" / "axiomrl" / "experiment" / "registry_value_based_specs.py"
 
     assert module_path.exists(), "missing split registry value-based specs module"
 
 
 def test_quality_gates_cover_split_registry_value_based_specs_module() -> None:
-    expected_name = "src/rl_training/experiment/registry_value_based_specs.py"
+    expected_name = "src/axiomrl/experiment/registry_value_based_specs.py"
     quality_gate_texts = {
         "pyproject": (REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"),
         "makefile": (REPO_ROOT / "Makefile").read_text(encoding="utf-8"),

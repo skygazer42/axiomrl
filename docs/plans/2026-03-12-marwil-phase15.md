@@ -6,7 +6,7 @@
 
 **Architecture:** Reuse `MLPIQLModel` for tanh-Gaussian policy plus value regression, and keep the packaged `MARWIL` path intentionally narrow: regress value to discounted returns-to-go, compute advantages as `returns_to_go - value(obs)`, normalize those advantages with a running squared-advantage scale, then perform exponentiated advantage-weighted behavior cloning. Reuse the current offline dataset builder, reward processing, checkpoint, eval, predict, schedule, and early-stopping surfaces instead of creating a new trainer family.
 
-**Tech Stack:** Python, PyTorch, Gymnasium, existing `rl_training` offline dataset stack, returns-to-go processing, and experiment infrastructure
+**Tech Stack:** Python, PyTorch, Gymnasium, existing `axiomrl` offline dataset stack, returns-to-go processing, and experiment infrastructure
 
 ---
 
@@ -48,8 +48,8 @@ Record that tests are added but intentionally not executed until the user explic
 ### Task 2: Add The `MARWIL` Learner
 
 **Files:**
-- Create: `src/rl_training/algorithms/marwil.py`
-- Modify: `src/rl_training/algorithms/__init__.py`
+- Create: `src/axiomrl/algorithms/marwil.py`
+- Modify: `src/axiomrl/algorithms/__init__.py`
 
 **Step 1: Reuse the actor/value model family**
 
@@ -72,8 +72,8 @@ Add a readable `marwil_loss(...)` helper and export `MARWIL` / `MARWILAlgorithm`
 ### Task 3: Add The Offline `MARWIL` Trainer
 
 **Files:**
-- Create: `src/rl_training/runtime/marwil_trainer.py`
-- Modify: `src/rl_training/experiment/registry.py`
+- Create: `src/axiomrl/runtime/marwil_trainer.py`
+- Modify: `src/axiomrl/experiment/registry.py`
 
 **Step 1: Reuse offline dataset and returns processing**
 
@@ -96,11 +96,11 @@ Evaluate and predict through the current deterministic actor helper path already
 ### Task 4: Wire `MARWIL` Into The Package Surface
 
 **Files:**
-- Modify: `src/rl_training/api/algorithms.py`
-- Modify: `src/rl_training/api/__init__.py`
-- Modify: `src/rl_training/__init__.py`
+- Modify: `src/axiomrl/api/algorithms.py`
+- Modify: `src/axiomrl/api/__init__.py`
+- Modify: `src/axiomrl/__init__.py`
 - Create: `configs/marwil/pendulum.yaml`
-- Create: `src/rl_training/assets/configs/marwil/pendulum.yaml`
+- Create: `src/axiomrl/assets/configs/marwil/pendulum.yaml`
 - Modify: `README.md`
 
 **Step 1: Add the managed API entrypoint**

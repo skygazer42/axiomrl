@@ -10,9 +10,9 @@ from torch.distributions import Categorical
 from torch.distributions.kl import kl_divergence
 from torch.nn import functional as F
 
-from rl_training.algorithms._advantage_utils import normalize_advantages
-from rl_training.algorithms.base import UpdateResult
-from rl_training.models.mlp_actor_critic import MLPActorCritic
+from axiomrl.algorithms._advantage_utils import normalize_advantages
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.models.mlp_actor_critic import MLPActorCritic
 
 
 @dataclass(frozen=True)
@@ -168,7 +168,9 @@ class TRPO:
             raise ValueError(f"ent_coef must be >= 0, got {ent_coef}")
 
         self.policy = policy
-        self.value_optimizer = torch.optim.Adam(self.policy.critic.parameters(), lr=value_learning_rate, weight_decay=0.0)
+        self.value_optimizer = torch.optim.Adam(
+            self.policy.critic.parameters(), lr=value_learning_rate, weight_decay=0.0
+        )
         self.max_kl = float(max_kl)
         self.cg_iterations = int(cg_iterations)
         self.cg_damping = float(cg_damping)
@@ -341,15 +343,15 @@ class TRPO:
                 "accepted_step": torch.as_tensor(step_stats.accepted_step, dtype=torch.float32, device=device),
                 "step_norm": torch.as_tensor(step_stats.step_norm, dtype=torch.float32, device=device),
                 "backtrack_steps": torch.as_tensor(step_stats.backtrack_steps, dtype=torch.float32, device=device),
-                "cg_iterations": torch.as_tensor(float(step_stats.cg_iteration_count), dtype=torch.float32, device=device),
+                "cg_iterations": torch.as_tensor(
+                    float(step_stats.cg_iteration_count), dtype=torch.float32, device=device
+                ),
             }
         )
         metrics["line_search_fraction"] = step_stats.accepted_fraction
         metrics["value_updates"] = float(self.value_updates)
         metrics["final_value_loss"] = float(final_value_loss.detach().cpu().item())
-        metrics["surrogate_improvement"] = float(
-            (metrics["surrogate_gain"] - old_surrogate.detach().cpu().item())
-        )
+        metrics["surrogate_improvement"] = float(metrics["surrogate_gain"] - old_surrogate.detach().cpu().item())
         return metrics
 
     def update(self, batch: dict[str, Any], *, global_step: int) -> UpdateResult:

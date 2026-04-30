@@ -1,21 +1,21 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import replace
 from pathlib import Path
-from collections.abc import Sequence
 from typing import Any
 
 import numpy as np
 
-from rl_training.cli_config import load_config
-from rl_training.experiment.checkpointing import CheckpointState, load_checkpoint
-from rl_training.experiment.benchmarking import augment_metrics_with_benchmark
-from rl_training.experiment.config import TrainConfig
-from rl_training.experiment.registry import get_algorithm_spec
-from rl_training.runtime.callbacks import Callback
-from rl_training.runtime.run_utils import resolve_device
-from rl_training.runtime.trainer import TrainResult
-from rl_training.runtime.types import MetricDict
+from axiomrl.cli_config import load_config
+from axiomrl.experiment.benchmarking import augment_metrics_with_benchmark
+from axiomrl.experiment.checkpointing import CheckpointState, load_checkpoint
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.experiment.registry import get_algorithm_spec
+from axiomrl.runtime.callbacks import Callback
+from axiomrl.runtime.run_utils import resolve_device
+from axiomrl.runtime.trainer import TrainResult
+from axiomrl.runtime.types import MetricDict
 
 _CHECKPOINT_PATH_REQUIRED_ERROR = "checkpoint_path must not be None"
 
@@ -61,9 +61,7 @@ def _resolve_resume_config(
         mismatches.append(f"num_envs={resume_config.num_envs!r} expected {checkpoint_config.num_envs!r}")
     if mismatches:
         resolved_path = Path(config_path).resolve()
-        raise ValueError(
-            f"resume config {resolved_path} is incompatible with checkpoint: " + ", ".join(mismatches)
-        )
+        raise ValueError(f"resume config {resolved_path} is incompatible with checkpoint: " + ", ".join(mismatches))
     return resume_config
 
 

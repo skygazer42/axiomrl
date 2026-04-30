@@ -9,17 +9,17 @@ import gymnasium as gym
 import numpy as np
 import torch
 
-from rl_training.algorithms.iql import IQL
-from rl_training.data.dataset_loaders import load_transition_dataset
-from rl_training.data.offline_dataset import TransitionDataset
-from rl_training.data.offline_mixers import mix_transition_datasets
-from rl_training.envs.factory import build_env
-from rl_training.experiment.checkpointing import CheckpointState
-from rl_training.experiment.config import TrainConfig
-from rl_training.models.mlp_iql import MLPIQLModel
-from rl_training.runtime.callbacks import Callback
-from rl_training.runtime.collector import CollectResult
-from rl_training.runtime.controls import (
+from axiomrl.algorithms.iql import IQL
+from axiomrl.data.dataset_loaders import load_transition_dataset
+from axiomrl.data.offline_dataset import TransitionDataset
+from axiomrl.data.offline_mixers import mix_transition_datasets
+from axiomrl.envs.factory import build_env
+from axiomrl.experiment.checkpointing import CheckpointState
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.models.mlp_iql import MLPIQLModel
+from axiomrl.runtime.callbacks import Callback
+from axiomrl.runtime.collector import CollectResult
+from axiomrl.runtime.controls import (
     resolve_effective_total_updates,
     resolve_eval_interval,
     resolve_max_epochs,
@@ -27,13 +27,13 @@ from rl_training.runtime.controls import (
     should_run_evaluation,
     stop_reason_for_training_limits,
 )
-from rl_training.runtime.evaluation_support import evaluate_continuous_episodes
-from rl_training.runtime.resume_state import capture_global_random_state, restore_global_random_state
-from rl_training.runtime.run_utils import save_training_checkpoint
-from rl_training.runtime.schedules import apply_learning_rate_scale, resolve_schedule_value
-from rl_training.runtime.session import create_training_session
-from rl_training.runtime.trainer import TrainResult
-from rl_training.runtime.types import MetricDict
+from axiomrl.runtime.evaluation_support import evaluate_continuous_episodes
+from axiomrl.runtime.resume_state import capture_global_random_state, restore_global_random_state
+from axiomrl.runtime.run_utils import save_training_checkpoint
+from axiomrl.runtime.schedules import apply_learning_rate_scale, resolve_schedule_value
+from axiomrl.runtime.session import create_training_session
+from axiomrl.runtime.trainer import TrainResult
+from axiomrl.runtime.types import MetricDict
 
 
 def _infer_env_spaces(config: TrainConfig) -> tuple[gym.spaces.Box, gym.spaces.Box]:
@@ -152,9 +152,7 @@ def _build_mixed_offline_dataset(config: TrainConfig, *, action_space: gym.space
     weights: list[float] = []
     for index, descriptor in enumerate(mix_payload):
         if not isinstance(descriptor, Mapping):
-            raise TypeError(
-                f"expected dataset_mix[{index}] to be a mapping, got {type(descriptor)!r}"
-            )
+            raise TypeError(f"expected dataset_mix[{index}] to be a mapping, got {type(descriptor)!r}")
         entry_kwargs = dict(config.algo_kwargs)
         entry_kwargs.pop("dataset_mix", None)
         entry_kwargs.pop("dataset_mix_size", None)
@@ -245,7 +243,9 @@ def _build_offline_dataset(config: TrainConfig, *, action_space: gym.spaces.Box 
     resolved_action_space = action_space
     if resolved_action_space is None:
         _, resolved_action_space = _infer_env_spaces(config)
-    return _process_offline_dataset(dataset, config=config, action_space=resolved_action_space, dataset_kind=dataset_kind)
+    return _process_offline_dataset(
+        dataset, config=config, action_space=resolved_action_space, dataset_kind=dataset_kind
+    )
 
 
 def _evaluate_iql_policy(
@@ -349,9 +349,7 @@ def train_iql(
         global_step = int(checkpoint_state.trainer_state.get("global_step", 0)) if checkpoint_state is not None else 0
         epoch = int(checkpoint_state.trainer_state.get("epoch", global_step)) if checkpoint_state is not None else 0
         update_count = (
-            int(checkpoint_state.trainer_state.get("update_count", global_step))
-            if checkpoint_state is not None
-            else 0
+            int(checkpoint_state.trainer_state.get("update_count", global_step)) if checkpoint_state is not None else 0
         )
         latest_update_metrics: MetricDict = {}
         trainer_state.global_step = global_step

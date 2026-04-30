@@ -1,7 +1,7 @@
 import pytest
 import torch
 
-from rl_training.models.cnn import NatureCNN
+from axiomrl.models.cnn import NatureCNN
 
 
 def test_nature_cnn_returns_fixed_size_features_for_batched_images() -> None:

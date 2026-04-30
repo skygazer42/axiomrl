@@ -115,7 +115,11 @@ class RecurrentRolloutBuffer:
         if sequences_per_batch <= 0:
             raise ValueError(f"sequences_per_batch must be > 0, got {sequences_per_batch}")
 
-        chunks = [(env_index, start) for env_index in range(self.num_envs) for start in range(0, self.num_steps, sequence_length)]
+        chunks = [
+            (env_index, start)
+            for env_index in range(self.num_envs)
+            for start in range(0, self.num_steps, sequence_length)
+        ]
         order = torch.randperm(len(chunks)).tolist() if shuffle else list(range(len(chunks)))
 
         for batch_start in range(0, len(order), sequences_per_batch):

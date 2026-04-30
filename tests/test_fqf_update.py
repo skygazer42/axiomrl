@@ -1,7 +1,7 @@
 import torch
 
-from rl_training.algorithms.fqf import FQF
-from rl_training.models.mlp_fqf_network import MLPFQFNetwork
+from axiomrl.algorithms.fqf import FQF
+from axiomrl.models.mlp_fqf_network import MLPFQFNetwork
 
 
 def test_mlp_fqf_network_forward_shapes_and_tau_bounds() -> None:

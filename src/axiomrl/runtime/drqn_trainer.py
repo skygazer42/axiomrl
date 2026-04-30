@@ -7,21 +7,21 @@ import gymnasium as gym
 import numpy as np
 import torch
 
-from rl_training.algorithms.drqn import DRQN
-from rl_training.data.recurrent_replay_buffer import RecurrentReplayBuffer
-from rl_training.envs.factory import make_vector_env
-from rl_training.experiment.checkpointing import CheckpointState
-from rl_training.experiment.config import TrainConfig
-from rl_training.models.recurrent import LSTMQNetwork
-from rl_training.runtime.callbacks import Callback
-from rl_training.runtime.collector import CollectResult
-from rl_training.runtime.controls import (
+from axiomrl.algorithms.drqn import DRQN
+from axiomrl.data.recurrent_replay_buffer import RecurrentReplayBuffer
+from axiomrl.envs.factory import make_vector_env
+from axiomrl.experiment.checkpointing import CheckpointState
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.models.recurrent import LSTMQNetwork
+from axiomrl.runtime.callbacks import Callback
+from axiomrl.runtime.collector import CollectResult
+from axiomrl.runtime.controls import (
     resolve_eval_interval,
     resolve_exploration_epsilon,
     should_run_evaluation,
 )
-from rl_training.runtime.evaluation_support import evaluate_discrete_episodes
-from rl_training.runtime.resume_state import (
+from axiomrl.runtime.evaluation_support import evaluate_discrete_episodes
+from axiomrl.runtime.resume_state import (
     capture_global_random_state,
     capture_resume_value,
     capture_vector_env_resume_state,
@@ -30,10 +30,10 @@ from rl_training.runtime.resume_state import (
     restore_resume_value,
     restore_vector_env_resume_state,
 )
-from rl_training.runtime.run_utils import save_training_checkpoint
-from rl_training.runtime.session import create_training_session
-from rl_training.runtime.trainer import TrainResult
-from rl_training.runtime.types import MetricDict
+from axiomrl.runtime.run_utils import save_training_checkpoint
+from axiomrl.runtime.session import create_training_session
+from axiomrl.runtime.trainer import TrainResult
+from axiomrl.runtime.types import MetricDict
 
 
 def _infer_spaces(envs: gym.vector.VectorEnv) -> tuple[tuple[int, ...], int]:

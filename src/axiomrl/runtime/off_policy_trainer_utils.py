@@ -6,18 +6,18 @@ from typing import Any
 import gymnasium as gym
 import numpy as np
 
-from rl_training.data.replay_buffer import ReplayBuffer
-from rl_training.experiment.checkpointing import CheckpointState
-from rl_training.runtime.callbacks import CallbackList
-from rl_training.runtime.collector import CollectResult
-from rl_training.runtime.resume_state import (
+from axiomrl.data.replay_buffer import ReplayBuffer
+from axiomrl.experiment.checkpointing import CheckpointState
+from axiomrl.runtime.callbacks import CallbackList
+from axiomrl.runtime.collector import CollectResult
+from axiomrl.runtime.resume_state import (
     capture_global_random_state,
     capture_vector_env_resume_state,
     restore_global_random_state,
     restore_vector_env_resume_state,
 )
-from rl_training.runtime.trainer import TrainerState
-from rl_training.runtime.types import MetricDict
+from axiomrl.runtime.trainer import TrainerState
+from axiomrl.runtime.types import MetricDict
 
 
 def store_vector_transitions(

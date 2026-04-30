@@ -32,13 +32,13 @@ Expected: FAIL until the algo name, model, exports, and example exist.
 ### Task 2: Implement model + wiring
 
 **Files:**
-- Create: `src/rl_training/models/mlp_dueling_noisy_q_network.py`
-- Modify: `src/rl_training/runtime/dqn_trainer.py`
-- Modify: `src/rl_training/experiment/registry.py`
-- Modify: `src/rl_training/api/algorithms.py`
-- Modify: `src/rl_training/api/__init__.py`
-- Modify: `src/rl_training/algorithms/__init__.py`
-- Modify: `src/rl_training/__init__.py`
+- Create: `src/axiomrl/models/mlp_dueling_noisy_q_network.py`
+- Modify: `src/axiomrl/runtime/dqn_trainer.py`
+- Modify: `src/axiomrl/experiment/registry.py`
+- Modify: `src/axiomrl/api/algorithms.py`
+- Modify: `src/axiomrl/api/__init__.py`
+- Modify: `src/axiomrl/algorithms/__init__.py`
+- Modify: `src/axiomrl/__init__.py`
 
 Notes:
 - Use `PrioritizedReplayBuffer` and priority updates when `config.algo == "rainbow_dqn"`.

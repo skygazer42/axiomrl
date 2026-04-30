@@ -1,121 +1,117 @@
-from rl_training.algorithms.ars import ARS as ARSAlgorithm
-from rl_training.algorithms.ars import ars_loss
-from rl_training.algorithms.openai_es import OpenAIES as OpenAIESAlgorithm
-from rl_training.algorithms.openai_es import openai_es_loss
-from rl_training.algorithms.base import Algorithm, UpdateResult
-from rl_training.algorithms.a2c import A2C as A2CAlgorithm
-from rl_training.algorithms.a2c import a2c_loss
-from rl_training.algorithms.awr import AWR as AWRAlgorithm
-from rl_training.algorithms.awr import awr_loss
-from rl_training.algorithms.awac import AWAC as AWACAlgorithm
-from rl_training.algorithms.awac import awac_loss
-from rl_training.algorithms.marwil import MARWIL as MARWILAlgorithm
-from rl_training.algorithms.marwil import marwil_loss
-from rl_training.algorithms.bc import BC as BCAlgorithm
-from rl_training.algorithms.bc import bc_loss
-from rl_training.algorithms.impala import IMPALA as IMPALAAlgorithm
-from rl_training.algorithms.impala import impala_loss
-from rl_training.algorithms.appo import APPO as APPOAlgorithm
-from rl_training.algorithms.appo import appo_loss
-from rl_training.algorithms.decision_transformer import DecisionTransformer as DecisionTransformerAlgorithm
-from rl_training.algorithms.decision_transformer import decision_transformer_loss
-from rl_training.algorithms.mopo import MOPO as MOPOAlgorithm
-from rl_training.algorithms.mopo import mopo_model_loss
-from rl_training.algorithms.pets import PETS as PETSAlgorithm
-from rl_training.algorithms.pets import pets_loss
-from rl_training.algorithms.bcq import BCQ as BCQAlgorithm
-from rl_training.algorithms.bcq import bcq_loss
-from rl_training.algorithms.bear import BEAR as BEARAlgorithm
-from rl_training.algorithms.bear import bear_loss
-from rl_training.algorithms.c51_dqn import C51DQN as C51DQNAlgorithm
-from rl_training.algorithms.c51_dqn import c51_loss
-from rl_training.algorithms.crossq import CrossQ as CrossQAlgorithm
-from rl_training.algorithms.crossq import crossq_loss
-from rl_training.algorithms.crr import CRR as CRRAlgorithm
-from rl_training.algorithms.crr import crr_loss
-from rl_training.algorithms.cal_ql import CalQL as CalQLAlgorithm
-from rl_training.algorithms.cal_ql import cal_ql_loss
-from rl_training.algorithms.cql import CQL as CQLAlgorithm
-from rl_training.algorithms.cql import cql_loss
-from rl_training.algorithms.curl import CURL as CURLAlgorithm
-from rl_training.algorithms.curl import curl_loss
-from rl_training.algorithms.d4pg import D4PG as D4PGAlgorithm
-from rl_training.algorithms.d4pg import d4pg_loss
-from rl_training.algorithms.drqn import DRQN as DRQNAlgorithm
-from rl_training.algorithms.drqn import drqn_loss
-from rl_training.algorithms.r2d2 import R2D2 as R2D2Algorithm
-from rl_training.algorithms.r2d2 import r2d2_loss
-from rl_training.algorithms.naf import NAF as NAFAlgorithm
-from rl_training.algorithms.naf import naf_loss
-from rl_training.algorithms.ddpg import DDPG as DDPGAlgorithm
-from rl_training.algorithms.ddpg import ddpg_loss
-from rl_training.algorithms.edac import EDAC as EDACAlgorithm
-from rl_training.algorithms.edac import critic_diversity_loss
-from rl_training.algorithms.edac import edac_loss
-from rl_training.algorithms.drq import DrQ as DrQAlgorithm
-from rl_training.algorithms.drq import drq_loss
-from rl_training.algorithms.drqv2 import DrQv2 as DrQv2Algorithm
-from rl_training.algorithms.drqv2 import drqv2_loss
-from rl_training.algorithms.discrete_sac import DiscreteSAC as DiscreteSACAlgorithm
-from rl_training.algorithms.discrete_sac import discrete_sac_loss
-from rl_training.algorithms.efficientzero import EfficientZero as EfficientZeroAlgorithm
-from rl_training.algorithms.gumbel_muzero import GumbelMuZero as GumbelMuZeroAlgorithm
-from rl_training.algorithms.ppg import PPG as PPGAlgorithm
-from rl_training.algorithms.ppg import ppg_auxiliary_loss
-from rl_training.algorithms.ppg import ppg_loss
-from rl_training.algorithms.dqn import DQN as DQNAlgorithm
-from rl_training.algorithms.dqn import AdvantageLearningDQN as AdvantageLearningDQNAlgorithm
-from rl_training.algorithms.dqn import BoltzmannDQN as BoltzmannDQNAlgorithm
-from rl_training.algorithms.dqn import BoltzmannDoubleDQN as BoltzmannDoubleDQNAlgorithm
-from rl_training.algorithms.dqn import CQLDQN as CQLDQNAlgorithm
-from rl_training.algorithms.dqn import CQLDoubleDQN as CQLDoubleDQNAlgorithm
-from rl_training.algorithms.dqn import ClippedDoubleDQN as ClippedDoubleDQNAlgorithm
-from rl_training.algorithms.dqn import DoubleDQN as DoubleDQNAlgorithm
-from rl_training.algorithms.dqn import DuelingDQN as DuelingDQNAlgorithm
-from rl_training.algorithms.dqn import ExpectedDoubleDQN as ExpectedDoubleDQNAlgorithm
-from rl_training.algorithms.dqn import ExpectedSARSA as ExpectedSARSAAlgorithm
-from rl_training.algorithms.her import HER as HERAlgorithm
-from rl_training.algorithms.her import her_loss
-from rl_training.algorithms.iql import IQL as IQLAlgorithm
-from rl_training.algorithms.iql import iql_loss
-from rl_training.algorithms.iqn import IQN as IQNAlgorithm
-from rl_training.algorithms.iqn import iqn_loss
-from rl_training.algorithms.dqn import HystereticDQN as HystereticDQNAlgorithm
-from rl_training.algorithms.dqn import MunchausenDoubleDQN as MunchausenDoubleDQNAlgorithm
-from rl_training.algorithms.dqn import PersistentAdvantageLearningDQN as PersistentAdvantageLearningDQNAlgorithm
-from rl_training.algorithms.dqn import SoftDoubleDQN as SoftDoubleDQNAlgorithm
-from rl_training.algorithms.xql import XQL as XQLAlgorithm
-from rl_training.algorithms.xql import gumbel_rescale_loss
-from rl_training.algorithms.xql import xql_loss
-from rl_training.algorithms.xql import xql_value_loss
-from rl_training.algorithms.dqn import NoisyDQN as NoisyDQNAlgorithm
-from rl_training.algorithms.dqn import MunchausenDQN as MunchausenDQNAlgorithm
-from rl_training.algorithms.dqn import MellowmaxDQN as MellowmaxDQNAlgorithm
-from rl_training.algorithms.dqn import PrioritizedDQN as PrioritizedDQNAlgorithm
-from rl_training.algorithms.dqn import RainbowDQN as RainbowDQNAlgorithm
-from rl_training.algorithms.dqn import SoftDQN as SoftDQNAlgorithm
-from rl_training.algorithms.dqn import dqn_loss
-from rl_training.algorithms.ppo import PPO as PPOAlgorithm
-from rl_training.algorithms.ppo import ppo_loss
-from rl_training.algorithms.qr_dqn import QRDQN as QRDQNAlgorithm
-from rl_training.algorithms.qr_dqn import qr_loss
-from rl_training.algorithms.spr import SPR as SPRAlgorithm
-from rl_training.algorithms.redq import REDQ as REDQAlgorithm
-from rl_training.algorithms.redq import redq_loss
-from rl_training.algorithms.rlpd import RLPD as RLPDAlgorithm
-from rl_training.algorithms.rlpd import rlpd_loss
-from rl_training.algorithms.rebrac import ReBRAC as ReBRACAlgorithm
-from rl_training.algorithms.rebrac import rebrac_loss
-from rl_training.algorithms.sac import SAC as SACAlgorithm
-from rl_training.algorithms.sac import sac_loss
-from rl_training.algorithms.trpo import TRPO as TRPOAlgorithm
-from rl_training.algorithms.trpo import trpo_loss
-from rl_training.algorithms.tqc import TQC as TQCAlgorithm
-from rl_training.algorithms.tqc import tqc_loss
-from rl_training.algorithms.td3 import TD3 as TD3Algorithm
-from rl_training.algorithms.td3 import td3_loss
-from rl_training.algorithms.td3_bc import TD3BC as TD3BCAlgorithm
-from rl_training.algorithms.td3_bc import td3_bc_loss
+from axiomrl.algorithms.a2c import A2C as A2CAlgorithm
+from axiomrl.algorithms.a2c import a2c_loss
+from axiomrl.algorithms.appo import APPO as APPOAlgorithm
+from axiomrl.algorithms.appo import appo_loss
+from axiomrl.algorithms.ars import ARS as ARSAlgorithm
+from axiomrl.algorithms.ars import ars_loss
+from axiomrl.algorithms.awac import AWAC as AWACAlgorithm
+from axiomrl.algorithms.awac import awac_loss
+from axiomrl.algorithms.awr import AWR as AWRAlgorithm
+from axiomrl.algorithms.awr import awr_loss
+from axiomrl.algorithms.base import Algorithm, UpdateResult
+from axiomrl.algorithms.bc import BC as BCAlgorithm
+from axiomrl.algorithms.bc import bc_loss
+from axiomrl.algorithms.bcq import BCQ as BCQAlgorithm
+from axiomrl.algorithms.bcq import bcq_loss
+from axiomrl.algorithms.bear import BEAR as BEARAlgorithm
+from axiomrl.algorithms.bear import bear_loss
+from axiomrl.algorithms.c51_dqn import C51DQN as C51DQNAlgorithm
+from axiomrl.algorithms.c51_dqn import c51_loss
+from axiomrl.algorithms.cal_ql import CalQL as CalQLAlgorithm
+from axiomrl.algorithms.cal_ql import cal_ql_loss
+from axiomrl.algorithms.cql import CQL as CQLAlgorithm
+from axiomrl.algorithms.cql import cql_loss
+from axiomrl.algorithms.crossq import CrossQ as CrossQAlgorithm
+from axiomrl.algorithms.crossq import crossq_loss
+from axiomrl.algorithms.crr import CRR as CRRAlgorithm
+from axiomrl.algorithms.crr import crr_loss
+from axiomrl.algorithms.curl import CURL as CURLAlgorithm
+from axiomrl.algorithms.curl import curl_loss
+from axiomrl.algorithms.d4pg import D4PG as D4PGAlgorithm
+from axiomrl.algorithms.d4pg import d4pg_loss
+from axiomrl.algorithms.ddpg import DDPG as DDPGAlgorithm
+from axiomrl.algorithms.ddpg import ddpg_loss
+from axiomrl.algorithms.decision_transformer import DecisionTransformer as DecisionTransformerAlgorithm
+from axiomrl.algorithms.decision_transformer import decision_transformer_loss
+from axiomrl.algorithms.discrete_sac import DiscreteSAC as DiscreteSACAlgorithm
+from axiomrl.algorithms.discrete_sac import discrete_sac_loss
+from axiomrl.algorithms.dqn import CQLDQN as CQLDQNAlgorithm
+from axiomrl.algorithms.dqn import DQN as DQNAlgorithm
+from axiomrl.algorithms.dqn import AdvantageLearningDQN as AdvantageLearningDQNAlgorithm
+from axiomrl.algorithms.dqn import BoltzmannDoubleDQN as BoltzmannDoubleDQNAlgorithm
+from axiomrl.algorithms.dqn import BoltzmannDQN as BoltzmannDQNAlgorithm
+from axiomrl.algorithms.dqn import ClippedDoubleDQN as ClippedDoubleDQNAlgorithm
+from axiomrl.algorithms.dqn import CQLDoubleDQN as CQLDoubleDQNAlgorithm
+from axiomrl.algorithms.dqn import DoubleDQN as DoubleDQNAlgorithm
+from axiomrl.algorithms.dqn import DuelingDQN as DuelingDQNAlgorithm
+from axiomrl.algorithms.dqn import ExpectedDoubleDQN as ExpectedDoubleDQNAlgorithm
+from axiomrl.algorithms.dqn import ExpectedSARSA as ExpectedSARSAAlgorithm
+from axiomrl.algorithms.dqn import HystereticDQN as HystereticDQNAlgorithm
+from axiomrl.algorithms.dqn import MellowmaxDQN as MellowmaxDQNAlgorithm
+from axiomrl.algorithms.dqn import MunchausenDoubleDQN as MunchausenDoubleDQNAlgorithm
+from axiomrl.algorithms.dqn import MunchausenDQN as MunchausenDQNAlgorithm
+from axiomrl.algorithms.dqn import NoisyDQN as NoisyDQNAlgorithm
+from axiomrl.algorithms.dqn import PersistentAdvantageLearningDQN as PersistentAdvantageLearningDQNAlgorithm
+from axiomrl.algorithms.dqn import PrioritizedDQN as PrioritizedDQNAlgorithm
+from axiomrl.algorithms.dqn import RainbowDQN as RainbowDQNAlgorithm
+from axiomrl.algorithms.dqn import SoftDoubleDQN as SoftDoubleDQNAlgorithm
+from axiomrl.algorithms.dqn import SoftDQN as SoftDQNAlgorithm
+from axiomrl.algorithms.dqn import dqn_loss
+from axiomrl.algorithms.drq import DrQ as DrQAlgorithm
+from axiomrl.algorithms.drq import drq_loss
+from axiomrl.algorithms.drqn import DRQN as DRQNAlgorithm
+from axiomrl.algorithms.drqn import drqn_loss
+from axiomrl.algorithms.drqv2 import DrQv2 as DrQv2Algorithm
+from axiomrl.algorithms.drqv2 import drqv2_loss
+from axiomrl.algorithms.edac import EDAC as EDACAlgorithm
+from axiomrl.algorithms.edac import critic_diversity_loss, edac_loss
+from axiomrl.algorithms.efficientzero import EfficientZero as EfficientZeroAlgorithm
+from axiomrl.algorithms.gumbel_muzero import GumbelMuZero as GumbelMuZeroAlgorithm
+from axiomrl.algorithms.her import HER as HERAlgorithm
+from axiomrl.algorithms.her import her_loss
+from axiomrl.algorithms.impala import IMPALA as IMPALAAlgorithm
+from axiomrl.algorithms.impala import impala_loss
+from axiomrl.algorithms.iql import IQL as IQLAlgorithm
+from axiomrl.algorithms.iql import iql_loss
+from axiomrl.algorithms.iqn import IQN as IQNAlgorithm
+from axiomrl.algorithms.iqn import iqn_loss
+from axiomrl.algorithms.marwil import MARWIL as MARWILAlgorithm
+from axiomrl.algorithms.marwil import marwil_loss
+from axiomrl.algorithms.mopo import MOPO as MOPOAlgorithm
+from axiomrl.algorithms.mopo import mopo_model_loss
+from axiomrl.algorithms.naf import NAF as NAFAlgorithm
+from axiomrl.algorithms.naf import naf_loss
+from axiomrl.algorithms.openai_es import OpenAIES as OpenAIESAlgorithm
+from axiomrl.algorithms.openai_es import openai_es_loss
+from axiomrl.algorithms.pets import PETS as PETSAlgorithm
+from axiomrl.algorithms.pets import pets_loss
+from axiomrl.algorithms.ppg import PPG as PPGAlgorithm
+from axiomrl.algorithms.ppg import ppg_auxiliary_loss, ppg_loss
+from axiomrl.algorithms.ppo import PPO as PPOAlgorithm
+from axiomrl.algorithms.ppo import ppo_loss
+from axiomrl.algorithms.qr_dqn import QRDQN as QRDQNAlgorithm
+from axiomrl.algorithms.qr_dqn import qr_loss
+from axiomrl.algorithms.r2d2 import R2D2 as R2D2Algorithm
+from axiomrl.algorithms.r2d2 import r2d2_loss
+from axiomrl.algorithms.rebrac import ReBRAC as ReBRACAlgorithm
+from axiomrl.algorithms.rebrac import rebrac_loss
+from axiomrl.algorithms.redq import REDQ as REDQAlgorithm
+from axiomrl.algorithms.redq import redq_loss
+from axiomrl.algorithms.rlpd import RLPD as RLPDAlgorithm
+from axiomrl.algorithms.rlpd import rlpd_loss
+from axiomrl.algorithms.sac import SAC as SACAlgorithm
+from axiomrl.algorithms.sac import sac_loss
+from axiomrl.algorithms.spr import SPR as SPRAlgorithm
+from axiomrl.algorithms.td3 import TD3 as TD3Algorithm
+from axiomrl.algorithms.td3 import td3_loss
+from axiomrl.algorithms.td3_bc import TD3BC as TD3BCAlgorithm
+from axiomrl.algorithms.td3_bc import td3_bc_loss
+from axiomrl.algorithms.tqc import TQC as TQCAlgorithm
+from axiomrl.algorithms.tqc import tqc_loss
+from axiomrl.algorithms.trpo import TRPO as TRPOAlgorithm
+from axiomrl.algorithms.trpo import trpo_loss
+from axiomrl.algorithms.xql import XQL as XQLAlgorithm
+from axiomrl.algorithms.xql import gumbel_rescale_loss, xql_loss, xql_value_loss
 
 __all__ = [
     "Algorithm",
@@ -380,76 +376,76 @@ def __getattr__(name: str):
         "TD3",
         "TD3BC",
     }:
-        from rl_training.api import (
-            ARS,
-            OpenAIES,
+        from axiomrl.api import (
             A2C,
-            AWR,
-            AWAC,
-            MARWIL,
-            BC,
-            IMPALA,
             APPO,
-            DecisionTransformer,
-            MOPO,
-            PETS,
+            ARS,
+            AWAC,
+            AWR,
+            BC,
             BCQ,
             BEAR,
             C51DQN,
-            CalQL,
-            CURL,
-            CrossQ,
-            CRR,
             CQL,
+            CQLDQN,
+            CRR,
+            CURL,
             D4PG,
-            DRQN,
-            R2D2,
-            NAF,
             DDPG,
-            EDAC,
-            DrQ,
-            DrQv2,
-            DiscreteSAC,
-            EfficientZero,
-            GumbelMuZero,
-            PPG,
             DQN,
+            DRQN,
+            EDAC,
+            HER,
+            IMPALA,
+            IQL,
+            IQN,
+            MARWIL,
+            MOPO,
+            NAF,
+            PETS,
+            PPG,
+            PPO,
+            QRDQN,
+            R2D2,
+            REDQ,
+            RLPD,
+            SAC,
+            SPR,
+            TD3,
+            TD3BC,
+            TQC,
+            TRPO,
+            XQL,
             AdvantageLearningDQN,
             BoltzmannDoubleDQN,
             BoltzmannDQN,
-            CQLDQN,
-            CQLDoubleDQN,
+            CalQL,
             ClippedDoubleDQN,
+            CQLDoubleDQN,
+            CrossQ,
+            DecisionTransformer,
+            DiscreteSAC,
+            DoubleDQN,
+            DrQ,
+            DrQv2,
+            DuelingDQN,
+            EfficientZero,
             ExpectedDoubleDQN,
             ExpectedSARSA,
+            GumbelMuZero,
             HystereticDQN,
             MellowmaxDQN,
             MunchausenDoubleDQN,
-            PersistentAdvantageLearningDQN,
-            SoftDQN,
-            SoftDoubleDQN,
-            DoubleDQN,
-            DuelingDQN,
-            HER,
-            IQL,
-            IQN,
             MunchausenDQN,
-            XQL,
             NoisyDQN,
             NStepDQN,
-            PPO,
+            OpenAIES,
+            PersistentAdvantageLearningDQN,
             PrioritizedDQN,
-            QRDQN,
-            SPR,
             RainbowDQN,
-            REDQ,
-            RLPD,
             ReBRAC,
-            SAC,
-            TRPO,
-            TQC,
-            TD3,
-            TD3BC,
+            SoftDoubleDQN,
+            SoftDQN,
         )
 
         mapping = {

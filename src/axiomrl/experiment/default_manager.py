@@ -1,18 +1,18 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from copy import deepcopy
 from dataclasses import dataclass, replace
 from pathlib import Path
-from collections.abc import Sequence
 
-from rl_training.experiment.config import TrainConfig
-from rl_training.experiment.manager import ExperimentManager
-from rl_training.experiment.registry import get_algorithm_spec
-from rl_training.experiment.sweeps import SeedSweepPlan, resolve_benchmark_seeds
-from rl_training.runtime.callbacks import Callback
-from rl_training.runtime.runner import BenchmarkRunner, FunctionRunner, Runner
-from rl_training.runtime.trainer import TrainResult, Trainer
-from rl_training.runtime.workflows import resume_training
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.experiment.manager import ExperimentManager
+from axiomrl.experiment.registry import get_algorithm_spec
+from axiomrl.experiment.sweeps import SeedSweepPlan, resolve_benchmark_seeds
+from axiomrl.runtime.callbacks import Callback
+from axiomrl.runtime.runner import BenchmarkRunner, FunctionRunner, Runner
+from axiomrl.runtime.trainer import Trainer, TrainResult
+from axiomrl.runtime.workflows import resume_training
 
 
 @dataclass(slots=True)

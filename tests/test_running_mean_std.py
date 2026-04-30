@@ -2,7 +2,7 @@ import torch
 
 
 def test_running_mean_std_updates_mean_and_var_for_batch() -> None:
-    from rl_training.data.running_mean_std import RunningMeanStd
+    from axiomrl.data.running_mean_std import RunningMeanStd
 
     rms = RunningMeanStd()
     x = torch.tensor([[1.0, 2.0], [3.0, 4.0]], dtype=torch.float32)
@@ -15,7 +15,7 @@ def test_running_mean_std_updates_mean_and_var_for_batch() -> None:
 
 
 def test_running_mean_std_matches_combined_statistics_across_updates() -> None:
-    from rl_training.data.running_mean_std import RunningMeanStd
+    from axiomrl.data.running_mean_std import RunningMeanStd
 
     rms = RunningMeanStd()
     rms.update(torch.tensor([[1.0, 2.0], [3.0, 4.0]], dtype=torch.float32))
@@ -31,7 +31,7 @@ def test_running_mean_std_matches_combined_statistics_across_updates() -> None:
 
 
 def test_running_mean_std_supports_single_sample_vector() -> None:
-    from rl_training.data.running_mean_std import RunningMeanStd
+    from axiomrl.data.running_mean_std import RunningMeanStd
 
     rms = RunningMeanStd()
     rms.update(torch.tensor([10.0, 20.0], dtype=torch.float32))
@@ -39,4 +39,3 @@ def test_running_mean_std_supports_single_sample_vector() -> None:
     assert rms.count == 1
     assert torch.allclose(rms.mean, torch.tensor([10.0, 20.0]))
     assert torch.allclose(rms.var, torch.tensor([0.0, 0.0]))
-

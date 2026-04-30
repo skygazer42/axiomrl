@@ -5,9 +5,9 @@ from typing import Any
 import torch
 from torch.nn import functional as F
 
-from rl_training.algorithms.base import UpdateResult
-from rl_training.models.dreamer import DreamerModel
-from rl_training.policies.base import PolicyOutput
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.models.dreamer import DreamerModel
+from axiomrl.policies.base import PolicyOutput
 
 
 class Dreamer:
@@ -83,7 +83,6 @@ class Dreamer:
         self.set_train_mode()
 
         horizon = max(1, int(imagination_horizon))
-        device = start_obs.device
 
         with torch.no_grad():
             start_features = self.model.encode(start_obs.to(dtype=torch.float32))
@@ -138,7 +137,9 @@ class Dreamer:
             "dreamer_actor_loss": float(actor_loss.detach().cpu().item()),
             "dreamer_critic_loss": float(critic_loss.detach().cpu().item()),
             "dreamer_imagination_horizon": float(horizon),
-            "dreamer_imagination_reward_mean": float(torch.stack(reward_terms, dim=0).mean().detach().cpu().item()) if reward_terms else 0.0,
+            "dreamer_imagination_reward_mean": float(torch.stack(reward_terms, dim=0).mean().detach().cpu().item())
+            if reward_terms
+            else 0.0,
         }
         return UpdateResult(metrics=metrics, num_gradient_steps=1)
 

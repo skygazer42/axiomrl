@@ -7,7 +7,6 @@ from typing import Any
 import gymnasium as gym
 import numpy as np
 
-
 GOAL_OBSERVATION_KEY = "observation"
 ACHIEVED_GOAL_KEY = "achieved_goal"
 DESIRED_GOAL_KEY = "desired_goal"
@@ -60,7 +59,9 @@ class PointGoal1DEnv(gym.Env):
             DESIRED_GOAL_KEY: goal,
         }
 
-    def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None) -> tuple[dict[str, np.ndarray], dict]:
+    def reset(
+        self, *, seed: int | None = None, options: dict[str, Any] | None = None
+    ) -> tuple[dict[str, np.ndarray], dict]:
         super().reset(seed=seed)
         del options
         self._step_count = 0
@@ -159,7 +160,9 @@ def flatten_goal_observation(observation: Mapping[str, object], *, desired_goal:
     return np.concatenate([obs, desired_goal_array], axis=-1).astype(np.float32)
 
 
-def goal_env_compute_reward(env: gym.Env, *, achieved_goal: object, desired_goal: object, info: object | None = None) -> float:
+def goal_env_compute_reward(
+    env: gym.Env, *, achieved_goal: object, desired_goal: object, info: object | None = None
+) -> float:
     compute_reward = getattr(env.unwrapped, "compute_reward", None)
     if not callable(compute_reward):
         raise AttributeError(f"env {type(env.unwrapped)!r} does not expose compute_reward(...)")
@@ -188,7 +191,9 @@ def goal_env_compute_done(
     terminated = False
     truncated = False
     if callable(compute_terminated):
-        terminated = bool(np.asarray(compute_terminated(achieved_goal, desired_goal, info_payload)).reshape(-1)[0].item())
+        terminated = bool(
+            np.asarray(compute_terminated(achieved_goal, desired_goal, info_payload)).reshape(-1)[0].item()
+        )
     if callable(compute_truncated):
         truncated = bool(np.asarray(compute_truncated(achieved_goal, desired_goal, info_payload)).reshape(-1)[0].item())
     return float(terminated or truncated or fallback_truncated)

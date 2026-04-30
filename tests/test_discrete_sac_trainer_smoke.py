@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from rl_training.experiment.config import TrainConfig
-from rl_training.runtime.discrete_sac_trainer import train_discrete_sac
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.runtime.discrete_sac_trainer import train_discrete_sac
 
 
 def test_train_discrete_sac_writes_checkpoint_and_metrics(tmp_path: Path) -> None:

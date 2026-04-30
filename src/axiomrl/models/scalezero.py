@@ -5,7 +5,7 @@ from collections.abc import Sequence
 import torch
 from torch import nn
 
-from rl_training.models.muzero import MuZeroInitialOutput, MuZeroModel, MuZeroRecurrentOutput, _build_mlp
+from axiomrl.models.muzero import MuZeroInitialOutput, MuZeroModel, MuZeroRecurrentOutput, _build_mlp
 
 
 class ScaleZeroModel(MuZeroModel):
@@ -89,7 +89,9 @@ class ScaleZeroModel(MuZeroModel):
         pred_features = self._mix_outputs([expert(hidden_state) for expert in self.prediction_trunk], gate_probs)
         return pred_features, gate_probs
 
-    def _next_hidden_with_info(self, hidden_state: torch.Tensor, action: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    def _next_hidden_with_info(
+        self, hidden_state: torch.Tensor, action: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         action_emb = self.action_embedding(action)
         dynamics_input = torch.cat([hidden_state, action_emb], dim=-1)
         gate_probs = torch.softmax(self.dynamics_gate(dynamics_input), dim=-1)
@@ -126,9 +128,7 @@ class ScaleZeroModel(MuZeroModel):
         if action_tensor.ndim != 1:
             raise ValueError(f"expected action shape (batch,), got {tuple(action_tensor.shape)!r}")
         if int(action_tensor.shape[0]) != int(hidden_tensor.shape[0]):
-            raise ValueError(
-                f"expected action batch {int(hidden_tensor.shape[0])}, got {int(action_tensor.shape[0])}"
-            )
+            raise ValueError(f"expected action batch {int(hidden_tensor.shape[0])}, got {int(action_tensor.shape[0])}")
 
         next_hidden, dynamics_gate_probs = self._next_hidden_with_info(hidden_tensor, action_tensor)
         reward = self.reward_head(next_hidden).squeeze(-1)

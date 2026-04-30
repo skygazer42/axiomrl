@@ -30,7 +30,7 @@ def resolve_benchmark_seed_values(benchmark: Mapping[str, object]) -> tuple[int,
     requested = benchmark.get("seeds")
     if requested is None:
         return None
-    if isinstance(requested, (str, bytes)) or not isinstance(requested, Sequence):
+    if isinstance(requested, str | bytes) or not isinstance(requested, Sequence):
         raise TypeError("benchmark['seeds'] must be a sequence of integers")
     if len(requested) == 0:
         raise ValueError("benchmark['seeds'] must not be empty")

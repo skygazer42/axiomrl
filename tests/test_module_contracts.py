@@ -2,15 +2,15 @@ from pathlib import Path
 
 import torch
 
-from rl_training.algorithms.base import UpdateResult
-from rl_training.data import RecurrentRolloutBuffer
-from rl_training.experiment.config import TrainConfig
-from rl_training.experiment.runs import RunContext
-from rl_training.models import CNNDrQv2Model, LSTMActorCritic, NatureCNN
-from rl_training.policies.base import PolicyOutput
-from rl_training.runtime.collector import CollectResult
-from rl_training.runtime.evaluator import EvalResult
-from rl_training.runtime.trainer import TrainResult
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.data import RecurrentRolloutBuffer
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.experiment.runs import RunContext
+from axiomrl.models import CNNDrQv2Model, LSTMActorCritic, NatureCNN
+from axiomrl.policies.base import PolicyOutput
+from axiomrl.runtime.collector import CollectResult
+from axiomrl.runtime.evaluator import EvalResult
+from axiomrl.runtime.trainer import TrainResult
 
 
 def test_contract_dataclasses_are_instantiable(tmp_path: Path) -> None:

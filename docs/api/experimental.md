@@ -4,19 +4,19 @@ title: 实验性 API
 
 # 实验性 API
 
-`rl_training.experimental` 提供 AxiomRL 全部 70 余种算法的访问入口。与稳定核心 API 不同，实验性 API 可能在次要版本之间发生变更。
+`axiomrl.experimental` 提供 AxiomRL 全部 70 余种算法的访问入口。与稳定核心 API 不同，实验性 API 可能在次要版本之间发生变更。
 
 ## 概览
 
 ```python
-from rl_training.experimental import EXPERIMENTAL_ALGORITHMS
+from axiomrl.experimental import EXPERIMENTAL_ALGORITHMS
 ```
 
-`rl_training.experimental` 重新导出 `rl_training.api` 的所有内容，并额外提供 `EXPERIMENTAL_ALGORITHMS` 常量，其中包含所有不在 `STABLE_ALGORITHMS` 中的算法名称。
+`axiomrl.experimental` 重新导出 `axiomrl.api` 的所有内容，并额外提供 `EXPERIMENTAL_ALGORITHMS` 常量，其中包含所有不在 `STABLE_ALGORITHMS` 中的算法名称。
 
 ```python
-from rl_training.experimental import EXPERIMENTAL_ALGORITHMS
-from rl_training.core import STABLE_ALGORITHMS
+from axiomrl.experimental import EXPERIMENTAL_ALGORITHMS
+from axiomrl.core import STABLE_ALGORITHMS
 
 # 实验性算法 = 全部算法 - 稳定核心算法
 print(f"稳定核心算法数量: {len(STABLE_ALGORITHMS)}")    # 10
@@ -29,13 +29,13 @@ print(f"实验性算法数量: {len(EXPERIMENTAL_ALGORITHMS)}")  # 60+
 
 ```python
 # 导入特定的实验性算法
-from rl_training.experimental import REDQ, TQC, CrossQ
+from axiomrl.experimental import REDQ, TQC, CrossQ
 
 # 导入所有可用算法
-from rl_training.experimental import *
+from axiomrl.experimental import *
 
 # 检查某个算法是否属于实验性
-from rl_training.experimental import EXPERIMENTAL_ALGORITHMS
+from axiomrl.experimental import EXPERIMENTAL_ALGORITHMS
 print("REDQ" in EXPERIMENTAL_ALGORITHMS)  # True
 print("PPO" in EXPERIMENTAL_ALGORITHMS)   # False (PPO 在稳定核心中)
 ```
@@ -116,12 +116,12 @@ print("PPO" in EXPERIMENTAL_ALGORITHMS)   # False (PPO 在稳定核心中)
 
 ---
 
-## rl_training.contrib - 社区扩展
+## axiomrl.contrib - 社区扩展
 
-`rl_training.contrib` 模块包含社区贡献的算法和工具，独立于核心和实验性 API 进行维护。
+`axiomrl.contrib` 模块包含社区贡献的算法和工具，独立于核心和实验性 API 进行维护。
 
 ```python
-from rl_training.contrib import RecurrentPPO
+from axiomrl.contrib import RecurrentPPO
 ```
 
 ### 可用扩展
@@ -151,25 +151,25 @@ algo_kwargs:
 ## 根包弃用导入
 
 !!! warning "弃用警告"
-    从 `rl_training` 根包直接导入非稳定核心算法的方式已被弃用，将在未来主要版本中移除。
+    从 `axiomrl` 根包直接导入非稳定核心算法的方式已被弃用，将在未来主要版本中移除。
 
 ### 弃用行为
 
 ```python
 # 稳定名称 - 正常工作，无警告
-from rl_training import PPO       # OK
-from rl_training import TrainConfig  # OK
+from axiomrl import PPO       # OK
+from axiomrl import TrainConfig  # OK
 
 # 实验性名称 - 触发 DeprecationWarning
-from rl_training import TQC  # DeprecationWarning!
+from axiomrl import TQC  # DeprecationWarning!
 ```
 
 触发的警告信息如下：
 
 ```
-DeprecationWarning: rl_training.TQC is no longer part of the stable root API
-and is deprecated; import advanced algorithms from rl_training.experimental
-or rl_training.api instead.
+DeprecationWarning: axiomrl.TQC is no longer part of the stable root API
+and is deprecated; import advanced algorithms from axiomrl.experimental
+or axiomrl.api instead.
 ```
 
 ---
@@ -178,39 +178,39 @@ or rl_training.api instead.
 
 ### 从根包导入迁移
 
-将非稳定核心算法的导入从根包迁移到 `rl_training.experimental`：
+将非稳定核心算法的导入从根包迁移到 `axiomrl.experimental`：
 
 ```python
 # 旧写法（弃用）
-from rl_training import TQC, REDQ, CrossQ
+from axiomrl import TQC, REDQ, CrossQ
 
 # 新写法（推荐）
-from rl_training.experimental import TQC, REDQ, CrossQ
+from axiomrl.experimental import TQC, REDQ, CrossQ
 ```
 
 ### 稳定核心算法无需迁移
 
-稳定核心算法可以从根包或 `rl_training.core` 导入，两种方式均受支持：
+稳定核心算法可以从根包或 `axiomrl.core` 导入，两种方式均受支持：
 
 ```python
 # 以下两种写法均可
-from rl_training import PPO
-from rl_training.core import PPO
+from axiomrl import PPO
+from axiomrl.core import PPO
 ```
 
 ### 批量检查与迁移
 
 ```python
-from rl_training.core import STABLE_ALGORITHMS
-from rl_training.experimental import EXPERIMENTAL_ALGORITHMS
+from axiomrl.core import STABLE_ALGORITHMS
+from axiomrl.experimental import EXPERIMENTAL_ALGORITHMS
 
 # 检查算法类别
 algo_name = "TQC"
 if algo_name in STABLE_ALGORITHMS:
-    print(f"从 rl_training.core 导入 {algo_name}")
+    print(f"从 axiomrl.core 导入 {algo_name}")
 elif algo_name in EXPERIMENTAL_ALGORITHMS:
-    print(f"从 rl_training.experimental 导入 {algo_name}")
+    print(f"从 axiomrl.experimental 导入 {algo_name}")
 ```
 
 !!! tip "消除警告"
-    如需消除弃用警告，只需将非稳定核心算法的导入路径改为 `rl_training.experimental` 即可。
+    如需消除弃用警告，只需将非稳定核心算法的导入路径改为 `axiomrl.experimental` 即可。

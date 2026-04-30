@@ -5,10 +5,9 @@ from collections.abc import Callable
 import numpy as np
 import torch
 
-from rl_training.experiment.config import TrainConfig
-from rl_training.runtime.evaluation_runner import EvaluationRunner
-from rl_training.runtime.types import MetricDict
-
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.runtime.evaluation_runner import EvaluationRunner
+from axiomrl.runtime.types import MetricDict
 
 DiscreteActionFn = Callable[[torch.Tensor], int]
 ContinuousActionFn = Callable[[torch.Tensor], np.ndarray]
@@ -21,11 +20,15 @@ def evaluate_discrete_episodes(
     num_episodes: int,
     action_fn: DiscreteActionFn,
 ) -> MetricDict:
-    return EvaluationRunner(
-        config=config,
-        device=device,
-        action_fn=action_fn,
-    ).evaluate(num_episodes=num_episodes).metrics
+    return (
+        EvaluationRunner(
+            config=config,
+            device=device,
+            action_fn=action_fn,
+        )
+        .evaluate(num_episodes=num_episodes)
+        .metrics
+    )
 
 
 def evaluate_continuous_episodes(
@@ -35,8 +38,12 @@ def evaluate_continuous_episodes(
     num_episodes: int,
     action_fn: ContinuousActionFn,
 ) -> MetricDict:
-    return EvaluationRunner(
-        config=config,
-        device=device,
-        action_fn=action_fn,
-    ).evaluate(num_episodes=num_episodes).metrics
+    return (
+        EvaluationRunner(
+            config=config,
+            device=device,
+            action_fn=action_fn,
+        )
+        .evaluate(num_episodes=num_episodes)
+        .metrics
+    )

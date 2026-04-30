@@ -7,39 +7,39 @@ import gymnasium as gym
 import numpy as np
 import torch
 
-from rl_training.algorithms.diamond import Diamond
-from rl_training.algorithms.dreamer import Dreamer
-from rl_training.algorithms.dreamerv3 import DreamerV3
-from rl_training.algorithms.eadream import EADream
-from rl_training.algorithms.horizon_imagination import HorizonImagination
-from rl_training.algorithms.mow import MoW
-from rl_training.algorithms.po_dreamer import PODreamer
-from rl_training.algorithms.twisted import Twisted
-from rl_training.data.replay_buffer import ReplayBuffer
-from rl_training.envs.factory import make_vector_env
-from rl_training.experiment.checkpointing import CheckpointState
-from rl_training.experiment.config import TrainConfig
-from rl_training.models.dreamer import DreamerModel
-from rl_training.models.eadream import EADreamModel
-from rl_training.models.mow import MoWModel
-from rl_training.models.po_dreamer import PODreamerModel
-from rl_training.runtime.callbacks import Callback
-from rl_training.runtime.controls import (
+from axiomrl.algorithms.diamond import Diamond
+from axiomrl.algorithms.dreamer import Dreamer
+from axiomrl.algorithms.dreamerv3 import DreamerV3
+from axiomrl.algorithms.eadream import EADream
+from axiomrl.algorithms.horizon_imagination import HorizonImagination
+from axiomrl.algorithms.mow import MoW
+from axiomrl.algorithms.po_dreamer import PODreamer
+from axiomrl.algorithms.twisted import Twisted
+from axiomrl.data.replay_buffer import ReplayBuffer
+from axiomrl.envs.factory import make_vector_env
+from axiomrl.experiment.checkpointing import CheckpointState
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.models.dreamer import DreamerModel
+from axiomrl.models.eadream import EADreamModel
+from axiomrl.models.mow import MoWModel
+from axiomrl.models.po_dreamer import PODreamerModel
+from axiomrl.runtime.callbacks import Callback
+from axiomrl.runtime.controls import (
     resolve_entropy_coefficient,
     resolve_eval_interval,
     should_run_periodic_eval,
 )
-from rl_training.runtime.evaluation_support import evaluate_discrete_episodes
-from rl_training.runtime.off_policy_trainer_utils import (
+from axiomrl.runtime.evaluation_support import evaluate_discrete_episodes
+from axiomrl.runtime.off_policy_trainer_utils import (
     capture_replay_resume_context,
     emit_collect_event,
     restore_replay_training_state,
     store_vector_transitions,
 )
-from rl_training.runtime.run_utils import save_training_checkpoint
-from rl_training.runtime.session import create_training_session
-from rl_training.runtime.trainer import TrainResult
-from rl_training.runtime.types import MetricDict
+from axiomrl.runtime.run_utils import save_training_checkpoint
+from axiomrl.runtime.session import create_training_session
+from axiomrl.runtime.trainer import TrainResult
+from axiomrl.runtime.types import MetricDict
 
 
 def _infer_spaces(envs: gym.vector.SyncVectorEnv) -> tuple[tuple[int, ...], int]:
@@ -189,9 +189,7 @@ def train_dreamer(
         if algorithm_cls is Twisted:
             algorithm_kwargs["reuse_loss_coef"] = float(config.algo_kwargs.get("reuse_loss_coef", 0.5))
             algorithm_kwargs["reuse_threshold"] = float(config.algo_kwargs.get("reuse_threshold", 0.03))
-            algorithm_kwargs["transport_temperature"] = float(
-                config.algo_kwargs.get("transport_temperature", 0.5)
-            )
+            algorithm_kwargs["transport_temperature"] = float(config.algo_kwargs.get("transport_temperature", 0.5))
         if algorithm_cls is EADream:
             algorithm_kwargs["event_loss_coef"] = float(config.algo_kwargs.get("event_loss_coef", 0.5))
             algorithm_kwargs["event_threshold"] = float(config.algo_kwargs.get("event_threshold", 0.01))

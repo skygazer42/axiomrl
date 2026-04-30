@@ -4,7 +4,7 @@
 
 **Goal:** Export explicit `manifest_alignment_fail_reasons` in zoo report and leaderboard outputs so CI and downstream tooling can see why the current drift gate would fail without parsing multiple summary counters.
 
-**Architecture:** Keep the change inside `src/rl_training/zoo_cli.py`. Reuse the existing manifest alignment summary plus the active CLI drift-gate options (`--fail-on-manifest-drift`, `--fail-on-manifest-drift-severity`, `--fail-on-manifest-drift-type`) to derive a normalized list of fail reasons, attach it to the rendered payload, and flatten it into text and CSV metadata.
+**Architecture:** Keep the change inside `src/axiomrl/zoo_cli.py`. Reuse the existing manifest alignment summary plus the active CLI drift-gate options (`--fail-on-manifest-drift`, `--fail-on-manifest-drift-severity`, `--fail-on-manifest-drift-type`) to derive a normalized list of fail reasons, attach it to the rendered payload, and flatten it into text and CSV metadata.
 
 **Tech Stack:** Python 3.10+, argparse, existing zoo CLI serializers, pytest.
 
@@ -29,7 +29,7 @@ Expected: FAIL because current payloads do not export a fail-reasons field.
 ### Task 2: Implement fail-reason export
 
 **Files:**
-- Modify: `src/rl_training/zoo_cli.py`
+- Modify: `src/axiomrl/zoo_cli.py`
 
 **Step 1: Write minimal implementation**
 - Add a helper that derives fail reasons from the manifest summary plus the active drift-gate options.
@@ -47,7 +47,7 @@ Expected: PASS.
 **Files:**
 - Modify: `README.md`
 - Modify: `zoo/README.md`
-- Modify: `src/rl_training/assets/zoo/README.md`
+- Modify: `src/axiomrl/assets/zoo/README.md`
 
 **Step 1: Add docs**
 - Document that machine-readable zoo outputs now include `manifest_alignment_fail_reasons`, reflecting the current CLI fail-gate configuration.

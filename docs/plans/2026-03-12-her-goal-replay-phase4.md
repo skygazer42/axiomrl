@@ -2,7 +2,7 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Add a first usable `HER` baseline to `rl_training` by combining goal-conditioned observation handling, future-goal replay relabeling, and a DDPG-based training path.
+**Goal:** Add a first usable `HER` baseline to `axiomrl` by combining goal-conditioned observation handling, future-goal replay relabeling, and a DDPG-based training path.
 
 **Architecture:** Keep the policy/runtime split simple. The environment continues to emit dict observations for goal-conditioned tasks, the HER replay buffer stores goal components separately, and the policy still consumes flat `observation + desired_goal` vectors. The first release uses a thin `HER` wrapper around the existing `DDPG` algorithm so the new package capability is replay relabeling, not a second actor-critic implementation.
 
@@ -13,9 +13,9 @@
 ### Task 1: Add built-in goal-conditioned env support and helpers
 
 **Files:**
-- Create: `src/rl_training/envs/goals.py`
-- Modify: `src/rl_training/envs/factory.py`
-- Modify: `src/rl_training/envs/__init__.py`
+- Create: `src/axiomrl/envs/goals.py`
+- Modify: `src/axiomrl/envs/factory.py`
+- Modify: `src/axiomrl/envs/__init__.py`
 - Create: `tests/test_goal_envs.py`
 
 **Step 1: Write the failing test**
@@ -46,8 +46,8 @@ Deferred until the user allows testing.
 ### Task 2: Add episodic HER replay relabeling
 
 **Files:**
-- Create: `src/rl_training/data/her_replay_buffer.py`
-- Modify: `src/rl_training/data/__init__.py`
+- Create: `src/axiomrl/data/her_replay_buffer.py`
+- Modify: `src/axiomrl/data/__init__.py`
 - Create: `tests/test_her_replay_buffer.py`
 
 **Step 1: Write the failing test**
@@ -78,15 +78,15 @@ Deferred until the user allows testing.
 ### Task 3: Add `HER` algorithm surface and trainer
 
 **Files:**
-- Create: `src/rl_training/algorithms/her.py`
-- Create: `src/rl_training/runtime/her_trainer.py`
-- Modify: `src/rl_training/algorithms/__init__.py`
-- Modify: `src/rl_training/experiment/registry.py`
-- Modify: `src/rl_training/api/algorithms.py`
-- Modify: `src/rl_training/api/__init__.py`
-- Modify: `src/rl_training/__init__.py`
+- Create: `src/axiomrl/algorithms/her.py`
+- Create: `src/axiomrl/runtime/her_trainer.py`
+- Modify: `src/axiomrl/algorithms/__init__.py`
+- Modify: `src/axiomrl/experiment/registry.py`
+- Modify: `src/axiomrl/api/algorithms.py`
+- Modify: `src/axiomrl/api/__init__.py`
+- Modify: `src/axiomrl/__init__.py`
 - Create: `configs/her/point_goal.yaml`
-- Create: `src/rl_training/assets/configs/her/point_goal.yaml`
+- Create: `src/axiomrl/assets/configs/her/point_goal.yaml`
 - Create: `tests/test_her_trainer_smoke.py`
 
 **Step 1: Write the failing test**

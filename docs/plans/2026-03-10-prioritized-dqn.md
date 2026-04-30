@@ -4,7 +4,7 @@
 
 **Goal:** Add `prioritized_dqn` as a first-class DQN-family algorithm using Prioritized Experience Replay (PER), with configs, examples, registry wiring, public API exports, and tests.
 
-**Architecture:** Introduce `PrioritizedReplayBuffer` in `rl_training.data` and extend the existing DQN update to support optional importance-sampling weights and expose per-batch TD errors for priority updates. Keep the existing `train_dqn` trainer entrypoint and registry evaluation/prediction flow, but select the prioritized buffer when `config.algo == "prioritized_dqn"`.
+**Architecture:** Introduce `PrioritizedReplayBuffer` in `axiomrl.data` and extend the existing DQN update to support optional importance-sampling weights and expose per-batch TD errors for priority updates. Keep the existing `train_dqn` trainer entrypoint and registry evaluation/prediction flow, but select the prioritized buffer when `config.algo == "prioritized_dqn"`.
 
 **Tech Stack:** Python 3.10, PyTorch, Gymnasium, pytest
 
@@ -38,10 +38,10 @@ Expected: FAIL because the buffer, wiring, exports, and scripts do not exist yet
 ### Task 2: Implement PrioritizedReplayBuffer + weighted DQN loss
 
 **Files:**
-- Create: `src/rl_training/data/prioritized_replay_buffer.py`
-- Modify: `src/rl_training/data/__init__.py`
-- Modify: `src/rl_training/algorithms/dqn.py`
-- Modify: `src/rl_training/runtime/dqn_trainer.py`
+- Create: `src/axiomrl/data/prioritized_replay_buffer.py`
+- Modify: `src/axiomrl/data/__init__.py`
+- Modify: `src/axiomrl/algorithms/dqn.py`
+- Modify: `src/axiomrl/runtime/dqn_trainer.py`
 
 **Step 1: Write minimal implementation**
 
@@ -60,11 +60,11 @@ Expected: PASS
 ### Task 3: Wire registry/API/configs/examples + verify
 
 **Files:**
-- Modify: `src/rl_training/experiment/registry.py`
-- Modify: `src/rl_training/api/algorithms.py`
-- Modify: `src/rl_training/api/__init__.py`
-- Modify: `src/rl_training/__init__.py`
-- Modify: `src/rl_training/algorithms/__init__.py`
+- Modify: `src/axiomrl/experiment/registry.py`
+- Modify: `src/axiomrl/api/algorithms.py`
+- Modify: `src/axiomrl/api/__init__.py`
+- Modify: `src/axiomrl/__init__.py`
+- Modify: `src/axiomrl/algorithms/__init__.py`
 - Create: `configs/prioritized_dqn/cartpole.yaml`
 - Create: `examples/prioritized_dqn_cartpole_reference.py`
 - Modify: `README.md`

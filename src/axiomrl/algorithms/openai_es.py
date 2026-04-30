@@ -4,8 +4,8 @@ from typing import Any
 
 import torch
 
-from rl_training.algorithms.base import UpdateResult
-from rl_training.models.mlp_ars import MLPARSModel
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.models.mlp_ars import MLPARSModel
 
 
 def _centered_ranks(values: torch.Tensor) -> torch.Tensor:

@@ -3,37 +3,37 @@ from __future__ import annotations
 import torch
 from torch import nn
 
-from rl_training.algorithms.c51_dqn import C51DQN as C51DQNAlgorithm
-from rl_training.algorithms.dqn import CQLDQN as CQLDQNAlgorithm
-from rl_training.algorithms.dqn import DQN as DQNAlgorithm
-from rl_training.algorithms.dqn import AdvantageLearningDQN as AdvantageLearningDQNAlgorithm
-from rl_training.algorithms.dqn import BoltzmannDoubleDQN as BoltzmannDoubleDQNAlgorithm
-from rl_training.algorithms.dqn import BoltzmannDQN as BoltzmannDQNAlgorithm
-from rl_training.algorithms.dqn import ClippedDoubleDQN as ClippedDoubleDQNAlgorithm
-from rl_training.algorithms.dqn import CQLDoubleDQN as CQLDoubleDQNAlgorithm
-from rl_training.algorithms.dqn import DoubleDQN as DoubleDQNAlgorithm
-from rl_training.algorithms.dqn import DuelingDQN as DuelingDQNAlgorithm
-from rl_training.algorithms.dqn import ExpectedDoubleDQN as ExpectedDoubleDQNAlgorithm
-from rl_training.algorithms.dqn import ExpectedSARSA as ExpectedSARSAAlgorithm
-from rl_training.algorithms.dqn import HystereticDQN as HystereticDQNAlgorithm
-from rl_training.algorithms.dqn import MellowmaxDQN as MellowmaxDQNAlgorithm
-from rl_training.algorithms.dqn import MunchausenDoubleDQN as MunchausenDoubleDQNAlgorithm
-from rl_training.algorithms.dqn import MunchausenDQN as MunchausenDQNAlgorithm
-from rl_training.algorithms.dqn import NoisyDQN as NoisyDQNAlgorithm
-from rl_training.algorithms.dqn import PersistentAdvantageLearningDQN as PersistentAdvantageLearningDQNAlgorithm
-from rl_training.algorithms.dqn import PrioritizedDQN as PrioritizedDQNAlgorithm
-from rl_training.algorithms.dqn import RainbowDQN as RainbowDQNAlgorithm
-from rl_training.algorithms.dqn import SoftDoubleDQN as SoftDoubleDQNAlgorithm
-from rl_training.algorithms.dqn import SoftDQN as SoftDQNAlgorithm
-from rl_training.algorithms.fqf import FQF as FQFAlgorithm
-from rl_training.algorithms.iqn import IQN as IQNAlgorithm
-from rl_training.algorithms.jowa import JOWA as JOWAAlgorithm
-from rl_training.algorithms.qr_dqn import QRDQN as QRDQNAlgorithm
-from rl_training.algorithms.spr import SPR as SPRAlgorithm
-from rl_training.experiment.checkpointing import CheckpointState
-from rl_training.experiment.config import TrainConfig
-from rl_training.experiment.registry_support import _infer_discrete_env_spaces
-from rl_training.models.cnn import (
+from axiomrl.algorithms.c51_dqn import C51DQN as C51DQNAlgorithm
+from axiomrl.algorithms.dqn import CQLDQN as CQLDQNAlgorithm
+from axiomrl.algorithms.dqn import DQN as DQNAlgorithm
+from axiomrl.algorithms.dqn import AdvantageLearningDQN as AdvantageLearningDQNAlgorithm
+from axiomrl.algorithms.dqn import BoltzmannDoubleDQN as BoltzmannDoubleDQNAlgorithm
+from axiomrl.algorithms.dqn import BoltzmannDQN as BoltzmannDQNAlgorithm
+from axiomrl.algorithms.dqn import ClippedDoubleDQN as ClippedDoubleDQNAlgorithm
+from axiomrl.algorithms.dqn import CQLDoubleDQN as CQLDoubleDQNAlgorithm
+from axiomrl.algorithms.dqn import DoubleDQN as DoubleDQNAlgorithm
+from axiomrl.algorithms.dqn import DuelingDQN as DuelingDQNAlgorithm
+from axiomrl.algorithms.dqn import ExpectedDoubleDQN as ExpectedDoubleDQNAlgorithm
+from axiomrl.algorithms.dqn import ExpectedSARSA as ExpectedSARSAAlgorithm
+from axiomrl.algorithms.dqn import HystereticDQN as HystereticDQNAlgorithm
+from axiomrl.algorithms.dqn import MellowmaxDQN as MellowmaxDQNAlgorithm
+from axiomrl.algorithms.dqn import MunchausenDoubleDQN as MunchausenDoubleDQNAlgorithm
+from axiomrl.algorithms.dqn import MunchausenDQN as MunchausenDQNAlgorithm
+from axiomrl.algorithms.dqn import NoisyDQN as NoisyDQNAlgorithm
+from axiomrl.algorithms.dqn import PersistentAdvantageLearningDQN as PersistentAdvantageLearningDQNAlgorithm
+from axiomrl.algorithms.dqn import PrioritizedDQN as PrioritizedDQNAlgorithm
+from axiomrl.algorithms.dqn import RainbowDQN as RainbowDQNAlgorithm
+from axiomrl.algorithms.dqn import SoftDoubleDQN as SoftDoubleDQNAlgorithm
+from axiomrl.algorithms.dqn import SoftDQN as SoftDQNAlgorithm
+from axiomrl.algorithms.fqf import FQF as FQFAlgorithm
+from axiomrl.algorithms.iqn import IQN as IQNAlgorithm
+from axiomrl.algorithms.jowa import JOWA as JOWAAlgorithm
+from axiomrl.algorithms.qr_dqn import QRDQN as QRDQNAlgorithm
+from axiomrl.algorithms.spr import SPR as SPRAlgorithm
+from axiomrl.experiment.checkpointing import CheckpointState
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.experiment.registry_support import _infer_discrete_env_spaces
+from axiomrl.models.cnn import (
     CNNC51QNetwork,
     CNNDuelingNoisyQNetwork,
     CNNDuelingQNetwork,
@@ -45,14 +45,14 @@ from rl_training.models.cnn import (
     CNNQRQNetwork,
     CNNSPRQNetwork,
 )
-from rl_training.models.mlp_c51_q_network import MLPC51QNetwork
-from rl_training.models.mlp_dueling_noisy_q_network import MLPDuelingNoisyQNetwork
-from rl_training.models.mlp_dueling_q_network import MLPDuelingQNetwork
-from rl_training.models.mlp_fqf_network import MLPFQFNetwork
-from rl_training.models.mlp_iqn_network import MLPIQNetwork
-from rl_training.models.mlp_noisy_q_network import MLPNoisyQNetwork
-from rl_training.models.mlp_q_network import MLPQNetwork
-from rl_training.models.mlp_qr_q_network import MLPQRQNetwork
+from axiomrl.models.mlp_c51_q_network import MLPC51QNetwork
+from axiomrl.models.mlp_dueling_noisy_q_network import MLPDuelingNoisyQNetwork
+from axiomrl.models.mlp_dueling_q_network import MLPDuelingQNetwork
+from axiomrl.models.mlp_fqf_network import MLPFQFNetwork
+from axiomrl.models.mlp_iqn_network import MLPIQNetwork
+from axiomrl.models.mlp_noisy_q_network import MLPNoisyQNetwork
+from axiomrl.models.mlp_q_network import MLPQNetwork
+from axiomrl.models.mlp_qr_q_network import MLPQRQNetwork
 
 
 def _build_image_dqn_loader(

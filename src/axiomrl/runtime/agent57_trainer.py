@@ -7,20 +7,20 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from rl_training.algorithms.agent57 import Agent57
-from rl_training.data.n_step import NStepAccumulator
-from rl_training.data.prioritized_recurrent_replay_buffer import PrioritizedRecurrentReplayBuffer
-from rl_training.envs.factory import make_vector_env
-from rl_training.experiment.checkpointing import CheckpointState
-from rl_training.experiment.config import TrainConfig
-from rl_training.models.rnd import RNDModel
-from rl_training.runtime.callbacks import Callback, CallbackList
-from rl_training.runtime.controls import (
+from axiomrl.algorithms.agent57 import Agent57
+from axiomrl.data.n_step import NStepAccumulator
+from axiomrl.data.prioritized_recurrent_replay_buffer import PrioritizedRecurrentReplayBuffer
+from axiomrl.envs.factory import make_vector_env
+from axiomrl.experiment.checkpointing import CheckpointState
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.models.rnd import RNDModel
+from axiomrl.runtime.callbacks import Callback, CallbackList
+from axiomrl.runtime.controls import (
     resolve_eval_interval,
     resolve_exploration_epsilon,
     should_run_evaluation,
 )
-from rl_training.runtime.r2d2_trainer import (
+from axiomrl.runtime.r2d2_trainer import (
     _append_recurrent_transitions,
     _beta_at_step,
     _build_q_network,
@@ -35,16 +35,16 @@ from rl_training.runtime.r2d2_trainer import (
     _restore_metadata_buffers,
     _restore_rollout_state,
 )
-from rl_training.runtime.resume_state import (
+from axiomrl.runtime.resume_state import (
     capture_global_random_state,
     capture_vector_env_resume_state,
     restore_global_random_state,
     restore_vector_env_resume_state,
 )
-from rl_training.runtime.run_utils import save_training_checkpoint, should_save_periodic_checkpoint
-from rl_training.runtime.session import create_training_session
-from rl_training.runtime.trainer import TrainerState, TrainResult
-from rl_training.runtime.types import MetricDict
+from axiomrl.runtime.run_utils import save_training_checkpoint, should_save_periodic_checkpoint
+from axiomrl.runtime.session import create_training_session
+from axiomrl.runtime.trainer import TrainerState, TrainResult
+from axiomrl.runtime.types import MetricDict
 
 
 def _build_rnd_model(config: TrainConfig, *, obs_shape: tuple[int, ...]) -> RNDModel:
@@ -253,7 +253,9 @@ def train_agent57(
             dones = np.logical_or(terminated, truncated).astype(np.float32)
             with torch.no_grad():
                 intrinsic_rewards = algorithm.intrinsic_reward(next_obs).detach().cpu().numpy().astype(np.float32)
-            combined_rewards = np.asarray(extrinsic_rewards, dtype=np.float32) + intrinsic_reward_coef * intrinsic_rewards
+            combined_rewards = (
+                np.asarray(extrinsic_rewards, dtype=np.float32) + intrinsic_reward_coef * intrinsic_rewards
+            )
 
             _append_recurrent_transitions(
                 replay_buffer=replay_buffer,

@@ -12,7 +12,7 @@ AxiomRL 将所有 API 划分为三个稳定性层级：
 
 ### :material-shield-check: 稳定层（Stable）
 
-**范围：** `rl_training` 根包 + `rl_training.core`
+**范围：** `axiomrl` 根包 + `axiomrl.core`
 
 - 受 [语义化版本](https://semver.org/lang/zh-CN/) 严格约束
 - 破坏性变更**仅在主版本（major）发布**
@@ -21,7 +21,7 @@ AxiomRL 将所有 API 划分为三个稳定性层级：
 
 ### :material-flask: 实验层（Experimental）
 
-**范围：** `rl_training.experimental`
+**范围：** `axiomrl.experimental`
 
 - API **可能在次版本（minor）发布中变更**
 - 用于孵化新特性，在获得充分验证后可能提升至稳定层
@@ -29,7 +29,7 @@ AxiomRL 将所有 API 划分为三个稳定性层级：
 
 ### :material-account-group: 社区 + Zoo 层（Contrib + Zoo）
 
-**范围：** `rl_training.contrib` + `zoo/`
+**范围：** `axiomrl.contrib` + `zoo/`
 
 - **无稳定性保证**
 - 社区贡献和基准预设可能随时变更
@@ -39,9 +39,9 @@ AxiomRL 将所有 API 划分为三个稳定性层级：
 
     | 层级 | 命名空间 | 版本约束 | 适用场景 |
     |---|---|---|---|
-    | 稳定 | `rl_training` / `rl_training.core` | 语义化版本 | 生产环境 |
-    | 实验 | `rl_training.experimental` | 次版本可变 | 新特性试用 |
-    | 社区 + Zoo | `rl_training.contrib` / `zoo/` | 无保证 | 实验、参考 |
+    | 稳定 | `axiomrl` / `axiomrl.core` | 语义化版本 | 生产环境 |
+    | 实验 | `axiomrl.experimental` | 次版本可变 | 新特性试用 |
+    | 社区 + Zoo | `axiomrl.contrib` / `zoo/` | 无保证 | 实验、参考 |
 
 ## 语义化版本规则
 
@@ -107,7 +107,7 @@ def old_function():
 
 ## 当前稳定核心
 
-以下算法属于 `rl_training.core` 稳定命名空间，受语义化版本保护：
+以下算法属于 `axiomrl.core` 稳定命名空间，受语义化版本保护：
 
 | 算法 | 类型 | 说明 |
 |---|---|---|
@@ -124,7 +124,7 @@ def old_function():
 
 ```python
 # 推荐的导入方式
-from rl_training.core import PPO, DQN, SAC
+from axiomrl.core import PPO, DQN, SAC
 ```
 
 ## 迁移指南
@@ -136,18 +136,18 @@ from rl_training.core import PPO, DQN, SAC
 === "旧方式（仍可用）"
 
     ```python
-    from rl_training import PPO
-    from rl_training import some_experimental_feature
+    from axiomrl import PPO
+    from axiomrl import some_experimental_feature
     ```
 
 === "新方式（推荐）"
 
     ```python
     # 稳定 API — 受语义化版本保护
-    from rl_training.core import PPO, SAC, DQN
+    from axiomrl.core import PPO, SAC, DQN
 
     # 实验性 API — 可能在次版本中变更
-    from rl_training.experimental import some_new_feature
+    from axiomrl.experimental import some_new_feature
     ```
 
 !!! warning "注意"
@@ -156,11 +156,11 @@ from rl_training.core import PPO, DQN, SAC
 
 ### 迁移步骤
 
-1. **审查当前导入**：检查代码中所有 `from rl_training import ...` 语句
+1. **审查当前导入**：检查代码中所有 `from axiomrl import ...` 语句
 2. **区分稳定与实验性 API**：对照上方的稳定核心列表
 3. **更新导入路径**：
-    - 稳定 API → `from rl_training.core import ...`
-    - 实验性功能 → `from rl_training.experimental import ...`
+    - 稳定 API → `from axiomrl.core import ...`
+    - 实验性功能 → `from axiomrl.experimental import ...`
 4. **运行测试**：确保迁移后功能正常
 
 ## Python 版本支持

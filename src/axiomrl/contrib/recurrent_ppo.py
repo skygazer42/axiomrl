@@ -5,8 +5,8 @@ from typing import Any
 import torch
 from torch import nn
 
-from rl_training.algorithms.base import UpdateResult
-from rl_training.models.recurrent.lstm_actor_critic import LSTMActorCritic
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.models.recurrent.lstm_actor_critic import LSTMActorCritic
 
 __all__ = ["RecurrentPPOAlgorithm"]
 

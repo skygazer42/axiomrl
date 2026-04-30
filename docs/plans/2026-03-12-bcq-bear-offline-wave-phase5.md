@@ -13,13 +13,13 @@
 ### Task 1: Add shared offline schedule and budget utilities
 
 **Files:**
-- Create: `src/rl_training/runtime/schedules.py`
-- Modify: `src/rl_training/runtime/controls.py`
-- Modify: `src/rl_training/runtime/bc_trainer.py`
-- Modify: `src/rl_training/runtime/awac_trainer.py`
-- Modify: `src/rl_training/runtime/iql_trainer.py`
-- Modify: `src/rl_training/runtime/cql_trainer.py`
-- Modify: `src/rl_training/runtime/td3_bc_trainer.py`
+- Create: `src/axiomrl/runtime/schedules.py`
+- Modify: `src/axiomrl/runtime/controls.py`
+- Modify: `src/axiomrl/runtime/bc_trainer.py`
+- Modify: `src/axiomrl/runtime/awac_trainer.py`
+- Modify: `src/axiomrl/runtime/iql_trainer.py`
+- Modify: `src/axiomrl/runtime/cql_trainer.py`
+- Modify: `src/axiomrl/runtime/td3_bc_trainer.py`
 - Create: `tests/test_training_schedules.py`
 - Modify: `tests/test_training_controls.py`
 
@@ -53,14 +53,14 @@ Deferred until the user allows testing.
 ### Task 2: Add shared offline dataset mixing and reward-preset support
 
 **Files:**
-- Modify: `src/rl_training/data/offline_dataset.py`
-- Modify: `src/rl_training/data/dataset_loaders.py`
-- Modify: `src/rl_training/runtime/iql_trainer.py`
-- Modify: `src/rl_training/runtime/cql_trainer.py`
-- Modify: `src/rl_training/runtime/td3_bc_trainer.py`
-- Modify: `src/rl_training/runtime/awac_trainer.py`
-- Modify: `src/rl_training/runtime/bc_trainer.py`
-- Create: `src/rl_training/assets/configs/rewards/continuous_control.yaml`
+- Modify: `src/axiomrl/data/offline_dataset.py`
+- Modify: `src/axiomrl/data/dataset_loaders.py`
+- Modify: `src/axiomrl/runtime/iql_trainer.py`
+- Modify: `src/axiomrl/runtime/cql_trainer.py`
+- Modify: `src/axiomrl/runtime/td3_bc_trainer.py`
+- Modify: `src/axiomrl/runtime/awac_trainer.py`
+- Modify: `src/axiomrl/runtime/bc_trainer.py`
+- Create: `src/axiomrl/assets/configs/rewards/continuous_control.yaml`
 - Create: `tests/test_offline_dataset_mixing.py`
 - Modify: `tests/test_dataset_loaders.py`
 
@@ -93,17 +93,17 @@ Deferred until the user allows testing.
 ### Task 3: Add the BCQ algorithm, model, and trainer
 
 **Files:**
-- Create: `src/rl_training/models/mlp_bcq.py`
-- Modify: `src/rl_training/models/__init__.py`
-- Create: `src/rl_training/algorithms/bcq.py`
-- Modify: `src/rl_training/algorithms/__init__.py`
-- Create: `src/rl_training/runtime/bcq_trainer.py`
-- Modify: `src/rl_training/experiment/registry.py`
-- Modify: `src/rl_training/api/algorithms.py`
-- Modify: `src/rl_training/api/__init__.py`
-- Modify: `src/rl_training/__init__.py`
+- Create: `src/axiomrl/models/mlp_bcq.py`
+- Modify: `src/axiomrl/models/__init__.py`
+- Create: `src/axiomrl/algorithms/bcq.py`
+- Modify: `src/axiomrl/algorithms/__init__.py`
+- Create: `src/axiomrl/runtime/bcq_trainer.py`
+- Modify: `src/axiomrl/experiment/registry.py`
+- Modify: `src/axiomrl/api/algorithms.py`
+- Modify: `src/axiomrl/api/__init__.py`
+- Modify: `src/axiomrl/__init__.py`
 - Create: `configs/bcq/pendulum.yaml`
-- Create: `src/rl_training/assets/configs/bcq/pendulum.yaml`
+- Create: `src/axiomrl/assets/configs/bcq/pendulum.yaml`
 - Create: `tests/test_bcq_update.py`
 - Create: `tests/test_bcq_trainer_smoke.py`
 
@@ -137,16 +137,16 @@ Deferred until the user allows testing.
 ### Task 4: Add the BEAR algorithm and trainer on the same offline support layer
 
 **Files:**
-- Create: `src/rl_training/algorithms/bear.py`
-- Create: `src/rl_training/runtime/bear_trainer.py`
-- Modify: `src/rl_training/models/mlp_bcq.py`
-- Modify: `src/rl_training/algorithms/__init__.py`
-- Modify: `src/rl_training/experiment/registry.py`
-- Modify: `src/rl_training/api/algorithms.py`
-- Modify: `src/rl_training/api/__init__.py`
-- Modify: `src/rl_training/__init__.py`
+- Create: `src/axiomrl/algorithms/bear.py`
+- Create: `src/axiomrl/runtime/bear_trainer.py`
+- Modify: `src/axiomrl/models/mlp_bcq.py`
+- Modify: `src/axiomrl/algorithms/__init__.py`
+- Modify: `src/axiomrl/experiment/registry.py`
+- Modify: `src/axiomrl/api/algorithms.py`
+- Modify: `src/axiomrl/api/__init__.py`
+- Modify: `src/axiomrl/__init__.py`
 - Create: `configs/bear/pendulum.yaml`
-- Create: `src/rl_training/assets/configs/bear/pendulum.yaml`
+- Create: `src/axiomrl/assets/configs/bear/pendulum.yaml`
 - Create: `tests/test_bear_update.py`
 - Create: `tests/test_bear_trainer_smoke.py`
 

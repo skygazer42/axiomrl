@@ -6,10 +6,9 @@ import torch
 from torch import nn
 from torch.distributions import Normal
 
-from rl_training.models.mlp_sac import ACTION_EPS, LOG_STD_MAX, LOG_STD_MIN, SACSample
-from rl_training.models.mlp_td3 import _build_mlp
-from rl_training.policies.base import PolicyOutput
-
+from axiomrl.models.mlp_sac import ACTION_EPS, LOG_STD_MAX, LOG_STD_MIN, SACSample
+from axiomrl.models.mlp_td3 import _build_mlp
+from axiomrl.policies.base import PolicyOutput
 
 LATENT_LOG_STD_MIN = -4.0
 LATENT_LOG_STD_MAX = 4.0

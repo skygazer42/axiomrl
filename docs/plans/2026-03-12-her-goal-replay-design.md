@@ -71,8 +71,8 @@ This gives the package:
 
 The first package-facing `HER` surface should include:
 
-- `rl_training.algorithms.HER` as a thin goal-conditioned wrapper over `DDPG`
-- `rl_training.runtime.her_trainer.train_her(...)`
+- `axiomrl.algorithms.HER` as a thin goal-conditioned wrapper over `DDPG`
+- `axiomrl.runtime.her_trainer.train_her(...)`
 - `configs/her/point_goal.yaml`
 - registry / public API / packaged asset integration
 

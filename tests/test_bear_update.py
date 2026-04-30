@@ -1,8 +1,8 @@
 import pytest
 import torch
 
-from rl_training.algorithms.bear import BEAR, bear_loss
-from rl_training.models.mlp_bear import MLPBEARModel
+from axiomrl.algorithms.bear import BEAR, bear_loss
+from axiomrl.models.mlp_bear import MLPBEARModel
 
 
 def test_bear_loss_returns_named_metrics() -> None:

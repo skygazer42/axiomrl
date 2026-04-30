@@ -1,7 +1,7 @@
-import torch
 import pytest
+import torch
 
-from rl_training.data import RecurrentReplayBuffer
+from axiomrl.data import RecurrentReplayBuffer
 
 
 def test_recurrent_replay_buffer_stores_chunks_with_masks_and_initial_state() -> None:

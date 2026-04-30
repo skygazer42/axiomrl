@@ -2,43 +2,43 @@ from __future__ import annotations
 
 import torch
 
-from rl_training.algorithms.diamond import Diamond as DiamondAlgorithm
-from rl_training.algorithms.discrete_sac import DiscreteSAC as DiscreteSACAlgorithm
-from rl_training.algorithms.dreamer import Dreamer as DreamerAlgorithm
-from rl_training.algorithms.dreamerv3 import DreamerV3 as DreamerV3Algorithm
-from rl_training.algorithms.eadream import EADream as EADreamAlgorithm
-from rl_training.algorithms.efficientzero import EfficientZero as EfficientZeroAlgorithm
-from rl_training.algorithms.gumbel_muzero import GumbelMuZero as GumbelMuZeroAlgorithm
-from rl_training.algorithms.her import HER as HERAlgorithm
-from rl_training.algorithms.horizon_imagination import (
+from axiomrl.algorithms.diamond import Diamond as DiamondAlgorithm
+from axiomrl.algorithms.discrete_sac import DiscreteSAC as DiscreteSACAlgorithm
+from axiomrl.algorithms.dreamer import Dreamer as DreamerAlgorithm
+from axiomrl.algorithms.dreamerv3 import DreamerV3 as DreamerV3Algorithm
+from axiomrl.algorithms.eadream import EADream as EADreamAlgorithm
+from axiomrl.algorithms.efficientzero import EfficientZero as EfficientZeroAlgorithm
+from axiomrl.algorithms.gumbel_muzero import GumbelMuZero as GumbelMuZeroAlgorithm
+from axiomrl.algorithms.her import HER as HERAlgorithm
+from axiomrl.algorithms.horizon_imagination import (
     HorizonImagination as HorizonImaginationAlgorithm,
 )
-from rl_training.algorithms.mbpo import MBPO as MBPOAlgorithm
-from rl_training.algorithms.mopo import MOPO as MOPOAlgorithm
-from rl_training.algorithms.mow import MoW as MoWAlgorithm
-from rl_training.algorithms.muzero import MuZero as MuZeroAlgorithm
-from rl_training.algorithms.muzero import MuZeroMCTSConfig
-from rl_training.algorithms.pets import PETS as PETSAlgorithm
-from rl_training.algorithms.po_dreamer import PODreamer as PODreamerAlgorithm
-from rl_training.algorithms.scalezero import ScaleZero as ScaleZeroAlgorithm
-from rl_training.algorithms.twisted import Twisted as TwistedAlgorithm
-from rl_training.experiment.checkpointing import CheckpointState
-from rl_training.experiment.config import TrainConfig
-from rl_training.experiment.registry_support import (
+from axiomrl.algorithms.mbpo import MBPO as MBPOAlgorithm
+from axiomrl.algorithms.mopo import MOPO as MOPOAlgorithm
+from axiomrl.algorithms.mow import MoW as MoWAlgorithm
+from axiomrl.algorithms.muzero import MuZero as MuZeroAlgorithm
+from axiomrl.algorithms.muzero import MuZeroMCTSConfig
+from axiomrl.algorithms.pets import PETS as PETSAlgorithm
+from axiomrl.algorithms.po_dreamer import PODreamer as PODreamerAlgorithm
+from axiomrl.algorithms.scalezero import ScaleZero as ScaleZeroAlgorithm
+from axiomrl.algorithms.twisted import Twisted as TwistedAlgorithm
+from axiomrl.experiment.checkpointing import CheckpointState
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.experiment.registry_support import (
     _infer_continuous_env_spaces,
     _infer_discrete_env_spaces,
 )
-from rl_training.models.dreamer import DreamerModel
-from rl_training.models.eadream import EADreamModel
-from rl_training.models.mlp_ddpg import MLPDDPGModel
-from rl_training.models.mlp_discrete_sac import MLPDiscreteSACModel
-from rl_training.models.mlp_mopo import MLPMOPOEnsembleModel
-from rl_training.models.mlp_sac import MLPSACModel
-from rl_training.models.mow import MoWModel
-from rl_training.models.muzero import MuZeroModel
-from rl_training.models.po_dreamer import PODreamerModel
-from rl_training.models.scalezero import ScaleZeroModel
-from rl_training.runtime.her_trainer import _infer_her_spaces
+from axiomrl.models.dreamer import DreamerModel
+from axiomrl.models.eadream import EADreamModel
+from axiomrl.models.mlp_ddpg import MLPDDPGModel
+from axiomrl.models.mlp_discrete_sac import MLPDiscreteSACModel
+from axiomrl.models.mlp_mopo import MLPMOPOEnsembleModel
+from axiomrl.models.mlp_sac import MLPSACModel
+from axiomrl.models.mow import MoWModel
+from axiomrl.models.muzero import MuZeroModel
+from axiomrl.models.po_dreamer import PODreamerModel
+from axiomrl.models.scalezero import ScaleZeroModel
+from axiomrl.runtime.her_trainer import _infer_her_spaces
 
 
 def _load_mopo_algorithm(

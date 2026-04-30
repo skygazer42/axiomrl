@@ -6,19 +6,19 @@ import gymnasium as gym
 import numpy as np
 import pytest
 
-from rl_training.envs.atari import (
+from axiomrl.envs.atari import (
     ChannelFirstObservation,
     apply_atari_wrappers,
     resolve_atari_wrapper_config,
     split_env_kwargs,
 )
-from rl_training.envs.factory import build_env
-from rl_training.envs.tennis_events import (
+from axiomrl.envs.factory import build_env
+from axiomrl.envs.tennis_events import (
     TennisEventConfig,
     TennisEventRewardWrapper,
     resolve_tennis_event_wrapper_config,
 )
-from rl_training.experiment.config import TrainConfig
+from axiomrl.experiment.config import TrainConfig
 
 
 class DummyImageEnv(gym.Env):
@@ -129,6 +129,10 @@ def _stacked_ball_frame(*xs: int, y: int = 40) -> np.ndarray:
     for channel, x in enumerate(xs[-4:]):
         frame[channel, y, x] = 255
     return frame
+
+
+def _install_fake_ale(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setitem(sys.modules, "ale_py", ModuleType("ale_py"))
 
 
 def test_split_env_kwargs_separates_wrapper_config() -> None:
@@ -556,6 +560,7 @@ def test_channel_first_observation_converts_hwc_to_chw() -> None:
 
 
 def test_build_env_applies_atari_wrappers_when_requested(monkeypatch, tmp_path: Path) -> None:
+    _install_fake_ale(monkeypatch)
     monkeypatch.setattr(gym, "make", lambda env_id, **kwargs: DummyImageEnv())
     monkeypatch.setattr(gym.wrappers, "AtariPreprocessing", DummyAtariPreprocessing)
 
@@ -628,6 +633,7 @@ def test_build_env_registers_ale_envs_before_retrying_make(monkeypatch, tmp_path
 
 
 def test_build_env_prefers_generic_reward_strategy_over_default_atari_clip(monkeypatch, tmp_path: Path) -> None:
+    _install_fake_ale(monkeypatch)
     monkeypatch.setattr(gym, "make", lambda env_id, **kwargs: DummyImageEnv())
     monkeypatch.setattr(gym.wrappers, "AtariPreprocessing", DummyAtariPreprocessing)
 
@@ -661,6 +667,7 @@ def test_build_env_keeps_explicit_atari_clip_reward_with_generic_reward_strategy
     monkeypatch,
     tmp_path: Path,
 ) -> None:
+    _install_fake_ale(monkeypatch)
     monkeypatch.setattr(gym, "make", lambda env_id, **kwargs: DummyImageEnv())
     monkeypatch.setattr(gym.wrappers, "AtariPreprocessing", DummyAtariPreprocessing)
 
@@ -694,6 +701,7 @@ def test_build_env_keeps_explicit_atari_clip_reward_with_generic_reward_strategy
 
 
 def test_build_env_applies_evaluation_env_overrides_for_atari_protocol(monkeypatch, tmp_path: Path) -> None:
+    _install_fake_ale(monkeypatch)
     captured_kwargs: dict[str, object] = {}
 
     def _make_env(env_id: str, **kwargs):
@@ -750,6 +758,7 @@ def test_build_env_applies_evaluation_env_overrides_for_atari_protocol(monkeypat
 
 
 def test_build_env_applies_training_env_overrides_for_atari_protocol(monkeypatch, tmp_path: Path) -> None:
+    _install_fake_ale(monkeypatch)
     captured_kwargs: dict[str, object] = {}
 
     def _make_env(env_id: str, **kwargs):

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+  <title>TensorBoard Logging</title>
+  <path d="M3 21 L21 21"/>
+  <rect x="5" y="13" width="3" height="8"/>
+  <rect x="10.5" y="9" width="3" height="12"/>
+  <rect x="16" y="5" width="3" height="16"/>
+  <path d="M5 11 L11 7 L17 9 L21 4" stroke-dasharray="2 1.5" opacity="0.7"/>
+</svg>

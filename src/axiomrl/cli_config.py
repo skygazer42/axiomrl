@@ -8,8 +8,8 @@ from typing import Any, cast
 
 import yaml
 
-from rl_training.experiment.config import TrainConfig
-from rl_training.resources import find_packaged_asset
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.resources import find_packaged_asset
 
 
 def _load_yaml_mapping(path: Path) -> dict[str, Any]:
@@ -57,7 +57,7 @@ def _load_config_payload(path: Path, *, visited: set[Path] | None = None) -> dic
 
     linked_config = payload.get("config")
     if isinstance(linked_config, str):
-        from rl_training.zoo.manifests import apply_manifest_defaults_to_config_payload
+        from axiomrl.zoo.manifests import apply_manifest_defaults_to_config_payload
 
         linked_path = _resolve_linked_config_path(resolved_path, linked_config)
         linked_payload = _load_config_payload(linked_path, visited=seen)

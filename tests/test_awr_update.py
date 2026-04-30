@@ -1,8 +1,8 @@
 import pytest
 import torch
 
-from rl_training.algorithms.awr import AWR, awr_loss
-from rl_training.models.mlp_iql import MLPIQLModel
+from axiomrl.algorithms.awr import AWR, awr_loss
+from axiomrl.models.mlp_iql import MLPIQLModel
 
 
 def test_awr_loss_returns_named_metrics() -> None:
@@ -74,4 +74,3 @@ def test_awr_update_returns_named_metrics() -> None:
         "advantage_weight_mean",
         "behavior_logprob_mean",
     }
-

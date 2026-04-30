@@ -1,7 +1,7 @@
 import torch
 
-from rl_training.algorithms.mopo import MOPO, mopo_model_loss
-from rl_training.models import MLPMOPOEnsembleModel, MLPSACModel
+from axiomrl.algorithms.mopo import MOPO, mopo_model_loss
+from axiomrl.models import MLPMOPOEnsembleModel, MLPSACModel
 
 
 def test_mopo_model_loss_returns_named_metrics() -> None:

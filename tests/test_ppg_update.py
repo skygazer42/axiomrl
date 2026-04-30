@@ -2,8 +2,8 @@ import copy
 
 import torch
 
-from rl_training.algorithms.ppg import PPG, ppg_auxiliary_loss, ppg_loss
-from rl_training.models import MLPPPGModel
+from axiomrl.algorithms.ppg import PPG, ppg_auxiliary_loss, ppg_loss
+from axiomrl.models import MLPPPGModel
 
 
 def test_mlp_ppg_model_act_returns_policy_output() -> None:

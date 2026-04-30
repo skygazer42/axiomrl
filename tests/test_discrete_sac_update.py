@@ -1,7 +1,7 @@
 import torch
 
-from rl_training.algorithms.discrete_sac import DiscreteSAC, discrete_sac_loss
-from rl_training.models.mlp_discrete_sac import MLPDiscreteSACModel
+from axiomrl.algorithms.discrete_sac import DiscreteSAC, discrete_sac_loss
+from axiomrl.models.mlp_discrete_sac import MLPDiscreteSACModel
 
 
 def test_discrete_sac_loss_returns_named_metrics() -> None:

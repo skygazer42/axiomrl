@@ -1,7 +1,7 @@
 import torch
 
-from rl_training.algorithms.ppo import PPO, ppo_loss
-from rl_training.models.mlp_actor_critic import MLPActorCritic
+from axiomrl.algorithms.ppo import PPO, ppo_loss
+from axiomrl.models.mlp_actor_critic import MLPActorCritic
 
 
 def test_mlp_actor_critic_act_returns_policy_output() -> None:

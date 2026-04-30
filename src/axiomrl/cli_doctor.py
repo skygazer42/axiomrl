@@ -3,7 +3,7 @@ from __future__ import annotations
 import platform
 import sys
 
-from rl_training.version import __version__
+from axiomrl.version import __version__
 
 
 def print_doctor() -> None:
@@ -45,7 +45,7 @@ def print_doctor() -> None:
     print(f"pygame_version={resolve_version('pygame')}")
     print(f"minari_version={resolve_version('minari')}")
     try:
-        from rl_training.envs.atari import probe_atari_runtime
+        from axiomrl.envs.atari import probe_atari_runtime
     except Exception as exc:  # pragma: no cover - diagnostic fallback
         atari_status = {
             "atari_env_registration": "unavailable",

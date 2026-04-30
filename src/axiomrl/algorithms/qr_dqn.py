@@ -5,8 +5,8 @@ from typing import Any
 
 import torch
 
-from rl_training.algorithms.base import UpdateResult
-from rl_training.models.mlp_qr_q_network import MLPQRQNetwork
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.models.mlp_qr_q_network import MLPQRQNetwork
 
 
 def _quantile_huber_loss(
@@ -160,4 +160,3 @@ class QRDQN:
     def set_eval_mode(self) -> None:
         self.q_network.eval()
         self.target_network.eval()
-

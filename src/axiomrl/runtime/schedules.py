@@ -84,7 +84,7 @@ def iter_optimizers(owner: object) -> tuple[torch.optim.Optimizer, ...]:
                 seen_ids.add(candidate_id)
                 discovered.append(candidate)
             return
-        if isinstance(candidate, Sequence) and not isinstance(candidate, (str, bytes)):
+        if isinstance(candidate, Sequence) and not isinstance(candidate, str | bytes):
             for item in candidate:
                 _collect(item)
 

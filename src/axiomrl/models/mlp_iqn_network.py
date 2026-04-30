@@ -5,7 +5,7 @@ from collections.abc import Sequence
 import torch
 from torch import nn
 
-from rl_training.models.mlp_q_network import _build_mlp
+from axiomrl.models.mlp_q_network import _build_mlp
 
 
 class MLPIQNetwork(nn.Module):
@@ -103,9 +103,7 @@ class MLPIQNetwork(nn.Module):
 
         state_features = self.state_activation(self.state_encoder(obs_tensor))
         cosine_embeddings = torch.cos(
-            torch.pi
-            * tau_tensor.unsqueeze(-1)
-            * self.cosine_basis.to(device=obs_tensor.device, dtype=obs_tensor.dtype)
+            torch.pi * tau_tensor.unsqueeze(-1) * self.cosine_basis.to(device=obs_tensor.device, dtype=obs_tensor.dtype)
         )
         quantile_features = self.quantile_activation(self.quantile_layer(cosine_embeddings))
 

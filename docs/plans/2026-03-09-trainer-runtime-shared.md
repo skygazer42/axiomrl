@@ -13,7 +13,7 @@
 ### Task 1: Add a shared runtime utilities module
 
 **Files:**
-- Create: `src/rl_training/runtime/run_utils.py`
+- Create: `src/axiomrl/runtime/run_utils.py`
 - Create: `tests/test_run_utils.py`
 
 **Step 1: Write the failing test**
@@ -42,9 +42,9 @@ Expected: PASS
 ### Task 2: Move PPO, DQN, and SAC trainers onto the shared utilities
 
 **Files:**
-- Modify: `src/rl_training/runtime/ppo_trainer.py`
-- Modify: `src/rl_training/runtime/dqn_trainer.py`
-- Modify: `src/rl_training/runtime/sac_trainer.py`
+- Modify: `src/axiomrl/runtime/ppo_trainer.py`
+- Modify: `src/axiomrl/runtime/dqn_trainer.py`
+- Modify: `src/axiomrl/runtime/sac_trainer.py`
 
 **Step 1: Use the existing smoke tests**
 

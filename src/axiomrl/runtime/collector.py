@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Protocol
 
-from rl_training.runtime.types import MetricDict
+from axiomrl.runtime.types import MetricDict
 
 
 @dataclass(slots=True)
@@ -15,21 +15,18 @@ class CollectResult:
 
 
 class Collector(Protocol):
-    def reset(self) -> None:
-        ...
+    def reset(self) -> None: ...
 
     def collect_steps(
         self,
         *,
         num_steps: int,
         deterministic: bool = False,
-    ) -> CollectResult:
-        ...
+    ) -> CollectResult: ...
 
     def collect_episodes(
         self,
         *,
         num_episodes: int,
         deterministic: bool = False,
-    ) -> CollectResult:
-        ...
+    ) -> CollectResult: ...

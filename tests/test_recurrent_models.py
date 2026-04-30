@@ -1,7 +1,7 @@
 import pytest
 import torch
 
-from rl_training.models import LSTMActorCritic
+from axiomrl.models import LSTMActorCritic
 
 
 def test_lstm_actor_critic_vector_obs_returns_actions_values_and_state() -> None:

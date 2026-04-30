@@ -6,8 +6,8 @@ from typing import Any
 import torch
 from torch.nn import functional as F
 
-from rl_training.algorithms.base import UpdateResult
-from rl_training.models.cnn.drqv2 import CNNDrQv2Model
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.models.cnn.drqv2 import CNNDrQv2Model
 
 
 def _random_crop(obs: torch.Tensor, *, pad: int) -> torch.Tensor:
@@ -24,7 +24,12 @@ def _random_crop(obs: torch.Tensor, *, pad: int) -> torch.Tensor:
     offsets_x = torch.randint(0, max_offset, (batch_size,), device=obs_tensor.device)
 
     cropped = [
-        padded[index : index + 1, :, int(offset_y.item()) : int(offset_y.item()) + height, int(offset_x.item()) : int(offset_x.item()) + width]
+        padded[
+            index : index + 1,
+            :,
+            int(offset_y.item()) : int(offset_y.item()) + height,
+            int(offset_x.item()) : int(offset_x.item()) + width,
+        ]
         for index, (offset_y, offset_x) in enumerate(zip(offsets_y, offsets_x, strict=True))
     ]
     return torch.cat(cropped, dim=0)

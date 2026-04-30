@@ -1,7 +1,7 @@
 import torch
 
-from rl_training.algorithms.drqn import DRQN, drqn_loss
-from rl_training.models import LSTMQNetwork
+from axiomrl.algorithms.drqn import DRQN, drqn_loss
+from axiomrl.models import LSTMQNetwork
 
 
 def _make_sequence_batch() -> dict[str, torch.Tensor]:

@@ -1,12 +1,12 @@
-import torch
 import pytest
+import torch
 from torch import nn
 
-from rl_training.algorithms.dqn import DQN, dqn_loss
-from rl_training.models.mlp_dueling_noisy_q_network import MLPDuelingNoisyQNetwork
-from rl_training.models.mlp_dueling_q_network import MLPDuelingQNetwork
-from rl_training.models.mlp_noisy_q_network import MLPNoisyQNetwork
-from rl_training.models.mlp_q_network import MLPQNetwork
+from axiomrl.algorithms.dqn import DQN, dqn_loss
+from axiomrl.models.mlp_dueling_noisy_q_network import MLPDuelingNoisyQNetwork
+from axiomrl.models.mlp_dueling_q_network import MLPDuelingQNetwork
+from axiomrl.models.mlp_noisy_q_network import MLPNoisyQNetwork
+from axiomrl.models.mlp_q_network import MLPQNetwork
 
 
 class FixedQNetwork(nn.Module):

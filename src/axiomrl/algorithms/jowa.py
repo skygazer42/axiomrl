@@ -5,9 +5,9 @@ from typing import Any
 import torch
 from torch.nn import functional as F
 
-from rl_training.algorithms.base import UpdateResult
-from rl_training.algorithms.dqn import DQN, _weighted_smooth_l1_loss
-from rl_training.models.cnn.jowa_q_network import CNNJOWAQNetwork
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.algorithms.dqn import DQN, _weighted_smooth_l1_loss
+from axiomrl.models.cnn.jowa_q_network import CNNJOWAQNetwork
 
 
 class JOWA(DQN):
@@ -120,7 +120,9 @@ class JOWA(DQN):
 
     def load_state_dict(self, state_dict: dict[str, Any]) -> None:
         super().load_state_dict(state_dict)
-        self.jowa_world_model_loss_coef = float(state_dict.get("jowa_world_model_loss_coef", self.jowa_world_model_loss_coef))
+        self.jowa_world_model_loss_coef = float(
+            state_dict.get("jowa_world_model_loss_coef", self.jowa_world_model_loss_coef)
+        )
         self.jowa_reward_loss_coef = float(state_dict.get("jowa_reward_loss_coef", self.jowa_reward_loss_coef))
         self.jowa_reconstruction_loss_coef = float(
             state_dict.get("jowa_reconstruction_loss_coef", self.jowa_reconstruction_loss_coef)

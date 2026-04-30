@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 import torch
 
-from rl_training.data.replay_buffer import ReplayBuffer
+from axiomrl.data.replay_buffer import ReplayBuffer
 
 
 def test_replay_buffer_add_and_sample() -> None:

@@ -1,7 +1,7 @@
 import torch
 
-from rl_training.algorithms.curl import CURL, curl_loss
-from rl_training.models import CNNCURLModel
+from axiomrl.algorithms.curl import CURL, curl_loss
+from axiomrl.models import CNNCURLModel
 
 
 def test_curl_loss_returns_named_metrics() -> None:
@@ -20,7 +20,14 @@ def test_curl_loss_returns_named_metrics() -> None:
         }
     )
 
-    assert set(metrics) == {"critic_loss", "actor_loss", "target_q_mean", "entropy_term", "curl_loss", "total_critic_loss"}
+    assert set(metrics) == {
+        "critic_loss",
+        "actor_loss",
+        "target_q_mean",
+        "entropy_term",
+        "curl_loss",
+        "total_critic_loss",
+    }
 
 
 def test_curl_update_returns_expected_metrics() -> None:

@@ -1,13 +1,13 @@
 from pathlib import Path
 from types import SimpleNamespace
 
-import rl_training.experiment.default_manager as default_manager_module
-from rl_training.experiment.config import TrainConfig
-from rl_training.experiment.default_manager import DefaultExperimentManager
-from rl_training.experiment.sweeps import SeedSweepPlan
-from rl_training.runtime import runner as runner_module
-from rl_training.runtime.runner import FunctionRunner
-from rl_training.runtime.trainer import TrainResult
+import axiomrl.experiment.default_manager as default_manager_module
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.experiment.default_manager import DefaultExperimentManager
+from axiomrl.experiment.sweeps import SeedSweepPlan
+from axiomrl.runtime import runner as runner_module
+from axiomrl.runtime.runner import FunctionRunner
+from axiomrl.runtime.trainer import TrainResult
 
 
 def test_default_experiment_manager_setup_runner_executes_training(tmp_path: Path) -> None:

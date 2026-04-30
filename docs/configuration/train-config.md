@@ -4,12 +4,12 @@ title: TrainConfig 完整参考
 
 # TrainConfig 完整参考
 
-`TrainConfig` 是 AxiomRL 训练流程的核心配置数据类，定义于 `rl_training.experiment.config`。所有 YAML 配置文件最终解析为该类的实例。
+`TrainConfig` 是 AxiomRL 训练流程的核心配置数据类，定义于 `axiomrl.experiment.config`。所有 YAML 配置文件最终解析为该类的实例。
 
 ```python
-from rl_training.experiment.config import TrainConfig
+from axiomrl.experiment.config import TrainConfig
 # 或者通过稳定核心 API 导入
-from rl_training.core import TrainConfig
+from axiomrl.core import TrainConfig
 ```
 
 ---

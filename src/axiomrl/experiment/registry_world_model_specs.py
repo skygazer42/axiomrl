@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from rl_training.experiment.registry_evaluators import (
+from axiomrl.experiment.registry_evaluators import (
     _evaluate_diamond,
     _evaluate_dreamer,
     _evaluate_dreamerv3,
@@ -17,7 +17,7 @@ from rl_training.experiment.registry_evaluators import (
     _evaluate_scalezero,
     _evaluate_twisted,
 )
-from rl_training.experiment.registry_predictors import (
+from axiomrl.experiment.registry_predictors import (
     _predict_diamond,
     _predict_dreamer,
     _predict_dreamerv3,
@@ -34,13 +34,13 @@ from rl_training.experiment.registry_predictors import (
     _predict_scalezero,
     _predict_twisted,
 )
-from rl_training.experiment.registry_types import AlgorithmSpec
-from rl_training.runtime.dreamer_trainer import train_dreamer
-from rl_training.runtime.efficientzero_trainer import train_efficientzero
-from rl_training.runtime.mbpo_trainer import train_mbpo
-from rl_training.runtime.mopo_trainer import train_mopo
-from rl_training.runtime.muzero_trainer import train_muzero
-from rl_training.runtime.pets_trainer import train_pets
+from axiomrl.experiment.registry_types import AlgorithmSpec
+from axiomrl.runtime.dreamer_trainer import train_dreamer
+from axiomrl.runtime.efficientzero_trainer import train_efficientzero
+from axiomrl.runtime.mbpo_trainer import train_mbpo
+from axiomrl.runtime.mopo_trainer import train_mopo
+from axiomrl.runtime.muzero_trainer import train_muzero
+from axiomrl.runtime.pets_trainer import train_pets
 
 WORLD_MODEL_SPECS: dict[str, AlgorithmSpec] = {
     "dreamer": AlgorithmSpec(

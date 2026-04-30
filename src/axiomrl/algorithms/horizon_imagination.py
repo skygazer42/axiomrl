@@ -6,9 +6,9 @@ from typing import Any
 import torch
 from torch.nn import functional as F
 
-from rl_training.algorithms.base import UpdateResult
-from rl_training.algorithms.diamond import Diamond
-from rl_training.models.dreamer import DreamerModel
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.algorithms.diamond import Diamond
+from axiomrl.models.dreamer import DreamerModel
 
 
 def _build_horizon_schedule(
@@ -61,9 +61,7 @@ class HorizonImagination(Diamond):
         if not math.isfinite(float(schedule_bias)):
             raise ValueError(f"schedule_bias must be finite, got {schedule_bias}")
         if not 0.0 <= float(subframe_budget_ratio) <= 1.0:
-            raise ValueError(
-                f"subframe_budget_ratio must be in [0, 1], got {subframe_budget_ratio}"
-            )
+            raise ValueError(f"subframe_budget_ratio must be in [0, 1], got {subframe_budget_ratio}")
 
         self.stabilization_coef = float(stabilization_coef)
         self.schedule_bias = float(schedule_bias)
@@ -115,14 +113,10 @@ class HorizonImagination(Diamond):
 
         metrics = {
             "horizon_imagination_world_model_loss": float(loss.detach().cpu().item()),
-            "horizon_imagination_reconstruction_loss": float(
-                reconstruction_loss.detach().cpu().item()
-            ),
+            "horizon_imagination_reconstruction_loss": float(reconstruction_loss.detach().cpu().item()),
             "horizon_imagination_reward_loss": float(reward_loss.detach().cpu().item()),
             "horizon_imagination_denoising_loss": float(denoising_loss.detach().cpu().item()),
-            "horizon_imagination_stabilization_loss": float(
-                stabilization_loss.detach().cpu().item()
-            ),
+            "horizon_imagination_stabilization_loss": float(stabilization_loss.detach().cpu().item()),
             "horizon_imagination_denoising_loss_coef": self.denoising_loss_coef,
             "horizon_imagination_stabilization_coef": self.stabilization_coef,
             "horizon_imagination_noise_scale": self.noise_scale,
@@ -189,9 +183,10 @@ class HorizonImagination(Diamond):
         advantages = returns_tensor - values_tensor
         step_weights = schedule.unsqueeze(-1)
 
-        actor_loss = -(
-            (step_weights * logprobs_tensor * advantages.detach()).sum(dim=0).mean()
-        ) - self.entropy_coef * (step_weights * entropy_tensor).sum(dim=0).mean()
+        actor_loss = (
+            -((step_weights * logprobs_tensor * advantages.detach()).sum(dim=0).mean())
+            - self.entropy_coef * (step_weights * entropy_tensor).sum(dim=0).mean()
+        )
         critic_loss = 0.5 * (step_weights * (values_tensor - returns_tensor.detach()).pow(2)).sum(dim=0).mean()
 
         self.actor_optimizer.zero_grad(set_to_none=True)
@@ -208,9 +203,7 @@ class HorizonImagination(Diamond):
             dtype=torch.float32,
         )
         schedule_mean = float((schedule * horizon_positions).sum().detach().cpu().item())
-        schedule_entropy = float(
-            (-(schedule * schedule.clamp_min(1e-8).log()).sum()).detach().cpu().item()
-        )
+        schedule_entropy = float((-(schedule * schedule.clamp_min(1e-8).log()).sum()).detach().cpu().item())
 
         metrics = {
             "horizon_imagination_actor_loss": float(actor_loss.detach().cpu().item()),
@@ -238,10 +231,6 @@ class HorizonImagination(Diamond):
 
     def load_state_dict(self, state_dict: dict[str, Any]) -> None:
         super().load_state_dict(state_dict)
-        self.stabilization_coef = float(
-            state_dict.get("stabilization_coef", self.stabilization_coef)
-        )
+        self.stabilization_coef = float(state_dict.get("stabilization_coef", self.stabilization_coef))
         self.schedule_bias = float(state_dict.get("schedule_bias", self.schedule_bias))
-        self.subframe_budget_ratio = float(
-            state_dict.get("subframe_budget_ratio", self.subframe_budget_ratio)
-        )
+        self.subframe_budget_ratio = float(state_dict.get("subframe_budget_ratio", self.subframe_budget_ratio))

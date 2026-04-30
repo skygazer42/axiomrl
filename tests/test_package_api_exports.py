@@ -2,21 +2,21 @@ import importlib
 
 import pytest
 
-import rl_training as root_package
-from rl_training.api import A2C as ApiA2C
-from rl_training.api import ARS as ApiARS
-from rl_training.api import BC as ApiBC
-from rl_training.api import CQL as ApiCQL
-from rl_training.api import DQN as ApiDQN
-from rl_training.api import DiscreteSAC as ApiDiscreteSAC
-from rl_training.api import IQL as ApiIQL
-from rl_training.api import PPO as ApiPPO
-from rl_training.api import SAC as ApiSAC
-from rl_training.api import TD3 as ApiTD3
-from rl_training.api import TRPO as ApiTRPO
-from rl_training.contrib import RecurrentPPO, RecurrentPPOAlgorithm
-from rl_training.experiment import JsonlLogger, RunLogger
-from rl_training.experiment.config import TrainConfig
+import axiomrl as root_package
+from axiomrl.api import A2C as ApiA2C
+from axiomrl.api import ARS as ApiARS
+from axiomrl.api import BC as ApiBC
+from axiomrl.api import CQL as ApiCQL
+from axiomrl.api import DQN as ApiDQN
+from axiomrl.api import IQL as ApiIQL
+from axiomrl.api import PPO as ApiPPO
+from axiomrl.api import SAC as ApiSAC
+from axiomrl.api import TD3 as ApiTD3
+from axiomrl.api import TRPO as ApiTRPO
+from axiomrl.api import DiscreteSAC as ApiDiscreteSAC
+from axiomrl.contrib import RecurrentPPO, RecurrentPPOAlgorithm
+from axiomrl.experiment import JsonlLogger, RunLogger
+from axiomrl.experiment.config import TrainConfig
 
 
 def test_root_package_exports_only_stable_core_algorithms_by_default() -> None:
@@ -34,8 +34,8 @@ def test_root_package_exports_only_stable_core_algorithms_by_default() -> None:
 
 
 def test_root_package_exposes_stability_namespaces() -> None:
-    core_module = importlib.import_module("rl_training.core")
-    experimental_module = importlib.import_module("rl_training.experimental")
+    core_module = importlib.import_module("axiomrl.core")
+    experimental_module = importlib.import_module("axiomrl.experimental")
 
     assert root_package.core is core_module
     assert root_package.experimental is experimental_module
@@ -44,7 +44,7 @@ def test_root_package_exposes_stability_namespaces() -> None:
 
 
 def test_core_module_lists_stable_algorithm_exports() -> None:
-    core_module = importlib.import_module("rl_training.core")
+    core_module = importlib.import_module("axiomrl.core")
 
     assert core_module.STABLE_ALGORITHMS == (
         "A2C",
@@ -64,7 +64,7 @@ def test_core_module_lists_stable_algorithm_exports() -> None:
 
 
 def test_experimental_module_reexports_advanced_algorithms() -> None:
-    experimental_module = importlib.import_module("rl_training.experimental")
+    experimental_module = importlib.import_module("axiomrl.experimental")
 
     assert experimental_module.ARS is ApiARS
     assert "ARS" in experimental_module.EXPERIMENTAL_ALGORITHMS

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from rl_training.experiment.registry_core import AlgorithmSpec
-from rl_training.experiment.registry_providers import ALL_SPEC_GROUPS
+from axiomrl.experiment.registry_core import AlgorithmSpec
+from axiomrl.experiment.registry_providers import ALL_SPEC_GROUPS
 
 
 def _merge_spec_groups() -> dict[str, AlgorithmSpec]:

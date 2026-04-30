@@ -6,8 +6,8 @@ from typing import Any
 import torch
 from torch.nn import functional as F
 
-from rl_training.algorithms.base import UpdateResult
-from rl_training.models.mlp_discrete_sac import MLPDiscreteSACModel
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.models.mlp_discrete_sac import MLPDiscreteSACModel
 
 
 def _discrete_sac_loss_terms(batch: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
@@ -16,7 +16,9 @@ def _discrete_sac_loss_terms(batch: dict[str, torch.Tensor]) -> dict[str, torch.
         batch["target_q_values"],
     )
     min_policy_q = torch.minimum(batch["policy_q1"], batch["policy_q2"])
-    actor_loss = (batch["action_probs"] * (batch["alpha"] * batch["log_action_probs"] - min_policy_q)).sum(dim=-1).mean()
+    actor_loss = (
+        (batch["action_probs"] * (batch["alpha"] * batch["log_action_probs"] - min_policy_q)).sum(dim=-1).mean()
+    )
     entropy = -(batch["action_probs"] * batch["log_action_probs"]).sum(dim=-1).mean()
 
     return {
@@ -79,8 +81,7 @@ class DiscreteSAC:
             next_action_probs, next_log_action_probs = self.target_model.policy(next_obs)
             target_q1_all, target_q2_all = self.target_model.q_values(next_obs)
             target_state_values = (
-                next_action_probs
-                * (torch.minimum(target_q1_all, target_q2_all) - self.alpha * next_log_action_probs)
+                next_action_probs * (torch.minimum(target_q1_all, target_q2_all) - self.alpha * next_log_action_probs)
             ).sum(dim=-1)
             target_q_values = rewards + self.gamma * (1.0 - dones) * target_state_values
 
@@ -142,4 +143,3 @@ class DiscreteSAC:
     def set_eval_mode(self) -> None:
         self.model.eval()
         self.target_model.eval()
-

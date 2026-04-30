@@ -178,7 +178,7 @@ make typecheck
 
 - [x] 所有变更附带对应的测试用例
 - [x] 更新 `CHANGELOG.md`（在 `[Unreleased]` 部分添加条目）
-- [x] 涉及稳定 API（`rl_training.core`）的变更需同步更新文档
+- [x] 涉及稳定 API（`axiomrl.core`）的变更需同步更新文档
 - [x] `make verify` 全部通过
 - [x] 预提交钩子检查通过
 
@@ -205,7 +205,7 @@ make typecheck
 
 AxiomRL 采用三层架构，不同层级的贡献标准如下：
 
-### :material-shield-check: 核心层（Core） — `rl_training.core`
+### :material-shield-check: 核心层（Core） — `axiomrl.core`
 
 最严格的审查标准：
 
@@ -217,7 +217,7 @@ AxiomRL 采用三层架构，不同层级的贡献标准如下：
 
 **当前稳定核心算法：** A2C, BC, CQL, DQN, DiscreteSAC, IQL, PPO, SAC, TD3, TRPO
 
-### :material-flask: 实验层（Experimental） — `rl_training.experimental`
+### :material-flask: 实验层（Experimental） — `axiomrl.experimental`
 
 中等审查标准：
 
@@ -225,7 +225,7 @@ AxiomRL 采用三层架构，不同层级的贡献标准如下：
 - 必须附带冒烟测试
 - API 可能在次版本中变更
 
-### :material-account-group: 社区层（Contrib） — `rl_training.contrib`
+### :material-account-group: 社区层（Contrib） — `axiomrl.contrib`
 
 社区驱动：
 

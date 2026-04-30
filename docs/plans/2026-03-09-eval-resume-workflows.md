@@ -13,9 +13,9 @@
 ### Task 1: Add function-level checkpoint workflows
 
 **Files:**
-- Create: `src/rl_training/runtime/workflows.py`
-- Modify: `src/rl_training/runtime/ppo_trainer.py`
-- Modify: `src/rl_training/runtime/dqn_trainer.py`
+- Create: `src/axiomrl/runtime/workflows.py`
+- Modify: `src/axiomrl/runtime/ppo_trainer.py`
+- Modify: `src/axiomrl/runtime/dqn_trainer.py`
 - Create: `tests/test_checkpoint_workflows.py`
 
 **Step 1: Write the failing test**
@@ -45,7 +45,7 @@ Expected: PASS
 ### Task 2: Wire the CLI `eval` and `resume` commands
 
 **Files:**
-- Modify: `src/rl_training/cli.py`
+- Modify: `src/axiomrl/cli.py`
 - Modify: `tests/test_cli.py`
 
 **Step 1: Extend the failing test**

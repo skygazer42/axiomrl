@@ -3,8 +3,8 @@ from pathlib import Path
 import gymnasium as gym
 import numpy as np
 
-from rl_training.experiment.config import TrainConfig
-from rl_training.runtime.gail_trainer import train_gail
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.runtime.gail_trainer import train_gail
 
 
 class TinyRenderDiscreteEnv(gym.Env):
@@ -136,4 +136,3 @@ def test_train_gail_supports_pixel_observations(tmp_path: Path) -> None:
     assert result.checkpoint_path.exists()
     assert result.metrics["global_step"] >= 128
     assert "eval_return_mean" in result.metrics
-

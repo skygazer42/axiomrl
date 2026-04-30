@@ -73,7 +73,7 @@ def ensure_atari_env_registered(*, env_id: str | None = None) -> None:
     except ModuleNotFoundError as exc:
         raise ModuleNotFoundError(
             "Atari environments require 'ale-py'. Install Atari support with "
-            "`pip install \"axiomrl[atari]\"` and download ROMs with `AutoROM --accept-license`."
+            '`pip install "axiomrl[atari]"` and download ROMs with `AutoROM --accept-license`.'
         ) from exc
 
     register_envs = getattr(gym, "register_envs", None)

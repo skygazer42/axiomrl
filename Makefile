@@ -1,28 +1,28 @@
 PYTHON ?= python
 
 RUFF_TARGETS = \
-	src/rl_training/cli.py \
-	src/rl_training/cli_config.py \
-	src/rl_training/cli_doctor.py \
-	src/rl_training/cli_zoo.py \
-	src/rl_training/zoo/reporting.py \
-	src/rl_training/zoo/reporting_render.py \
-	src/rl_training/zoo/reporting_runs.py \
-	src/rl_training/zoo/reporting_stats.py \
-	src/rl_training/experiment/registry_actor_critic_specs.py \
-	src/rl_training/experiment/registry_core.py \
-	src/rl_training/experiment/registry_continuous_loaders.py \
-	src/rl_training/experiment/registry_dqn_loaders.py \
-	src/rl_training/experiment/registry_evaluators.py \
-	src/rl_training/experiment/registry_offline_loaders.py \
-	src/rl_training/experiment/registry_offline_specs.py \
-	src/rl_training/experiment/registry_on_policy_specs.py \
-	src/rl_training/experiment/registry_policy_loaders.py \
-	src/rl_training/experiment/registry_predictors.py \
-	src/rl_training/experiment/registry_recurrent_loaders.py \
-	src/rl_training/experiment/registry_specialized_loaders.py \
-	src/rl_training/experiment/registry_value_based_specs.py \
-	src/rl_training/experiment/registry_world_model_specs.py \
+	src/axiomrl/cli.py \
+	src/axiomrl/cli_config.py \
+	src/axiomrl/cli_doctor.py \
+	src/axiomrl/cli_zoo.py \
+	src/axiomrl/zoo/reporting.py \
+	src/axiomrl/zoo/reporting_render.py \
+	src/axiomrl/zoo/reporting_runs.py \
+	src/axiomrl/zoo/reporting_stats.py \
+	src/axiomrl/experiment/registry_actor_critic_specs.py \
+	src/axiomrl/experiment/registry_core.py \
+	src/axiomrl/experiment/registry_continuous_loaders.py \
+	src/axiomrl/experiment/registry_dqn_loaders.py \
+	src/axiomrl/experiment/registry_evaluators.py \
+	src/axiomrl/experiment/registry_offline_loaders.py \
+	src/axiomrl/experiment/registry_offline_specs.py \
+	src/axiomrl/experiment/registry_on_policy_specs.py \
+	src/axiomrl/experiment/registry_policy_loaders.py \
+	src/axiomrl/experiment/registry_predictors.py \
+	src/axiomrl/experiment/registry_recurrent_loaders.py \
+	src/axiomrl/experiment/registry_specialized_loaders.py \
+	src/axiomrl/experiment/registry_value_based_specs.py \
+	src/axiomrl/experiment/registry_world_model_specs.py \
 	tests/conftest.py \
 	tests/support/checkpoint_workflows.py \
 	tests/support/markers.py \
@@ -50,30 +50,30 @@ RUFF_TARGETS = \
 	tests/test_zoo_reporting_split.py
 
 TYPECHECK_TARGETS = \
-	src/rl_training/cli.py \
-	src/rl_training/cli_config.py \
-	src/rl_training/cli_doctor.py \
-	src/rl_training/cli_zoo.py \
-	src/rl_training/zoo/reporting.py \
-	src/rl_training/zoo/reporting_render.py \
-	src/rl_training/zoo/reporting_runs.py \
-	src/rl_training/zoo/reporting_stats.py \
-	src/rl_training/zoo/core.py \
-	src/rl_training/experiment/registry_actor_critic_specs.py \
-	src/rl_training/experiment/registry_core.py \
-	src/rl_training/experiment/registry_continuous_loaders.py \
-	src/rl_training/experiment/registry_dqn_loaders.py \
-	src/rl_training/experiment/registry_evaluators.py \
-	src/rl_training/experiment/registry_offline_loaders.py \
-	src/rl_training/experiment/registry_offline_specs.py \
-	src/rl_training/experiment/registry_on_policy_specs.py \
-	src/rl_training/experiment/registry_policy_loaders.py \
-	src/rl_training/experiment/registry_predictors.py \
-	src/rl_training/experiment/registry_recurrent_loaders.py \
-	src/rl_training/experiment/registry_specialized_loaders.py \
-	src/rl_training/experiment/registry_value_based_specs.py \
-	src/rl_training/experiment/registry_world_model_specs.py \
-	src/rl_training/experiment/registry_types.py \
+	src/axiomrl/cli.py \
+	src/axiomrl/cli_config.py \
+	src/axiomrl/cli_doctor.py \
+	src/axiomrl/cli_zoo.py \
+	src/axiomrl/zoo/reporting.py \
+	src/axiomrl/zoo/reporting_render.py \
+	src/axiomrl/zoo/reporting_runs.py \
+	src/axiomrl/zoo/reporting_stats.py \
+	src/axiomrl/zoo/core.py \
+	src/axiomrl/experiment/registry_actor_critic_specs.py \
+	src/axiomrl/experiment/registry_core.py \
+	src/axiomrl/experiment/registry_continuous_loaders.py \
+	src/axiomrl/experiment/registry_dqn_loaders.py \
+	src/axiomrl/experiment/registry_evaluators.py \
+	src/axiomrl/experiment/registry_offline_loaders.py \
+	src/axiomrl/experiment/registry_offline_specs.py \
+	src/axiomrl/experiment/registry_on_policy_specs.py \
+	src/axiomrl/experiment/registry_policy_loaders.py \
+	src/axiomrl/experiment/registry_predictors.py \
+	src/axiomrl/experiment/registry_recurrent_loaders.py \
+	src/axiomrl/experiment/registry_specialized_loaders.py \
+	src/axiomrl/experiment/registry_value_based_specs.py \
+	src/axiomrl/experiment/registry_world_model_specs.py \
+	src/axiomrl/experiment/registry_types.py \
 	tests/conftest.py \
 	tests/support/checkpoint_workflows.py \
 	tests/support/markers.py \

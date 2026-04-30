@@ -2,7 +2,7 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Add a mainstream `AWAC` offline actor-critic baseline and unify evaluation cadence / early-stopping controls across the online off-policy trainers so `rl_training` behaves more like a coherent training package.
+**Goal:** Add a mainstream `AWAC` offline actor-critic baseline and unify evaluation cadence / early-stopping controls across the online off-policy trainers so `axiomrl` behaves more like a coherent training package.
 
 **Architecture:** Reuse the existing continuous-control stack instead of inventing a second offline runtime. `AWAC` should sit beside `IQL`, `CQL`, `TD3+BC`, reuse the external dataset pipeline, and evaluate through the same continuous-action policy helpers. Online trainers should adopt the existing callback-based control surface so `eval_interval` and `early_stopping` work consistently across `DQN`, `DDPG`, `SAC`, `TD3`, `REDQ`, and `TQC`.
 
@@ -13,17 +13,17 @@
 ### Task 1: Add the AWAC algorithm and trainer
 
 **Files:**
-- Modify: `src/rl_training/models/mlp_sac.py`
-- Create: `src/rl_training/algorithms/awac.py`
-- Create: `src/rl_training/runtime/awac_trainer.py`
-- Modify: `src/rl_training/algorithms/__init__.py`
-- Modify: `src/rl_training/models/__init__.py`
-- Modify: `src/rl_training/experiment/registry.py`
-- Modify: `src/rl_training/api/algorithms.py`
-- Modify: `src/rl_training/api/__init__.py`
-- Modify: `src/rl_training/__init__.py`
+- Modify: `src/axiomrl/models/mlp_sac.py`
+- Create: `src/axiomrl/algorithms/awac.py`
+- Create: `src/axiomrl/runtime/awac_trainer.py`
+- Modify: `src/axiomrl/algorithms/__init__.py`
+- Modify: `src/axiomrl/models/__init__.py`
+- Modify: `src/axiomrl/experiment/registry.py`
+- Modify: `src/axiomrl/api/algorithms.py`
+- Modify: `src/axiomrl/api/__init__.py`
+- Modify: `src/axiomrl/__init__.py`
 - Create: `configs/awac/pendulum.yaml`
-- Create: `src/rl_training/assets/configs/awac/pendulum.yaml`
+- Create: `src/axiomrl/assets/configs/awac/pendulum.yaml`
 - Create: `tests/test_awac_update.py`
 - Create: `tests/test_awac_trainer_smoke.py`
 
@@ -56,12 +56,12 @@ Deferred until the user allows testing.
 ### Task 2: Unify eval cadence and early stopping for online off-policy trainers
 
 **Files:**
-- Modify: `src/rl_training/runtime/dqn_trainer.py`
-- Modify: `src/rl_training/runtime/ddpg_trainer.py`
-- Modify: `src/rl_training/runtime/sac_trainer.py`
-- Modify: `src/rl_training/runtime/td3_trainer.py`
-- Modify: `src/rl_training/runtime/redq_trainer.py`
-- Modify: `src/rl_training/runtime/tqc_trainer.py`
+- Modify: `src/axiomrl/runtime/dqn_trainer.py`
+- Modify: `src/axiomrl/runtime/ddpg_trainer.py`
+- Modify: `src/axiomrl/runtime/sac_trainer.py`
+- Modify: `src/axiomrl/runtime/td3_trainer.py`
+- Modify: `src/axiomrl/runtime/redq_trainer.py`
+- Modify: `src/axiomrl/runtime/tqc_trainer.py`
 - Modify: `tests/test_training_controls.py`
 - Modify: `tests/test_callbacks.py`
 

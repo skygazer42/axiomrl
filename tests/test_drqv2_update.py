@@ -1,7 +1,7 @@
 import torch
 
-from rl_training.algorithms.drqv2 import DrQv2, drqv2_loss
-from rl_training.models import CNNDrQv2Model
+from axiomrl.algorithms.drqv2 import DrQv2, drqv2_loss
+from axiomrl.models import CNNDrQv2Model
 
 
 def test_drqv2_loss_returns_named_metrics() -> None:

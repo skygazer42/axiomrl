@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 180" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, system-ui, sans-serif">
+  <title>AxiomRL</title>
+  <defs>
+    <linearGradient id="markGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#10B981"/>
+    </linearGradient>
+    <linearGradient id="curveGrad" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0%" stop-color="#3B82F6" stop-opacity="0.0"/>
+      <stop offset="40%" stop-color="#3B82F6" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#10B981"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Mark: rounded square with axis + reward curve -->
+  <g transform="translate(40, 30)">
+    <rect x="0" y="0" width="120" height="120" rx="26" fill="url(#markGrad)"/>
+    <!-- inner card highlight -->
+    <rect x="0" y="0" width="120" height="120" rx="26" fill="#ffffff" opacity="0.06"/>
+    <!-- axis -->
+    <path d="M 26 92 L 96 92" stroke="#ffffff" stroke-width="3" stroke-linecap="round" opacity="0.85"/>
+    <path d="M 28 92 L 28 30" stroke="#ffffff" stroke-width="3" stroke-linecap="round" opacity="0.85"/>
+    <!-- reward curve -->
+    <path d="M 30 84 Q 50 80 60 64 T 92 32" fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- end node -->
+    <circle cx="92" cy="32" r="6" fill="#ffffff"/>
+  </g>
+
+  <!-- Wordmark -->
+  <g transform="translate(196, 0)">
+    <text x="0" y="108" fill="#0F172A" font-size="72" font-weight="800" letter-spacing="-2">
+      <tspan>Axiom</tspan><tspan fill="#3B82F6">RL</tspan>
+    </text>
+    <text x="4" y="142" fill="#475569" font-size="18" font-weight="500" letter-spacing="0.2">
+      A modular reinforcement learning library
+    </text>
+  </g>
+</svg>

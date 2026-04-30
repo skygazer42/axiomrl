@@ -31,15 +31,15 @@ Expected: FAIL because seed-sweep orchestration and benchmark summary artifacts 
 ### Task 2: Add seed-sweep planning and aggregate metric helpers
 
 **Files:**
-- Create: `src/rl_training/experiment/sweeps.py`
-- Modify: `src/rl_training/experiment/benchmarking.py`
-- Modify: `src/rl_training/experiment/config.py`
+- Create: `src/axiomrl/experiment/sweeps.py`
+- Modify: `src/axiomrl/experiment/benchmarking.py`
+- Modify: `src/axiomrl/experiment/config.py`
 
 **Step 1: Write minimal implementation**
-- Create `src/rl_training/experiment/sweeps.py` with small dataclasses/helpers such as `SeedSweepPlan`, `BenchmarkRunRecord`, and `resolve_benchmark_seeds(config: TrainConfig) -> tuple[int, ...]`.
+- Create `src/axiomrl/experiment/sweeps.py` with small dataclasses/helpers such as `SeedSweepPlan`, `BenchmarkRunRecord`, and `resolve_benchmark_seeds(config: TrainConfig) -> tuple[int, ...]`.
 - Normalize `benchmark["seeds"]` into a validated tuple of distinct integers and reject empty or malformed seed lists with explicit errors.
-- Add aggregate helpers in `src/rl_training/experiment/benchmarking.py` that compute `*_mean`, `*_std`, `*_min`, and `*_max` for numeric metrics shared across run results.
-- Add a tiny helper in `src/rl_training/experiment/config.py` if needed to expose validated benchmark seed settings without expanding the dataclass surface more than necessary.
+- Add aggregate helpers in `src/axiomrl/experiment/benchmarking.py` that compute `*_mean`, `*_std`, `*_min`, and `*_max` for numeric metrics shared across run results.
+- Add a tiny helper in `src/axiomrl/experiment/config.py` if needed to expose validated benchmark seed settings without expanding the dataclass surface more than necessary.
 
 **Step 2: Run focused tests**
 
@@ -50,12 +50,12 @@ Expected: still FAIL, but now only because the runner/manager/CLI wiring is not 
 ### Task 3: Implement `BenchmarkRunner` on top of the runtime foundation
 
 **Files:**
-- Modify: `src/rl_training/runtime/runner.py`
-- Modify: `src/rl_training/experiment/default_manager.py`
-- Modify: `src/rl_training/experiment/manager.py`
+- Modify: `src/axiomrl/runtime/runner.py`
+- Modify: `src/axiomrl/experiment/default_manager.py`
+- Modify: `src/axiomrl/experiment/manager.py`
 
 **Step 1: Write minimal implementation**
-- Extend `src/rl_training/runtime/runner.py` with a `BenchmarkRunner` that accepts a `SeedSweepPlan`, a child runner factory, and an output path for aggregate artifacts.
+- Extend `src/axiomrl/runtime/runner.py` with a `BenchmarkRunner` that accepts a `SeedSweepPlan`, a child runner factory, and an output path for aggregate artifacts.
 - Have `BenchmarkRunner.run()` execute one ordinary child runner per seed, collect each `TrainResult`, aggregate numeric metrics, and return a synthetic `TrainResult` whose `metrics` contains both aggregate values and a `benchmark_run_count`.
 - Persist a machine-readable benchmark summary JSON file that includes per-seed run directories, checkpoint paths, and aggregate metrics.
 - Update `DefaultExperimentManager.setup_runner(...)` so it chooses `BenchmarkRunner` when benchmark seeds are configured; otherwise it keeps returning `FunctionRunner`.
@@ -70,8 +70,8 @@ Expected: PASS.
 ### Task 4: Expose seed sweeps through the CLI
 
 **Files:**
-- Modify: `src/rl_training/cli.py`
-- Modify: `src/rl_training/runtime/workflows.py`
+- Modify: `src/axiomrl/cli.py`
+- Modify: `src/axiomrl/runtime/workflows.py`
 
 **Step 1: Write minimal implementation**
 - Add a `--seeds` option to `axiomrl train` that accepts a comma-separated list like `--seeds 1,2,3`.

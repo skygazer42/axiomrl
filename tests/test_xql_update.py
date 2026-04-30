@@ -1,8 +1,8 @@
 import pytest
 import torch
 
-from rl_training.algorithms.xql import XQL, gumbel_rescale_loss, xql_loss, xql_value_loss
-from rl_training.models.mlp_iql import MLPIQLModel
+from axiomrl.algorithms.xql import XQL, gumbel_rescale_loss, xql_loss, xql_value_loss
+from axiomrl.models.mlp_iql import MLPIQLModel
 
 
 def test_gumbel_rescale_loss_returns_finite_values() -> None:

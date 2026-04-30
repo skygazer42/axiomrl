@@ -4,7 +4,7 @@
 
 **Goal:** Export manifest drift severity and named drifted preset summaries so downstream benchmark tooling can quickly distinguish clean runs, protocol-only drift, and manifest-inventory errors.
 
-**Architecture:** Keep the change inside `src/rl_training/zoo_cli.py`. Extend existing manifest alignment metadata with a severity classifier, attach it to run and aggregate records, and enrich the top-level `manifest_alignment_summary` with severity plus a sorted list of drifted preset names derived from the full filtered run set before any `--top-k` truncation.
+**Architecture:** Keep the change inside `src/axiomrl/zoo_cli.py`. Extend existing manifest alignment metadata with a severity classifier, attach it to run and aggregate records, and enrich the top-level `manifest_alignment_summary` with severity plus a sorted list of drifted preset names derived from the full filtered run set before any `--top-k` truncation.
 
 **Tech Stack:** Python 3.10+, argparse, existing zoo CLI serializers, pytest.
 
@@ -29,7 +29,7 @@ Expected: FAIL because the current payloads do not export severity or named drif
 ### Task 2: Implement severity export
 
 **Files:**
-- Modify: `src/rl_training/zoo_cli.py`
+- Modify: `src/axiomrl/zoo_cli.py`
 
 **Step 1: Write minimal implementation**
 - Add a shared severity helper that maps clean alignment to `clean`, protocol-only drift to `warning`, and any unknown-preset drift to `error`.
@@ -48,7 +48,7 @@ Expected: PASS.
 **Files:**
 - Modify: `README.md`
 - Modify: `zoo/README.md`
-- Modify: `src/rl_training/assets/zoo/README.md`
+- Modify: `src/axiomrl/assets/zoo/README.md`
 
 **Step 1: Add docs**
 - Document that machine-readable zoo exports now include manifest drift severity and a named list of drifted presets in the top-level summary.

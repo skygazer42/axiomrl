@@ -5,9 +5,9 @@ from typing import Any
 import torch
 from torch.nn import functional as F
 
-from rl_training.algorithms.base import UpdateResult
-from rl_training.algorithms.dreamer import Dreamer
-from rl_training.models.po_dreamer import PODreamerModel
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.algorithms.dreamer import Dreamer
+from axiomrl.models.po_dreamer import PODreamerModel
 
 
 class PODreamer(Dreamer):
@@ -172,9 +172,7 @@ class PODreamer(Dreamer):
             "po_dreamer_actor_loss": float(actor_loss.detach().cpu().item()),
             "po_dreamer_critic_loss": float(critic_loss.detach().cpu().item()),
             "po_dreamer_imagination_horizon": float(horizon),
-            "po_dreamer_imagination_reward_mean": float(
-                torch.stack(reward_terms, dim=0).mean().detach().cpu().item()
-            )
+            "po_dreamer_imagination_reward_mean": float(torch.stack(reward_terms, dim=0).mean().detach().cpu().item())
             if reward_terms
             else 0.0,
             "po_dreamer_memory_gate_mean": float(torch.stack(gate_terms).mean().detach().cpu().item()),

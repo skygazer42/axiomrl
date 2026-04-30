@@ -1,6 +1,6 @@
 import torch
 
-from rl_training.models import MLPMOPOEnsembleModel
+from axiomrl.models import MLPMOPOEnsembleModel
 
 
 def test_mopo_dynamics_model_predicts_distribution_and_samples_transitions() -> None:

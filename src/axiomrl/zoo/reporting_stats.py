@@ -4,8 +4,8 @@ import math
 from collections.abc import Mapping, Sequence
 from typing import Any, cast
 
-from rl_training.zoo.manifests import _build_manifest_alignment_severity
-from rl_training.zoo.reporting_runs import difference, sort_records
+from axiomrl.zoo.manifests import _build_manifest_alignment_severity
+from axiomrl.zoo.reporting_runs import difference, sort_records
 
 
 def seed_sort_key(seed: object) -> tuple[int, int | str]:

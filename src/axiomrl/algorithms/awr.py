@@ -5,9 +5,9 @@ from typing import Any
 import torch
 from torch.nn import functional as F
 
-from rl_training.algorithms._advantage_utils import normalize_advantages
-from rl_training.algorithms.base import UpdateResult
-from rl_training.models.mlp_iql import MLPIQLModel
+from axiomrl.algorithms._advantage_utils import normalize_advantages
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.models.mlp_iql import MLPIQLModel
 
 
 def _normalize_advantages(advantages: torch.Tensor) -> torch.Tensor:
@@ -17,9 +17,13 @@ def _normalize_advantages(advantages: torch.Tensor) -> torch.Tensor:
 def _awr_loss_terms(batch: dict[str, torch.Tensor | float]) -> dict[str, torch.Tensor]:
     value_predictions = torch.as_tensor(batch["value_predictions"], dtype=torch.float32)
     returns_to_go = torch.as_tensor(batch["returns_to_go"], dtype=torch.float32, device=value_predictions.device)
-    behavior_logprobs = torch.as_tensor(batch["behavior_logprobs"], dtype=torch.float32, device=value_predictions.device)
+    behavior_logprobs = torch.as_tensor(
+        batch["behavior_logprobs"], dtype=torch.float32, device=value_predictions.device
+    )
     advantages = torch.as_tensor(batch["advantages"], dtype=torch.float32, device=value_predictions.device)
-    advantage_weights = torch.as_tensor(batch["advantage_weights"], dtype=torch.float32, device=value_predictions.device)
+    advantage_weights = torch.as_tensor(
+        batch["advantage_weights"], dtype=torch.float32, device=value_predictions.device
+    )
 
     value_loss = F.mse_loss(value_predictions, returns_to_go)
     actor_loss = -(advantage_weights * behavior_logprobs).mean()
@@ -56,8 +60,12 @@ class AWR:
 
         self.model = model
         self.policy = model
-        self.actor_optimizer = torch.optim.Adam(self.model.actor_parameters(), lr=float(learning_rate), weight_decay=0.0)
-        self.value_optimizer = torch.optim.Adam(self.model.value_parameters(), lr=float(learning_rate), weight_decay=0.0)
+        self.actor_optimizer = torch.optim.Adam(
+            self.model.actor_parameters(), lr=float(learning_rate), weight_decay=0.0
+        )
+        self.value_optimizer = torch.optim.Adam(
+            self.model.value_parameters(), lr=float(learning_rate), weight_decay=0.0
+        )
         self.beta = float(beta)
         self.max_weight = float(max_weight)
         self.normalize_advantages = bool(normalize_advantages)
@@ -131,4 +139,3 @@ class AWR:
 
     def set_eval_mode(self) -> None:
         self.model.eval()
-

@@ -1,24 +1,21 @@
 from __future__ import annotations
 
 import json
+import warnings
 from pathlib import Path
 from typing import Protocol
-import warnings
 
 from torch.utils.tensorboard import SummaryWriter
 
-from rl_training.runtime.types import MetricDict
+from axiomrl.runtime.types import MetricDict
 
 
 class Logger(Protocol):
-    def log_metrics(self, metrics: MetricDict, *, step: int) -> None:
-        ...
+    def log_metrics(self, metrics: MetricDict, *, step: int) -> None: ...
 
-    def log_config(self, config: dict) -> None:
-        ...
+    def log_config(self, config: dict) -> None: ...
 
-    def close(self) -> None:
-        ...
+    def close(self) -> None: ...
 
 
 class RunLogger:

@@ -1,8 +1,8 @@
-import torch
 import pytest
+import torch
 
-from rl_training.algorithms.redq import REDQ, _sample_target_critic_indices, redq_loss
-from rl_training.models.mlp_redq import MLPREDQModel
+from axiomrl.algorithms.redq import REDQ, _sample_target_critic_indices, redq_loss
+from axiomrl.models.mlp_redq import MLPREDQModel
 
 
 def test_mlp_redq_model_samples_bounded_actions_and_ensemble_q_values() -> None:

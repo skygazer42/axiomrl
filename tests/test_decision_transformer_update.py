@@ -1,7 +1,7 @@
 import torch
 
-from rl_training.algorithms.decision_transformer import DecisionTransformer, decision_transformer_loss
-from rl_training.models import DecisionTransformerModel
+from axiomrl.algorithms.decision_transformer import DecisionTransformer, decision_transformer_loss
+from axiomrl.models import DecisionTransformerModel
 
 
 def test_decision_transformer_model_predict_actions_returns_expected_shape() -> None:

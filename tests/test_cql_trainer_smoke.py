@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from rl_training.experiment.config import TrainConfig
-from rl_training.runtime.cql_trainer import train_cql
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.runtime.cql_trainer import train_cql
 
 
 def test_train_cql_writes_checkpoint_and_metrics(tmp_path: Path) -> None:

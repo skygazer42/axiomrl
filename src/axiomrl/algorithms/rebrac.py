@@ -6,8 +6,8 @@ from typing import Any
 import torch
 from torch.nn import functional as F
 
-from rl_training.algorithms.base import UpdateResult
-from rl_training.models.mlp_td3 import MLPTD3Model
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.models.mlp_td3 import MLPTD3Model
 
 
 def _rebrac_loss_terms(batch: dict[str, torch.Tensor | float]) -> dict[str, torch.Tensor]:
@@ -71,8 +71,12 @@ class ReBRAC:
         self.model = model
         self.policy = model
         self.target_model = copy.deepcopy(model)
-        self.actor_optimizer = torch.optim.Adam(self.model.actor_parameters(), lr=float(learning_rate), weight_decay=0.0)
-        self.critic_optimizer = torch.optim.Adam(self.model.critic_parameters(), lr=float(learning_rate), weight_decay=0.0)
+        self.actor_optimizer = torch.optim.Adam(
+            self.model.actor_parameters(), lr=float(learning_rate), weight_decay=0.0
+        )
+        self.critic_optimizer = torch.optim.Adam(
+            self.model.critic_parameters(), lr=float(learning_rate), weight_decay=0.0
+        )
         self.gamma = float(gamma)
         self.tau = float(tau)
         self.policy_noise = float(policy_noise)

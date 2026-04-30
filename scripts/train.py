@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from rl_training.cli import main
-
+from axiomrl.cli import main
 
 if __name__ == "__main__":
     raise SystemExit(main())

@@ -6,8 +6,8 @@ from typing import Any
 import torch
 from torch.nn import functional as F
 
-from rl_training.algorithms.base import UpdateResult
-from rl_training.models.mlp_bear import MLPBEARModel
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.models.mlp_bear import MLPBEARModel
 
 
 def _bear_loss_terms(batch: dict[str, torch.Tensor | float]) -> dict[str, torch.Tensor]:
@@ -82,9 +82,15 @@ class BEAR:
         self.model = model
         self.policy = model
         self.target_model = copy.deepcopy(model)
-        self.behavior_optimizer = torch.optim.Adam(self.model.behavior_parameters(), lr=float(learning_rate), weight_decay=0.0)
-        self.actor_optimizer = torch.optim.Adam(self.model.actor_parameters(), lr=float(learning_rate), weight_decay=0.0)
-        self.critic_optimizer = torch.optim.Adam(self.model.critic_parameters(), lr=float(learning_rate), weight_decay=0.0)
+        self.behavior_optimizer = torch.optim.Adam(
+            self.model.behavior_parameters(), lr=float(learning_rate), weight_decay=0.0
+        )
+        self.actor_optimizer = torch.optim.Adam(
+            self.model.actor_parameters(), lr=float(learning_rate), weight_decay=0.0
+        )
+        self.critic_optimizer = torch.optim.Adam(
+            self.model.critic_parameters(), lr=float(learning_rate), weight_decay=0.0
+        )
         self.gamma = float(gamma)
         self.tau = float(tau)
         self.behavior_kl_weight = float(behavior_kl_weight)
@@ -119,9 +125,7 @@ class BEAR:
         reconstructed_actions, latent_mean, latent_log_std = self.model.reconstruct_behavior(obs, actions)
         reconstruction_loss = F.mse_loss(reconstructed_actions, actions)
         latent_variance = torch.exp(2.0 * latent_log_std)
-        kl_loss = (
-            -0.5 * (1.0 + 2.0 * latent_log_std - latent_mean.pow(2) - latent_variance).sum(dim=-1).mean()
-        )
+        kl_loss = -0.5 * (1.0 + 2.0 * latent_log_std - latent_mean.pow(2) - latent_variance).sum(dim=-1).mean()
 
         self.behavior_optimizer.zero_grad(set_to_none=True)
         behavior_terms = _bear_loss_terms(

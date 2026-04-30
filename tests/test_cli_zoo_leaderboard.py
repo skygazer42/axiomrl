@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from rl_training.cli import main
+from axiomrl.cli import main
 
 
 def test_leaderboard_subcommand_uses_packaged_manifest_outside_repo_root(monkeypatch, tmp_path: Path) -> None:

@@ -3,9 +3,9 @@ from pathlib import Path
 import gymnasium as gym
 import numpy as np
 
-from rl_training.envs.factory import build_env, make_vector_env, resolve_mode_env_kwargs
-from rl_training.envs.video import resolve_video_wrapper_config
-from rl_training.experiment.config import TrainConfig
+from axiomrl.envs.factory import build_env, make_vector_env, resolve_mode_env_kwargs
+from axiomrl.envs.video import resolve_video_wrapper_config
+from axiomrl.experiment.config import TrainConfig
 
 
 class TinyImageEnv(gym.Env):

@@ -2,8 +2,8 @@ from pathlib import Path
 
 import pytest
 
-from rl_training.experiment.config import TrainConfig
-from rl_training.experiment.sweeps import resolve_benchmark_seeds
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.experiment.sweeps import resolve_benchmark_seeds
 
 
 def _base_config(tmp_path: Path, *, benchmark: dict[str, object]) -> TrainConfig:

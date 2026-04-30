@@ -5,8 +5,8 @@ from typing import Any
 import numpy as np
 import torch
 
-from rl_training.algorithms.base import UpdateResult
-from rl_training.models.mlp_mopo import MLPMOPOEnsembleModel
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.models.mlp_mopo import MLPMOPOEnsembleModel
 
 
 def _pets_model_loss_terms(batch: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
@@ -47,7 +47,9 @@ class PETS:
         self.model = dynamics_model
         self.dynamics_model = dynamics_model
         self.policy = dynamics_model
-        self.optimizer = torch.optim.Adam(self.dynamics_model.ensemble_parameters(), lr=float(learning_rate), weight_decay=0.0)
+        self.optimizer = torch.optim.Adam(
+            self.dynamics_model.ensemble_parameters(), lr=float(learning_rate), weight_decay=0.0
+        )
 
     def _device(self) -> torch.device:
         parameter = next(iter(self.dynamics_model.parameters()), None)
@@ -149,7 +151,9 @@ class PETS:
         obs_tensor = torch.as_tensor(obs, dtype=torch.float32, device=device)
         if obs_tensor.ndim == 2:
             if int(obs_tensor.shape[0]) != 1:
-                raise ValueError(f"plan_action currently supports a single observation, got shape {tuple(obs_tensor.shape)!r}")
+                raise ValueError(
+                    f"plan_action currently supports a single observation, got shape {tuple(obs_tensor.shape)!r}"
+                )
             obs_tensor = obs_tensor[0]
         elif obs_tensor.ndim != 1:
             raise ValueError(f"expected flat observation for planning, got shape {tuple(obs_tensor.shape)!r}")

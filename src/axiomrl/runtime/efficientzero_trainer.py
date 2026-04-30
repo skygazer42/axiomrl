@@ -6,33 +6,33 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from rl_training.algorithms.efficientzero import EfficientZero
-from rl_training.algorithms.muzero import MuZeroMCTSConfig
-from rl_training.data.muzero_replay_buffer import MuZeroReplayBuffer
-from rl_training.envs.factory import build_env
-from rl_training.experiment.checkpointing import CheckpointState
-from rl_training.experiment.config import TrainConfig
-from rl_training.models.muzero import MuZeroModel
-from rl_training.runtime.callbacks import Callback
-from rl_training.runtime.controls import (
+from axiomrl.algorithms.efficientzero import EfficientZero
+from axiomrl.algorithms.muzero import MuZeroMCTSConfig
+from axiomrl.data.muzero_replay_buffer import MuZeroReplayBuffer
+from axiomrl.envs.factory import build_env
+from axiomrl.experiment.checkpointing import CheckpointState
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.models.muzero import MuZeroModel
+from axiomrl.runtime.callbacks import Callback
+from axiomrl.runtime.controls import (
     resolve_eval_interval,
     resolve_num_simulations,
     resolve_root_exploration_fraction,
     resolve_temperature,
     should_run_evaluation,
 )
-from rl_training.runtime.muzero_trainer import (
+from axiomrl.runtime.muzero_trainer import (
     _emit_collect_event,
     _evaluate_muzero_policy,
     _infer_spaces,
     _maybe_run_muzero_evaluation,
     _restore_training_state,
 )
-from rl_training.runtime.resume_state import capture_env_resume_state, capture_global_random_state
-from rl_training.runtime.run_utils import save_training_checkpoint
-from rl_training.runtime.session import create_training_session
-from rl_training.runtime.trainer import TrainResult
-from rl_training.runtime.types import MetricDict
+from axiomrl.runtime.resume_state import capture_env_resume_state, capture_global_random_state
+from axiomrl.runtime.run_utils import save_training_checkpoint
+from axiomrl.runtime.session import create_training_session
+from axiomrl.runtime.trainer import TrainResult
+from axiomrl.runtime.types import MetricDict
 
 
 def train_efficientzero(

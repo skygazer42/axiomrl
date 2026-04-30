@@ -4,7 +4,7 @@
 
 **Goal:** Improve benchmark comparability by filtering out under-seeded aggregate rows and making leaderboard defaults prefer normalized scores when the benchmark manifest provides score normalization.
 
-**Architecture:** Extend `src/rl_training/zoo_cli.py` so report/leaderboard payload construction can drop aggregate groups whose `seed_count` falls below a user-provided `--min-seeds` threshold while leaving per-run rows intact. Update leaderboard default sort resolution to prefer normalized-score benchmark axes when the manifest declares score normalization, while preserving explicit `--sort-by` behavior and existing JSON/CSV/text output contracts.
+**Architecture:** Extend `src/axiomrl/zoo_cli.py` so report/leaderboard payload construction can drop aggregate groups whose `seed_count` falls below a user-provided `--min-seeds` threshold while leaving per-run rows intact. Update leaderboard default sort resolution to prefer normalized-score benchmark axes when the manifest declares score normalization, while preserving explicit `--sort-by` behavior and existing JSON/CSV/text output contracts.
 
 **Tech Stack:** Python 3.10+, existing zoo CLI/report renderers, argparse, pytest.
 
@@ -30,8 +30,8 @@ Expected: FAIL because `--min-seeds` is unsupported and leaderboard still defaul
 ### Task 2: Implement filtering and default leaderboard ranking
 
 **Files:**
-- Modify: `src/rl_training/zoo_cli.py`
-- Modify: `src/rl_training/cli.py`
+- Modify: `src/axiomrl/zoo_cli.py`
+- Modify: `src/axiomrl/cli.py`
 
 **Step 1: Write minimal implementation**
 - Add `--min-seeds` argument plumbing through report and leaderboard code paths.
@@ -50,7 +50,7 @@ Expected: PASS.
 **Files:**
 - Modify: `README.md`
 - Modify: `zoo/README.md`
-- Modify: `src/rl_training/assets/zoo/README.md`
+- Modify: `src/axiomrl/assets/zoo/README.md`
 
 **Step 1: Add docs**
 - Document `--min-seeds`.

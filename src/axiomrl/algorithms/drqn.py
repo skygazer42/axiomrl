@@ -6,8 +6,8 @@ from typing import Any
 import torch
 from torch.nn import functional as F
 
-from rl_training.algorithms.base import UpdateResult
-from rl_training.models.recurrent import LSTMQNetwork
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.models.recurrent import LSTMQNetwork
 
 
 def _masked_mean(values: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:

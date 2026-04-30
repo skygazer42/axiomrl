@@ -4,7 +4,7 @@ import gymnasium as gym
 import numpy as np
 import pytest
 
-from rl_training.envs import (
+from axiomrl.envs import (
     POINT_GOAL_ENV_ID,
     build_env,
     flatten_goal_observation,
@@ -12,7 +12,7 @@ from rl_training.envs import (
     goal_env_compute_reward,
     register_builtin_goal_envs,
 )
-from rl_training.experiment.config import TrainConfig
+from axiomrl.experiment.config import TrainConfig
 
 
 def test_builtin_goal_env_is_registered_and_buildable(tmp_path: Path) -> None:

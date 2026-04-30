@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from rl_training.api import (
+from axiomrl.api import (
     A2C,
     AWR,
     C51DQN,
@@ -29,7 +29,7 @@ from rl_training.api import (
     PrioritizedDQN,
     RainbowDQN,
 )
-from rl_training.experiment.config import TrainConfig
+from axiomrl.experiment.config import TrainConfig
 
 
 def test_off_policy_public_apis_support_learn_and_evaluate(tmp_path: Path) -> None:

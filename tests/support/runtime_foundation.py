@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from rl_training.envs import POINT_GOAL_ENV_ID
-from rl_training.experiment.config import TrainConfig
+from axiomrl.envs import POINT_GOAL_ENV_ID
+from axiomrl.experiment.config import TrainConfig
 
 
 class ExpectedSharedSession(RuntimeError):

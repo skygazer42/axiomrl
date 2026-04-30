@@ -5,8 +5,8 @@ from typing import Any
 import torch
 from torch.nn import functional as F
 
-from rl_training.algorithms.base import UpdateResult
-from rl_training.models.mlp_crossq import MLPCrossQModel
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.models.mlp_crossq import MLPCrossQModel
 
 
 def _crossq_loss_terms(batch: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
@@ -58,8 +58,12 @@ class CrossQ:
         self.model = model
         self.policy = model
         betas = (adam_beta1, 0.999)
-        self.actor_optimizer = torch.optim.Adam(self.model.actor_parameters(), lr=learning_rate, betas=betas, weight_decay=0.0)
-        self.critic_optimizer = torch.optim.Adam(self.model.critic_parameters(), lr=learning_rate, betas=betas, weight_decay=0.0)
+        self.actor_optimizer = torch.optim.Adam(
+            self.model.actor_parameters(), lr=learning_rate, betas=betas, weight_decay=0.0
+        )
+        self.critic_optimizer = torch.optim.Adam(
+            self.model.critic_parameters(), lr=learning_rate, betas=betas, weight_decay=0.0
+        )
         self.gamma = gamma
         self.alpha = alpha
         self.policy_delay = policy_delay

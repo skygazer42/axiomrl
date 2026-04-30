@@ -4,7 +4,7 @@
 
 **Goal:** Make reward strategy configuration practical for Atari and other games by adding reusable scenario presets and ensuring explicit generic reward strategies are not silently overridden by Atari's default reward clipping.
 
-**Architecture:** Extend the reward preset registry in `src/rl_training/envs/rewards.py` with scenario-oriented presets such as Atari clipping and survival/goal shaping. Update Atari wrapper resolution so default `clip_reward` is disabled when a non-identity generic reward wrapper is configured, while preserving explicit `wrappers.atari.clip_reward` overrides. Cover the behavior in Atari env tests and reward wrapper tests, then document the recommended YAML recipes.
+**Architecture:** Extend the reward preset registry in `src/axiomrl/envs/rewards.py` with scenario-oriented presets such as Atari clipping and survival/goal shaping. Update Atari wrapper resolution so default `clip_reward` is disabled when a non-identity generic reward wrapper is configured, while preserving explicit `wrappers.atari.clip_reward` overrides. Cover the behavior in Atari env tests and reward wrapper tests, then document the recommended YAML recipes.
 
 **Tech Stack:** Python 3.10+, Gymnasium wrappers, existing env factory/config system, pytest.
 
@@ -29,9 +29,9 @@
 ### Task 2: Implement preset registry and Atari override behavior
 
 **Files:**
-- Modify: `src/rl_training/envs/rewards.py`
-- Modify: `src/rl_training/envs/atari.py`
-- Modify: `src/rl_training/envs/factory.py`
+- Modify: `src/axiomrl/envs/rewards.py`
+- Modify: `src/axiomrl/envs/atari.py`
+- Modify: `src/axiomrl/envs/factory.py`
 
 **Step 1: Write minimal implementation**
 - Add scenario presets for Atari and generic game shaping.

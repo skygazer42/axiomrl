@@ -1,8 +1,8 @@
 import pytest
 import torch
 
-from rl_training.algorithms.marwil import MARWIL, marwil_loss
-from rl_training.models import MLPIQLModel
+from axiomrl.algorithms.marwil import MARWIL, marwil_loss
+from axiomrl.models import MLPIQLModel
 
 
 def test_marwil_loss_returns_named_metrics() -> None:

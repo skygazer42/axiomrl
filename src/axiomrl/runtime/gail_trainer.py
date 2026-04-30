@@ -8,30 +8,30 @@ import gymnasium as gym
 import numpy as np
 import torch
 
-from rl_training.algorithms.gail import GAIL
-from rl_training.data.dataset_loaders import load_transition_dataset
-from rl_training.data.offline_dataset import TransitionDataset
-from rl_training.data.rollout_buffer import RolloutBuffer
-from rl_training.envs.factory import build_env, make_vector_env
-from rl_training.experiment.checkpointing import CheckpointState
-from rl_training.experiment.config import TrainConfig
-from rl_training.models.cnn import CNNActorCritic
-from rl_training.models.mlp_actor_critic import MLPActorCritic
-from rl_training.models.mlp_gail_discriminator import CNNGAILDiscriminator, MLPGAILDiscriminator
-from rl_training.runtime.callbacks import Callback
-from rl_training.runtime.collector import CollectResult
-from rl_training.runtime.controls import resolve_clip_coefficient, resolve_entropy_coefficient
-from rl_training.runtime.evaluation_support import evaluate_discrete_episodes
-from rl_training.runtime.resume_state import (
+from axiomrl.algorithms.gail import GAIL
+from axiomrl.data.dataset_loaders import load_transition_dataset
+from axiomrl.data.offline_dataset import TransitionDataset
+from axiomrl.data.rollout_buffer import RolloutBuffer
+from axiomrl.envs.factory import build_env, make_vector_env
+from axiomrl.experiment.checkpointing import CheckpointState
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.models.cnn import CNNActorCritic
+from axiomrl.models.mlp_actor_critic import MLPActorCritic
+from axiomrl.models.mlp_gail_discriminator import CNNGAILDiscriminator, MLPGAILDiscriminator
+from axiomrl.runtime.callbacks import Callback
+from axiomrl.runtime.collector import CollectResult
+from axiomrl.runtime.controls import resolve_clip_coefficient, resolve_entropy_coefficient
+from axiomrl.runtime.evaluation_support import evaluate_discrete_episodes
+from axiomrl.runtime.resume_state import (
     capture_global_random_state,
     capture_vector_env_resume_state,
     restore_global_random_state,
     restore_vector_env_resume_state,
 )
-from rl_training.runtime.run_utils import save_training_checkpoint
-from rl_training.runtime.session import create_training_session
-from rl_training.runtime.trainer import TrainResult
-from rl_training.runtime.types import MetricDict
+from axiomrl.runtime.run_utils import save_training_checkpoint
+from axiomrl.runtime.session import create_training_session
+from axiomrl.runtime.trainer import TrainResult
+from axiomrl.runtime.types import MetricDict
 
 
 def _infer_spaces(envs: gym.vector.SyncVectorEnv) -> tuple[tuple[int, ...], int]:
@@ -48,7 +48,9 @@ def _infer_spaces(envs: gym.vector.SyncVectorEnv) -> tuple[tuple[int, ...], int]
     return tuple(int(dim) for dim in obs_space.shape), int(action_space.n)
 
 
-def _build_policy(config: TrainConfig, *, obs_shape: tuple[int, ...], action_dim: int) -> MLPActorCritic | CNNActorCritic:
+def _build_policy(
+    config: TrainConfig, *, obs_shape: tuple[int, ...], action_dim: int
+) -> MLPActorCritic | CNNActorCritic:
     if len(obs_shape) == 1:
         hidden_sizes = tuple(config.algo_kwargs.get("hidden_sizes", (64, 64)))
         return MLPActorCritic(
@@ -72,7 +74,9 @@ def _build_discriminator(
     action_dim: int,
 ) -> MLPGAILDiscriminator | CNNGAILDiscriminator:
     if len(obs_shape) == 1:
-        hidden_sizes = tuple(config.algo_kwargs.get("discriminator_hidden_sizes", config.algo_kwargs.get("hidden_sizes", (64, 64))))
+        hidden_sizes = tuple(
+            config.algo_kwargs.get("discriminator_hidden_sizes", config.algo_kwargs.get("hidden_sizes", (64, 64)))
+        )
         return MLPGAILDiscriminator(
             obs_dim=obs_shape[0],
             action_dim=action_dim,
@@ -89,7 +93,9 @@ def _build_discriminator(
         obs_shape=obs_shape,
         action_dim=action_dim,
         hidden_sizes=hidden_sizes,
-        features_dim=int(config.algo_kwargs.get("discriminator_features_dim", config.algo_kwargs.get("features_dim", 512))),
+        features_dim=int(
+            config.algo_kwargs.get("discriminator_features_dim", config.algo_kwargs.get("features_dim", 512))
+        ),
     )
 
 

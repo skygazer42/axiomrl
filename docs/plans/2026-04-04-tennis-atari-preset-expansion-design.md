@@ -21,9 +21,9 @@ This change does not modify trainer implementations, environment wrapper code, C
 The new Tennis presets should mirror the established pattern already used by `rainbow_dqn_tennis` and `r2d2_tennis`:
 
 - a root config under `configs/<algo>/tennis_atari.yaml`
-- a packaged asset mirror under `src/rl_training/assets/configs/<algo>/tennis_atari.yaml`
+- a packaged asset mirror under `src/axiomrl/assets/configs/<algo>/tennis_atari.yaml`
 - a zoo preset under `zoo/atari/<preset>.yaml`
-- a packaged asset mirror under `src/rl_training/assets/zoo/atari/<preset>.yaml`
+- a packaged asset mirror under `src/axiomrl/assets/zoo/atari/<preset>.yaml`
 - an entry in `zoo/atari/tennis_benchmark.yaml`
 
 Both configs will be copied from the existing Breakout Atari configs for the same algorithms and adapted only where Tennis already has established conventions:

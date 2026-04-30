@@ -4,7 +4,7 @@
 
 **Goal:** Add declarative per-mode environment overrides so training and evaluation can use different Atari/game protocols from the same config file.
 
-**Architecture:** Keep `TrainConfig` unchanged and extend `env_kwargs` parsing in `src/rl_training/envs/factory.py`. Base `env_kwargs` remain the shared scenario definition, while nested `training` and `evaluation` mappings provide mode-specific overrides that are recursively merged before wrapper resolution. This keeps existing configs backward compatible and creates a stable foundation for Atari evaluation protocols, video capture, sticky-action settings, and benchmark recipes.
+**Architecture:** Keep `TrainConfig` unchanged and extend `env_kwargs` parsing in `src/axiomrl/envs/factory.py`. Base `env_kwargs` remain the shared scenario definition, while nested `training` and `evaluation` mappings provide mode-specific overrides that are recursively merged before wrapper resolution. This keeps existing configs backward compatible and creates a stable foundation for Atari evaluation protocols, video capture, sticky-action settings, and benchmark recipes.
 
 **Tech Stack:** Python 3.10+, Gymnasium env factory/wrappers, existing config system, pytest.
 
@@ -28,7 +28,7 @@
 ### Task 2: Implement env mode override resolution
 
 **Files:**
-- Modify: `src/rl_training/envs/factory.py`
+- Modify: `src/axiomrl/envs/factory.py`
 
 **Step 1: Write minimal implementation**
 - Add a recursive mapping merge helper.

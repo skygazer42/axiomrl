@@ -1,7 +1,7 @@
 from pathlib import Path
 from types import SimpleNamespace
 
-import rl_training.examples.recurrent_ppo_breakout_atari_reference as recurrent_reference
+import axiomrl.examples.recurrent_ppo_breakout_atari_reference as recurrent_reference
 
 
 def test_recurrent_ppo_reference_script_builds_atari_config(monkeypatch, tmp_path: Path) -> None:

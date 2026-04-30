@@ -80,7 +80,7 @@ Fill one row per repo.
 
 | Repo | Pinned commit | Config | CLI | Artifacts | Repro | Eval | Resume | Obs | Export | Evidence (paths/links) | Borrowable patterns | Avoid copying |
 |---|---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|---|---|---|
-| AxiomRL (baseline) | `ce59cf6` | 1 | 1 | 1 | 1 | 2 | 1 | 1 | 1 | `src/rl_training/cli.py`, `src/rl_training/runtime/run_utils.py`, `src/rl_training/zoo/reporting.py` | Zoo reporting + stable-core tiering | Pixel tests need extra deps |
+| AxiomRL (baseline) | `ce59cf6` | 1 | 1 | 1 | 1 | 2 | 1 | 1 | 1 | `src/axiomrl/cli.py`, `src/axiomrl/runtime/run_utils.py`, `src/axiomrl/zoo/reporting.py` | Zoo reporting + stable-core tiering | Pixel tests need extra deps |
 | SB3 | `a72be40` (2026-03-18) | 1 | 0 | 2 | 1 | 1 | 2 | 1 | 1 | `stable_baselines3/common/base_class.py`, `common/callbacks.py`, `common/logger.py` | Stable base class + callback ecosystem | Not a CLI-first project |
 | RL Baselines3 Zoo | `bb4bdf1` (2026-03-13) | 2 | 2 | 2 | 2 | 2 | 1 | 2 | 1 | `rl_zoo3/train.py`, `rl_zoo3/exp_manager.py` | Experiment manager layer | Large env-specific flag surface |
 | CleanRL | `004f8a0` (2025-07-08) | 1 | 1 | 1 | 2 | 1 | 0 | 2 | 1 | `cleanrl/ppo.py`, `cleanrl_utils/benchmark.py` | Vertical-slice scripts + tyro CLI | Duplication is intentional |
@@ -98,11 +98,11 @@ Fill one row per repo.
 
 Key facts to anchor the scorecard:
 
-- **Stable API tiering:** `rl_training` + `rl_training.core` (stable), `rl_training.experimental` (managed but faster moving), `rl_training.contrib` + zoo workflows (explicitly experimental). See `docs/compatibility.md`.
-- **Entry points:** `axiomrl` uses `src/rl_training/cli.py` (`train/eval/resume/zoo`); `axiomrl-zoo` uses `src/rl_training/zoo_cli.py`.
-- **Run structure:** created via `src/rl_training/experiment/runs.py` (run id includes algo/env/seed/timestamp); artifacts include `metadata.json`, `config.yaml`, `checkpoints/`, and `tensorboard/`.
-- **Metadata contract:** `src/rl_training/runtime/run_utils.py` writes `metadata.json` and updates `latest_metrics` / `best_checkpoint` on checkpoint saves.
-- **Zoo reporting:** reads `runs/*/metadata.json` and produces text/JSON/CSV reports via `src/rl_training/zoo/reporting.py`.
+- **Stable API tiering:** `axiomrl` + `axiomrl.core` (stable), `axiomrl.experimental` (managed but faster moving), `axiomrl.contrib` + zoo workflows (explicitly experimental). See `docs/compatibility.md`.
+- **Entry points:** `axiomrl` uses `src/axiomrl/cli.py` (`train/eval/resume/zoo`); `axiomrl-zoo` uses `src/axiomrl/zoo_cli.py`.
+- **Run structure:** created via `src/axiomrl/experiment/runs.py` (run id includes algo/env/seed/timestamp); artifacts include `metadata.json`, `config.yaml`, `checkpoints/`, and `tensorboard/`.
+- **Metadata contract:** `src/axiomrl/runtime/run_utils.py` writes `metadata.json` and updates `latest_metrics` / `best_checkpoint` on checkpoint saves.
+- **Zoo reporting:** reads `runs/*/metadata.json` and produces text/JSON/CSV reports via `src/axiomrl/zoo/reporting.py`.
 
 ---
 
@@ -236,13 +236,13 @@ Avoid copying:
 
 - [x] **Enrich `metadata.json` with environment + git context** (Done: 2026-03-21)
   - Acceptance (met): `metadata.json` records `created_at_utc`, command/argv, python/OS, and pinned versions for key deps; git commit + dirty flag when available; no failures when git is absent.
-  - Implementation: `src/rl_training/runtime/run_utils.py`
+  - Implementation: `src/axiomrl/runtime/run_utils.py`
   - Tests: `tests/test_run_utils.py`
   - Docs: `docs/run-artifacts.md` (schema + run dir layout)
 
 - [x] **Add `axiomrl doctor` for environment self-check** (Done: 2026-03-21)
   - Acceptance (met): `axiomrl doctor` returns exit code 0 and prints python/torch/cuda/gymnasium versions and key capabilities in a stable, greppable format.
-  - Implementation: `src/rl_training/cli.py`
+  - Implementation: `src/axiomrl/cli.py`
   - Tests: `tests/test_doctor_cli.py`
 
 - [x] **Document "dev/test dependencies" for pixel and render tests** (Done: 2026-03-21)
@@ -254,7 +254,7 @@ Avoid copying:
 ### P1 (bigger surface area)
 
 - [x] **Config validation + schema documentation** (Done: 2026-03-21)
-  - CLI validation: `src/rl_training/cli.py`
+  - CLI validation: `src/axiomrl/cli.py`
   - Docs: `docs/config-schema.md`
   - Tests: `tests/test_cli.py`
 
@@ -277,5 +277,5 @@ Avoid copying:
 
 Record PoC outcomes here (measured time/cost, risk notes, follow-ups).
 
-- PoC 1: metadata enrichment (TDD; `src/rl_training/runtime/run_utils.py`, `tests/test_run_utils.py`)
-- PoC 2: `axiomrl doctor` (TDD; `src/rl_training/cli.py`, `tests/test_doctor_cli.py`)
+- PoC 1: metadata enrichment (TDD; `src/axiomrl/runtime/run_utils.py`, `tests/test_run_utils.py`)
+- PoC 2: `axiomrl doctor` (TDD; `src/axiomrl/cli.py`, `tests/test_doctor_cli.py`)

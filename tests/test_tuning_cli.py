@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from rl_training.cli import main
+from axiomrl.cli import main
 
 
 def _write_base_train_config(tmp_path: Path) -> Path:
@@ -264,10 +264,10 @@ def test_tune_command_reports_missing_optuna_dependency(
         encoding="utf-8",
     )
 
-    import rl_training.tuning.optuna_backend as optuna_backend
+    import axiomrl.tuning.optuna_backend as optuna_backend
 
     def _raise_missing_dependency() -> object:
-        raise ModuleNotFoundError("Optuna backend requires `pip install \"axiomrl[tuning]\"`")
+        raise ModuleNotFoundError('Optuna backend requires `pip install "axiomrl[tuning]"`')
 
     monkeypatch.setattr(optuna_backend, "_import_optuna", _raise_missing_dependency)
 
@@ -370,9 +370,10 @@ def test_tune_report_command_can_emit_json_and_write_output_file(
             "observed_unique_count": 2,
         },
     }
-    assert payload["search_efficiency_summary"]["time_to_best_seconds"] is None or payload["search_efficiency_summary"][
-        "time_to_best_seconds"
-    ] >= 0.0
+    assert (
+        payload["search_efficiency_summary"]["time_to_best_seconds"] is None
+        or payload["search_efficiency_summary"]["time_to_best_seconds"] >= 0.0
+    )
     assert payload["selected_incumbent_trace"] == [
         {
             "trial_index": 0,
@@ -569,9 +570,7 @@ def test_tune_report_command_supports_status_sort_and_top_k_csv(
     assert rows[0]["selected_best_objective_delta"] == "0.0"
 
 
-def test_tune_report_command_supports_duration_sorting(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_tune_report_command_supports_duration_sorting(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     study_dir = _write_study_report_fixture(tmp_path)
     trials = [
         json.loads(line)
@@ -611,9 +610,7 @@ def test_tune_report_command_supports_duration_sorting(
     }
 
 
-def test_tune_report_command_supports_parameter_filters(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_tune_report_command_supports_parameter_filters(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     study_dir = _write_study_report_fixture(tmp_path)
 
     exit_code = main(
@@ -724,9 +721,7 @@ def test_tune_report_command_supports_duration_floor_filters(
     assert [trial["trial_index"] for trial in payload["trials"]] == [2]
 
 
-def test_tune_report_command_supports_frontier_only_filter(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_tune_report_command_supports_frontier_only_filter(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     study_dir = _write_study_report_fixture(tmp_path)
     trials = [
         json.loads(line)
@@ -799,9 +794,7 @@ def test_tune_report_command_supports_error_substring_filters(
     assert [trial["trial_index"] for trial in payload["trials"]] == [1]
 
 
-def test_tune_report_command_supports_exact_error_filters(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_tune_report_command_supports_exact_error_filters(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     study_dir = _write_study_report_fixture(tmp_path)
 
     exit_code = main(
@@ -830,9 +823,7 @@ def test_tune_report_command_supports_exact_error_filters(
     assert [trial["trial_index"] for trial in payload["trials"]] == [1]
 
 
-def test_tune_report_command_supports_error_type_filters(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_tune_report_command_supports_error_type_filters(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     study_dir = _write_study_report_fixture(tmp_path)
 
     exit_code = main(
@@ -861,9 +852,7 @@ def test_tune_report_command_supports_error_type_filters(
     assert [trial["trial_index"] for trial in payload["trials"]] == [1]
 
 
-def test_tune_report_command_rejects_combined_error_filters(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_tune_report_command_rejects_combined_error_filters(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     study_dir = _write_study_report_fixture(tmp_path)
 
     with pytest.raises(SystemExit) as exc:
@@ -973,9 +962,7 @@ def test_tune_report_command_includes_selected_error_summaries(
     }
 
 
-def test_tune_report_command_supports_focus_param(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_tune_report_command_supports_focus_param(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     study_dir = _write_study_report_fixture(tmp_path)
 
     exit_code = main(
@@ -1004,9 +991,7 @@ def test_tune_report_command_supports_focus_param(
     }
 
 
-def test_tune_report_command_supports_focus_param_sorting(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_tune_report_command_supports_focus_param_sorting(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     study_dir = _write_study_report_fixture(tmp_path)
 
     exit_code = main(
@@ -1115,9 +1100,7 @@ def test_tune_report_command_supports_focus_param_duration_sorting(
     }
 
 
-def test_tune_report_command_supports_focus_param_top_k(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_tune_report_command_supports_focus_param_top_k(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     study_dir = _write_study_report_fixture(tmp_path)
 
     exit_code = main(
@@ -1169,9 +1152,7 @@ def test_tune_report_command_rejects_focus_only_flags_without_focus_param(
     assert "--focus-sort-by requires --focus-param" in capsys.readouterr().err
 
 
-def test_tune_report_command_can_export_selected_configs(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_tune_report_command_can_export_selected_configs(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     study_dir = _write_study_report_fixture(tmp_path)
     export_dir = tmp_path / "exported-configs"
 
@@ -1209,9 +1190,7 @@ def test_tune_report_command_can_export_selected_configs(
     assert yaml.safe_load(exported_config_path.read_text(encoding="utf-8"))["total_timesteps"] == 128
 
 
-def test_tune_report_command_exports_only_completed_trials(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_tune_report_command_exports_only_completed_trials(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     study_dir = _write_study_report_fixture(tmp_path)
     failed_run_dir = study_dir / "trials" / "trial-b"
     (failed_run_dir / "config.yaml").write_text(

@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from rl_training.api import APPO, IMPALA, PPG, PPO, TRPO, DiscreteSAC
-from rl_training.contrib import RecurrentPPO
-from rl_training.experiment.config import TrainConfig
+from axiomrl.api import APPO, IMPALA, PPG, PPO, TRPO, DiscreteSAC
+from axiomrl.contrib import RecurrentPPO
+from axiomrl.experiment.config import TrainConfig
 
 
 def test_impala_public_api_supports_learn_save_load_and_evaluate(tmp_path: Path) -> None:

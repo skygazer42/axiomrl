@@ -1,15 +1,14 @@
 from __future__ import annotations
 
 import csv
-from collections.abc import Mapping
 import io
 import json
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
-from rl_training.zoo.manifests import _build_payload_metadata_fields
-from rl_training.zoo.reporting import build_report_payload
-
+from axiomrl.zoo.manifests import _build_payload_metadata_fields
+from axiomrl.zoo.reporting import build_report_payload
 
 LEADERBOARD_METRIC_CHOICES = (
     "best-return",
@@ -82,13 +81,14 @@ def _resolve_leaderboard_metric_alias(
 
     score_normalization = manifest.get("score_normalization", {})
     prefers_normalized_scores = (
-        isinstance(score_normalization, dict)
-        and str(score_normalization.get("type", "none")).lower() != "none"
+        isinstance(score_normalization, dict) and str(score_normalization.get("type", "none")).lower() != "none"
     )
     resolved_compare_to = compare_to if compare_to is not None else "best"
     if score_view == "normalized" and not prefers_normalized_scores:
         raise ValueError("--score-view normalized requires score normalization in the benchmark manifest")
-    resolved_score_view = score_view if score_view is not None else ("normalized" if prefers_normalized_scores else "return")
+    resolved_score_view = (
+        score_view if score_view is not None else ("normalized" if prefers_normalized_scores else "return")
+    )
     resolved_metric = f"{resolved_compare_to}-{resolved_score_view}"
     resolved_sort_by, resolved_descending = metric_to_sort_by[resolved_metric]
     return resolved_compare_to, resolved_score_view, resolved_metric, resolved_sort_by, resolved_descending
@@ -113,14 +113,15 @@ def build_leaderboard_payload(
 ) -> dict[str, Any]:
     resolved_compare_to, resolved_score_view, resolved_metric, resolved_sort_by, resolved_descending = (
         _resolve_leaderboard_metric_alias(
-        manifest,
-        leaderboard_metric=leaderboard_metric,
-        baseline_preset=baseline_preset,
-        compare_to=compare_to,
-        score_view=score_view,
-        sort_by=sort_by,
-        descending=descending,
-    ))
+            manifest,
+            leaderboard_metric=leaderboard_metric,
+            baseline_preset=baseline_preset,
+            compare_to=compare_to,
+            score_view=score_view,
+            sort_by=sort_by,
+            descending=descending,
+        )
+    )
     report_payload = build_report_payload(
         manifest,
         runs_dir=runs_dir,
@@ -206,8 +207,7 @@ def _render_text_leaderboard(payload: Mapping[str, Any]) -> str:
         )
     if metadata_fields["manifest_alignment_protocol_mismatch_runs"] is not None:
         lines.append(
-            "manifest_alignment_protocol_mismatch_runs="
-            f"{metadata_fields['manifest_alignment_protocol_mismatch_runs']}"
+            f"manifest_alignment_protocol_mismatch_runs={metadata_fields['manifest_alignment_protocol_mismatch_runs']}"
         )
     if metadata_fields["manifest_alignment_all_runs"] is not None:
         lines.append(f"manifest_alignment_all_runs={metadata_fields['manifest_alignment_all_runs']}")

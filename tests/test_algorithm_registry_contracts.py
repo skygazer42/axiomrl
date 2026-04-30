@@ -1,4 +1,4 @@
-from rl_training.experiment.registry import get_algorithm_spec
+from axiomrl.experiment.registry import get_algorithm_spec
 
 REGISTERED_ALGORITHMS = (
     "a2c",

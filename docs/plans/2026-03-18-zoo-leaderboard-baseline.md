@@ -4,7 +4,7 @@
 
 **Goal:** Add baseline-aware benchmark comparisons so zoo reports and leaderboards can rank presets by improvement over a named baseline preset.
 
-**Architecture:** Extend aggregate preset rows in `src/rl_training/zoo_cli.py` with baseline-relative delta and ratio fields computed against a named preset's latest mean return and normalized score. Thread a new `--baseline-preset` CLI option through report and leaderboard flows, require `--group-by preset` for baseline comparisons, and expose explicit leaderboard aliases for delta-vs-baseline and ratio-vs-baseline ranking.
+**Architecture:** Extend aggregate preset rows in `src/axiomrl/zoo_cli.py` with baseline-relative delta and ratio fields computed against a named preset's latest mean return and normalized score. Thread a new `--baseline-preset` CLI option through report and leaderboard flows, require `--group-by preset` for baseline comparisons, and expose explicit leaderboard aliases for delta-vs-baseline and ratio-vs-baseline ranking.
 
 **Tech Stack:** Python 3.10+, argparse, existing zoo CLI/report serializers, pytest.
 
@@ -30,8 +30,8 @@ Expected: FAIL because baseline fields, CLI option plumbing, and leaderboard ali
 ### Task 2: Implement baseline aggregation and ranking
 
 **Files:**
-- Modify: `src/rl_training/zoo_cli.py`
-- Modify: `src/rl_training/cli.py`
+- Modify: `src/axiomrl/zoo_cli.py`
+- Modify: `src/axiomrl/cli.py`
 
 **Step 1: Write minimal implementation**
 - Add a helper that attaches baseline-relative fields to aggregate rows.
@@ -50,7 +50,7 @@ Expected: PASS.
 **Files:**
 - Modify: `README.md`
 - Modify: `zoo/README.md`
-- Modify: `src/rl_training/assets/zoo/README.md`
+- Modify: `src/axiomrl/assets/zoo/README.md`
 
 **Step 1: Add docs**
 - Show `--baseline-preset dqn_breakout`.

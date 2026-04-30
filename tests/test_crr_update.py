@@ -1,7 +1,7 @@
 import torch
 
-from rl_training.algorithms.crr import CRR, crr_loss
-from rl_training.models import MLPSACModel
+from axiomrl.algorithms.crr import CRR, crr_loss
+from axiomrl.models import MLPSACModel
 
 
 def test_crr_loss_returns_named_metrics() -> None:

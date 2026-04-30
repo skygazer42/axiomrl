@@ -71,7 +71,7 @@ If a module starts doing a neighbor's job, that is a design bug.
 The user should eventually be able to do this:
 
 ```python
-from rl_training.algorithms import PPO
+from axiomrl.algorithms import PPO
 
 algo = PPO(config)
 algo.learn()
@@ -113,7 +113,7 @@ Purpose:
 
 Recommended location:
 
-- `src/rl_training/experiment/config.py`
+- `src/axiomrl/experiment/config.py`
 
 Suggested shape:
 
@@ -154,7 +154,7 @@ Purpose:
 
 Recommended location:
 
-- `src/rl_training/experiment/runs.py`
+- `src/axiomrl/experiment/runs.py`
 
 Suggested shape:
 
@@ -181,7 +181,7 @@ Purpose:
 
 Recommended location:
 
-- `src/rl_training/runtime/types.py`
+- `src/axiomrl/runtime/types.py`
 
 Suggested shape:
 
@@ -211,7 +211,7 @@ For `v1`, keep this simple. Do not add a heavyweight metrics object unless there
 
 Recommended location:
 
-- `src/rl_training/policies/base.py`
+- `src/axiomrl/policies/base.py`
 
 ```python
 from typing import Protocol
@@ -270,7 +270,7 @@ class Policy(Protocol):
 
 Recommended location:
 
-- `src/rl_training/algorithms/base.py`
+- `src/axiomrl/algorithms/base.py`
 
 ```python
 from dataclasses import dataclass
@@ -315,8 +315,8 @@ This is the narrowest useful version of the Tianshou idea.
 
 Recommended locations:
 
-- `src/rl_training/algorithms/on_policy.py`
-- `src/rl_training/algorithms/off_policy.py`
+- `src/axiomrl/algorithms/on_policy.py`
+- `src/axiomrl/algorithms/off_policy.py`
 
 Contract distinction:
 
@@ -343,7 +343,7 @@ Do not create separate trainer classes per algorithm. Keep the contract split at
 
 Recommended location:
 
-- `src/rl_training/data/rollout_buffer.py`
+- `src/axiomrl/data/rollout_buffer.py`
 
 ```python
 from typing import Protocol
@@ -408,7 +408,7 @@ class RolloutBuffer(Protocol):
 
 Recommended location:
 
-- `src/rl_training/data/replay_buffer.py`
+- `src/axiomrl/data/replay_buffer.py`
 
 ```python
 from typing import Protocol
@@ -457,7 +457,7 @@ class ReplayBuffer(Protocol):
 
 Recommended location:
 
-- `src/rl_training/runtime/collector.py`
+- `src/axiomrl/runtime/collector.py`
 
 ```python
 from dataclasses import dataclass
@@ -513,7 +513,7 @@ class Collector(Protocol):
 
 Recommended location:
 
-- `src/rl_training/runtime/trainer.py`
+- `src/axiomrl/runtime/trainer.py`
 
 ```python
 from dataclasses import dataclass
@@ -578,7 +578,7 @@ This state should not be split across callback objects or hidden inside algorith
 
 Recommended location:
 
-- `src/rl_training/runtime/callbacks.py`
+- `src/axiomrl/runtime/callbacks.py`
 
 ```python
 class Callback(Protocol):
@@ -608,7 +608,7 @@ class Callback(Protocol):
 
 Recommended location:
 
-- `src/rl_training/experiment/logging.py`
+- `src/axiomrl/experiment/logging.py`
 
 ```python
 class Logger(Protocol):
@@ -634,7 +634,7 @@ class Logger(Protocol):
 
 Recommended location:
 
-- `src/rl_training/runtime/evaluator.py`
+- `src/axiomrl/runtime/evaluator.py`
 
 ```python
 from dataclasses import dataclass
@@ -675,7 +675,7 @@ class Evaluator(Protocol):
 
 Recommended location:
 
-- `src/rl_training/experiment/manager.py`
+- `src/axiomrl/experiment/manager.py`
 
 ```python
 class ExperimentManager(Protocol):
@@ -709,7 +709,7 @@ This is the narrowest useful version of the RL Zoo `ExperimentManager` pattern.
 
 Recommended location:
 
-- `src/rl_training/experiment/checkpointing.py`
+- `src/axiomrl/experiment/checkpointing.py`
 
 ```python
 from dataclasses import dataclass
@@ -775,23 +775,23 @@ If one of these becomes necessary, that is a signal that the package has entered
 
 When implementation starts, use these file mappings:
 
-- `src/rl_training/algorithms/base.py`
-- `src/rl_training/algorithms/on_policy.py`
-- `src/rl_training/algorithms/off_policy.py`
-- `src/rl_training/algorithms/ppo.py`
-- `src/rl_training/policies/base.py`
-- `src/rl_training/policies/actor_critic.py`
-- `src/rl_training/data/rollout_buffer.py`
-- `src/rl_training/data/replay_buffer.py`
-- `src/rl_training/runtime/collector.py`
-- `src/rl_training/runtime/trainer.py`
-- `src/rl_training/runtime/evaluator.py`
-- `src/rl_training/runtime/callbacks.py`
-- `src/rl_training/experiment/config.py`
-- `src/rl_training/experiment/runs.py`
-- `src/rl_training/experiment/manager.py`
-- `src/rl_training/experiment/checkpointing.py`
-- `src/rl_training/experiment/logging.py`
+- `src/axiomrl/algorithms/base.py`
+- `src/axiomrl/algorithms/on_policy.py`
+- `src/axiomrl/algorithms/off_policy.py`
+- `src/axiomrl/algorithms/ppo.py`
+- `src/axiomrl/policies/base.py`
+- `src/axiomrl/policies/actor_critic.py`
+- `src/axiomrl/data/rollout_buffer.py`
+- `src/axiomrl/data/replay_buffer.py`
+- `src/axiomrl/runtime/collector.py`
+- `src/axiomrl/runtime/trainer.py`
+- `src/axiomrl/runtime/evaluator.py`
+- `src/axiomrl/runtime/callbacks.py`
+- `src/axiomrl/experiment/config.py`
+- `src/axiomrl/experiment/runs.py`
+- `src/axiomrl/experiment/manager.py`
+- `src/axiomrl/experiment/checkpointing.py`
+- `src/axiomrl/experiment/logging.py`
 
 ## Final Recommendation
 

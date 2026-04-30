@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from rl_training.data import export_random_transition_dataset, load_transition_dataset
+from axiomrl.data import export_random_transition_dataset, load_transition_dataset
 
 
 def test_export_random_transition_dataset_writes_valid_npz(tmp_path: Path) -> None:

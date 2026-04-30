@@ -4,7 +4,7 @@
 
 **Goal:** Make leaderboard ranking easier to use by exposing a small set of explicit metric modes for latest/best/gap comparisons instead of requiring users to know raw `--sort-by` field names.
 
-**Architecture:** Extend `src/rl_training/zoo_cli.py` with a leaderboard-metric resolver that maps stable user-facing mode names onto existing aggregate fields such as best/latest return, best/latest normalized score, and latest-vs-best gap metrics. Keep the generic `--sort-by` path for advanced use, but let leaderboard mode resolve a canonical `leaderboard_metric` into the appropriate sort field and reflect that choice in JSON/text/CSV payload metadata.
+**Architecture:** Extend `src/axiomrl/zoo_cli.py` with a leaderboard-metric resolver that maps stable user-facing mode names onto existing aggregate fields such as best/latest return, best/latest normalized score, and latest-vs-best gap metrics. Keep the generic `--sort-by` path for advanced use, but let leaderboard mode resolve a canonical `leaderboard_metric` into the appropriate sort field and reflect that choice in JSON/text/CSV payload metadata.
 
 **Tech Stack:** Python 3.10+, argparse, existing zoo CLI/report serializers, pytest.
 
@@ -28,8 +28,8 @@ Expected: FAIL because `--leaderboard-metric` is not supported yet.
 ### Task 2: Implement metric alias resolution
 
 **Files:**
-- Modify: `src/rl_training/zoo_cli.py`
-- Modify: `src/rl_training/cli.py`
+- Modify: `src/axiomrl/zoo_cli.py`
+- Modify: `src/axiomrl/cli.py`
 
 **Step 1: Write minimal implementation**
 - Add `--leaderboard-metric` parser support with a constrained choice set.
@@ -48,7 +48,7 @@ Expected: PASS.
 **Files:**
 - Modify: `README.md`
 - Modify: `zoo/README.md`
-- Modify: `src/rl_training/assets/zoo/README.md`
+- Modify: `src/axiomrl/assets/zoo/README.md`
 
 **Step 1: Add docs**
 - Show example commands for `latest-normalized` and `gap-return`.

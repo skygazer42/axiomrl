@@ -1,8 +1,8 @@
 from pathlib import Path
 
-from rl_training.envs import POINT_GOAL_ENV_ID
-from rl_training.experiment.config import TrainConfig
-from rl_training.runtime.her_trainer import train_her
+from axiomrl.envs import POINT_GOAL_ENV_ID
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.runtime.her_trainer import train_her
 
 
 def test_train_her_writes_checkpoint_and_metrics(tmp_path: Path) -> None:

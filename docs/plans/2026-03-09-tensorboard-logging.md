@@ -71,8 +71,8 @@ Expected: PASS
 ### Task 2: Wire TensorBoard logging through run setup and dependencies
 
 **Files:**
-- Modify: `src/rl_training/experiment/logging.py`
-- Modify: `src/rl_training/runtime/run_utils.py`
+- Modify: `src/axiomrl/experiment/logging.py`
+- Modify: `src/axiomrl/runtime/run_utils.py`
 - Modify: `pyproject.toml`
 
 **Step 1: Use the failing tests**

@@ -6,9 +6,9 @@ import torch
 from torch import nn
 from torch.distributions import Categorical
 
-from rl_training.models.cnn.nature import NatureCNN
-from rl_training.models.dreamer import DreamerModel
-from rl_training.policies.base import PolicyOutput
+from axiomrl.models.cnn.nature import NatureCNN
+from axiomrl.models.dreamer import DreamerModel
+from axiomrl.policies.base import PolicyOutput
 
 
 class PODreamerModel(DreamerModel):

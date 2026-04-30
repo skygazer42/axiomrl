@@ -4,7 +4,7 @@
 
 **Goal:** Add a higher-level leaderboard switch that lets users compare peak performance versus final performance without needing to understand the full leaderboard metric alias set.
 
-**Architecture:** Extend `src/rl_training/zoo_cli.py` with a leaderboard-only `--compare-to latest|best` option that resolves into the existing leaderboard metric alias layer. When no explicit `--leaderboard-metric` or raw `--sort-by` is provided, `compare_to=latest` should select `latest-normalized` on normalized benchmarks and `latest-return` on unnormalized ones; `compare_to=best` should analogously resolve to `best-*`. Surface the resolved `compare_to` and `leaderboard_metric` in leaderboard payload metadata and renderers.
+**Architecture:** Extend `src/axiomrl/zoo_cli.py` with a leaderboard-only `--compare-to latest|best` option that resolves into the existing leaderboard metric alias layer. When no explicit `--leaderboard-metric` or raw `--sort-by` is provided, `compare_to=latest` should select `latest-normalized` on normalized benchmarks and `latest-return` on unnormalized ones; `compare_to=best` should analogously resolve to `best-*`. Surface the resolved `compare_to` and `leaderboard_metric` in leaderboard payload metadata and renderers.
 
 **Tech Stack:** Python 3.10+, argparse, existing zoo CLI/report serializers, pytest.
 
@@ -28,8 +28,8 @@ Expected: FAIL because `--compare-to` is not supported yet.
 ### Task 2: Implement compare-to resolution
 
 **Files:**
-- Modify: `src/rl_training/zoo_cli.py`
-- Modify: `src/rl_training/cli.py`
+- Modify: `src/axiomrl/zoo_cli.py`
+- Modify: `src/axiomrl/cli.py`
 
 **Step 1: Write minimal implementation**
 - Add `--compare-to` parser support in both CLI entry points.
@@ -47,7 +47,7 @@ Expected: PASS.
 **Files:**
 - Modify: `README.md`
 - Modify: `zoo/README.md`
-- Modify: `src/rl_training/assets/zoo/README.md`
+- Modify: `src/axiomrl/assets/zoo/README.md`
 
 **Step 1: Add docs**
 - Show `--compare-to latest`.

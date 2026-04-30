@@ -1,8 +1,8 @@
 import pytest
 import torch
 
-from rl_training.algorithms.td3_bc import TD3BC, td3_bc_loss
-from rl_training.models.mlp_td3 import MLPTD3Model
+from axiomrl.algorithms.td3_bc import TD3BC, td3_bc_loss
+from axiomrl.models.mlp_td3 import MLPTD3Model
 
 
 def test_td3_bc_loss_returns_named_metrics() -> None:

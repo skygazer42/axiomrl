@@ -6,9 +6,9 @@ from typing import Any
 import torch
 from torch.nn import functional as F
 
-from rl_training.algorithms.base import UpdateResult
-from rl_training.algorithms.drq import _random_crop
-from rl_training.models.cnn.curl import CNNCURLModel
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.algorithms.drq import _random_crop
+from axiomrl.models.cnn.curl import CNNCURLModel
 
 
 def _critic_loss_terms(

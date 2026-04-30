@@ -1,7 +1,7 @@
 import pytest
 import torch
 
-from rl_training.data.rollout_buffer import RolloutBuffer
+from axiomrl.data.rollout_buffer import RolloutBuffer
 
 
 def test_rollout_buffer_computes_returns_and_advantages() -> None:

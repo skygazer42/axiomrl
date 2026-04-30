@@ -1,7 +1,7 @@
 import torch
 
-from rl_training.algorithms.naf import NAF, naf_loss
-from rl_training.models.mlp_naf import MLPNAFModel
+from axiomrl.algorithms.naf import NAF, naf_loss
+from axiomrl.models.mlp_naf import MLPNAFModel
 
 
 def test_mlp_naf_model_outputs_bounded_actions_and_scalar_values() -> None:

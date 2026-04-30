@@ -1,8 +1,8 @@
 import pytest
 import torch
 
-from rl_training.algorithms.trpo import TRPO, trpo_loss
-from rl_training.models.mlp_actor_critic import MLPActorCritic
+from axiomrl.algorithms.trpo import TRPO, trpo_loss
+from axiomrl.models.mlp_actor_critic import MLPActorCritic
 
 
 def test_trpo_loss_returns_named_metrics() -> None:

@@ -55,7 +55,9 @@ class RecurrentReplayBuffer:
             device=self.device,
         )
         self.dones = torch.zeros((self.capacity, self.sequence_length), dtype=torch.float32, device=self.device)
-        self.episode_starts = torch.zeros((self.capacity, self.sequence_length), dtype=torch.float32, device=self.device)
+        self.episode_starts = torch.zeros(
+            (self.capacity, self.sequence_length), dtype=torch.float32, device=self.device
+        )
         self.mask = torch.zeros((self.capacity, self.sequence_length), dtype=torch.float32, device=self.device)
         self.initial_h = torch.zeros(
             (self.capacity, self.num_layers, self.hidden_size),

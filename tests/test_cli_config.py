@@ -6,8 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from rl_training.cli import load_config, main
-from rl_training.version import __version__
+from axiomrl.cli import load_config, main
+from axiomrl.version import __version__
 
 
 def test_version_flag_prints_cli_version(capsys: pytest.CaptureFixture[str]) -> None:
@@ -27,7 +27,7 @@ def test_cli_module_does_not_import_torch_on_import() -> None:
         [
             sys.executable,
             "-c",
-            "import sys; import rl_training.cli; print('torch' in sys.modules)",
+            "import sys; import axiomrl.cli; print('torch' in sys.modules)",
         ],
         env=env,
         capture_output=True,

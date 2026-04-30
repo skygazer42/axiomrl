@@ -1,8 +1,8 @@
 import pytest
 import torch
 
-from rl_training.algorithms.rebrac import ReBRAC, rebrac_loss
-from rl_training.models.mlp_td3 import MLPTD3Model
+from axiomrl.algorithms.rebrac import ReBRAC, rebrac_loss
+from axiomrl.models.mlp_td3 import MLPTD3Model
 
 
 def test_rebrac_loss_returns_named_metrics() -> None:

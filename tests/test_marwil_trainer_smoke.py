@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from rl_training.experiment.config import TrainConfig
-from rl_training.runtime.marwil_trainer import train_marwil
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.runtime.marwil_trainer import train_marwil
 
 
 def test_train_marwil_writes_checkpoint_and_metrics(tmp_path: Path) -> None:

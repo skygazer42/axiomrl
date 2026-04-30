@@ -5,9 +5,9 @@ from typing import Any
 import torch
 from torch.nn import functional as F
 
-from rl_training.algorithms.base import UpdateResult
-from rl_training.algorithms.dreamer import Dreamer
-from rl_training.models.dreamer import DreamerModel
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.algorithms.dreamer import Dreamer
+from axiomrl.models.dreamer import DreamerModel
 
 
 class Twisted(Dreamer):
@@ -37,9 +37,7 @@ class Twisted(Dreamer):
         if float(reuse_threshold) < 0.0:
             raise ValueError(f"reuse_threshold must be >= 0, got {reuse_threshold}")
         if float(transport_temperature) <= 0.0:
-            raise ValueError(
-                f"transport_temperature must be > 0, got {transport_temperature}"
-            )
+            raise ValueError(f"transport_temperature must be > 0, got {transport_temperature}")
         self.reuse_loss_coef = float(reuse_loss_coef)
         self.reuse_threshold = float(reuse_threshold)
         self.transport_temperature = float(transport_temperature)
@@ -64,9 +62,7 @@ class Twisted(Dreamer):
         reward_loss = F.mse_loss(predicted_rewards, rewards)
 
         frame_delta = (obs_target - obs_base).abs()
-        reuse_weights = torch.sigmoid(
-            (self.reuse_threshold - frame_delta) / self.transport_temperature
-        )
+        reuse_weights = torch.sigmoid((self.reuse_threshold - frame_delta) / self.transport_temperature)
         reuse_residual = (decoded_next - obs_base).pow(2) * reuse_weights
         reuse_loss = reuse_residual.sum() / reuse_weights.sum().clamp_min(1.0)
 
@@ -77,17 +73,13 @@ class Twisted(Dreamer):
 
         metrics = {
             "twisted_world_model_loss": float(loss.detach().cpu().item()),
-            "twisted_reconstruction_loss": float(
-                reconstruction_loss.detach().cpu().item()
-            ),
+            "twisted_reconstruction_loss": float(reconstruction_loss.detach().cpu().item()),
             "twisted_reward_loss": float(reward_loss.detach().cpu().item()),
             "twisted_reuse_loss": float(reuse_loss.detach().cpu().item()),
             "twisted_reuse_loss_coef": self.reuse_loss_coef,
             "twisted_reuse_threshold": self.reuse_threshold,
             "twisted_transport_temperature": self.transport_temperature,
-            "twisted_transport_weight_mean": float(
-                reuse_weights.mean().detach().cpu().item()
-            ),
+            "twisted_transport_weight_mean": float(reuse_weights.mean().detach().cpu().item()),
             "twisted_persistence_rate": float(
                 (frame_delta <= self.reuse_threshold).to(dtype=torch.float32).mean().detach().cpu().item()
             ),
@@ -106,10 +98,7 @@ class Twisted(Dreamer):
             imagination_horizon=imagination_horizon,
             global_step=global_step,
         )
-        metrics = {
-            key.replace("dreamer_", "twisted_"): value
-            for key, value in result.metrics.items()
-        }
+        metrics = {key.replace("dreamer_", "twisted_"): value for key, value in result.metrics.items()}
         metrics["twisted_reuse_loss_coef"] = self.reuse_loss_coef
         return UpdateResult(metrics=metrics, num_gradient_steps=result.num_gradient_steps)
 
@@ -122,12 +111,6 @@ class Twisted(Dreamer):
 
     def load_state_dict(self, state_dict: dict[str, Any]) -> None:
         super().load_state_dict(state_dict)
-        self.reuse_loss_coef = float(
-            state_dict.get("reuse_loss_coef", self.reuse_loss_coef)
-        )
-        self.reuse_threshold = float(
-            state_dict.get("reuse_threshold", self.reuse_threshold)
-        )
-        self.transport_temperature = float(
-            state_dict.get("transport_temperature", self.transport_temperature)
-        )
+        self.reuse_loss_coef = float(state_dict.get("reuse_loss_coef", self.reuse_loss_coef))
+        self.reuse_threshold = float(state_dict.get("reuse_threshold", self.reuse_threshold))
+        self.transport_temperature = float(state_dict.get("transport_temperature", self.transport_temperature))

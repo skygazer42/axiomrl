@@ -2,7 +2,12 @@ import math
 
 import torch
 
-from rl_training.runtime.schedules import ScheduleSpec, apply_learning_rate_scale, resolve_schedule_spec, resolve_schedule_value
+from axiomrl.runtime.schedules import (
+    ScheduleSpec,
+    apply_learning_rate_scale,
+    resolve_schedule_spec,
+    resolve_schedule_value,
+)
 
 
 def test_resolve_schedule_spec_supports_string_and_mapping_payloads() -> None:

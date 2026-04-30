@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from rl_training.experiment.registry_evaluators import (
+from axiomrl.experiment.registry_evaluators import (
     _evaluate_a2c,
     _evaluate_appo,
     _evaluate_ars,
@@ -11,7 +11,7 @@ from rl_training.experiment.registry_evaluators import (
     _evaluate_ppo,
     _evaluate_trpo,
 )
-from rl_training.experiment.registry_predictors import (
+from axiomrl.experiment.registry_predictors import (
     _predict_a2c,
     _predict_appo,
     _predict_ars,
@@ -22,16 +22,16 @@ from rl_training.experiment.registry_predictors import (
     _predict_ppo,
     _predict_trpo,
 )
-from rl_training.experiment.registry_types import AlgorithmSpec
-from rl_training.runtime.a2c_trainer import train_a2c
-from rl_training.runtime.appo_trainer import train_appo
-from rl_training.runtime.ars_trainer import train_ars
-from rl_training.runtime.gail_trainer import train_gail
-from rl_training.runtime.impala_trainer import train_impala
-from rl_training.runtime.openai_es_trainer import train_openai_es
-from rl_training.runtime.ppg_trainer import train_ppg
-from rl_training.runtime.ppo_trainer import train_ppo
-from rl_training.runtime.trpo_trainer import train_trpo
+from axiomrl.experiment.registry_types import AlgorithmSpec
+from axiomrl.runtime.a2c_trainer import train_a2c
+from axiomrl.runtime.appo_trainer import train_appo
+from axiomrl.runtime.ars_trainer import train_ars
+from axiomrl.runtime.gail_trainer import train_gail
+from axiomrl.runtime.impala_trainer import train_impala
+from axiomrl.runtime.openai_es_trainer import train_openai_es
+from axiomrl.runtime.ppg_trainer import train_ppg
+from axiomrl.runtime.ppo_trainer import train_ppo
+from axiomrl.runtime.trpo_trainer import train_trpo
 
 ON_POLICY_SPECS: dict[str, AlgorithmSpec] = {
     "a2c": AlgorithmSpec(

@@ -2,11 +2,11 @@ from pathlib import Path
 
 import pytest
 
-import rl_training.runtime.dqn_trainer as dqn_trainer
-from rl_training.experiment.config import TrainConfig
-from rl_training.experiment.registry import get_algorithm_spec
-from rl_training.runtime.dqn_trainer import train_dqn
-from rl_training.runtime.workflows import evaluate_checkpoint
+import axiomrl.runtime.dqn_trainer as dqn_trainer
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.experiment.registry import get_algorithm_spec
+from axiomrl.runtime.dqn_trainer import train_dqn
+from axiomrl.runtime.workflows import evaluate_checkpoint
 
 
 def test_train_dqn_writes_checkpoint_and_metrics(tmp_path: Path) -> None:
@@ -320,7 +320,9 @@ def test_train_n_step_dqn_uses_n_step_accumulator(tmp_path: Path) -> None:
     assert result.metrics["buffer_size"] < result.metrics["global_step"]
 
 
-def test_train_rainbow_dqn_uses_n_step_accumulator_and_effective_gamma(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_train_rainbow_dqn_uses_n_step_accumulator_and_effective_gamma(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     build_kwargs: dict[str, float] = {}
     original_build_algorithm = dqn_trainer._build_algorithm
 

@@ -8,10 +8,10 @@ from typing import Any
 
 import yaml
 
-from rl_training.cli_config import apply_overrides, load_config, serialize_train_config
-from rl_training.cli_doctor import print_doctor
-from rl_training.cli_zoo import build_zoo_forward_argv
-from rl_training.version import __version__
+from axiomrl.cli_config import apply_overrides, load_config, serialize_train_config
+from axiomrl.cli_doctor import print_doctor
+from axiomrl.cli_zoo import build_zoo_forward_argv
+from axiomrl.version import __version__
 
 
 def _print_result(result: Any) -> None:
@@ -342,13 +342,13 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "train":
         try:
             config = apply_overrides(load_config(args.config), args)
-            from rl_training.experiment.sweeps import resolve_benchmark_seeds
+            from axiomrl.experiment.sweeps import resolve_benchmark_seeds
 
             resolve_benchmark_seeds(config)
         except (TypeError, ValueError) as exc:
             parser.error(str(exc))
 
-        from rl_training.experiment.default_manager import DefaultExperimentManager
+        from axiomrl.experiment.default_manager import DefaultExperimentManager
 
         manager = DefaultExperimentManager()
         try:
@@ -361,8 +361,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "tune":
         from dataclasses import replace
 
-        from rl_training.tuning.config import load_study_config
-        from rl_training.tuning.study import resume_study, run_study
+        from axiomrl.tuning.config import load_study_config
+        from axiomrl.tuning.study import resume_study, run_study
 
         if getattr(args, "resume_study", None) is not None:
             if getattr(args, "output_dir", None) is not None:
@@ -392,7 +392,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.command == "tune-report":
-        from rl_training.tuning.study import (
+        from axiomrl.tuning.study import (
             export_selected_study_configs,
             load_study_report,
             render_csv_study_report,
@@ -437,7 +437,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.command == "eval":
-        from rl_training.runtime.workflows import evaluate_checkpoint
+        from axiomrl.runtime.workflows import evaluate_checkpoint
 
         metrics = evaluate_checkpoint(
             args.checkpoint,
@@ -447,7 +447,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.command == "resume":
-        from rl_training.runtime.workflows import resume_training
+        from axiomrl.runtime.workflows import resume_training
 
         try:
             result = resume_training(
@@ -464,17 +464,17 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.command == "report":
-        from rl_training.zoo_cli import main as zoo_main
+        from axiomrl.zoo_cli import main as zoo_main
 
         return zoo_main(build_zoo_forward_argv(args, format_override="report"))
 
     if args.command == "leaderboard":
-        from rl_training.zoo_cli import main as zoo_main
+        from axiomrl.zoo_cli import main as zoo_main
 
         return zoo_main(build_zoo_forward_argv(args, format_override="leaderboard"))
 
     if args.command == "zoo":
-        from rl_training.zoo_cli import main as zoo_main
+        from axiomrl.zoo_cli import main as zoo_main
 
         return zoo_main(build_zoo_forward_argv(args))
 

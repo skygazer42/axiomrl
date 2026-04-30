@@ -1,7 +1,7 @@
 import torch
 
-from rl_training.algorithms.ars import ARS, ars_loss
-from rl_training.models.mlp_ars import MLPARSModel
+from axiomrl.algorithms.ars import ARS, ars_loss
+from axiomrl.models.mlp_ars import MLPARSModel
 
 
 def test_mlp_ars_model_actor_outputs_bounded_actions() -> None:

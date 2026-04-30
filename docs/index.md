@@ -109,7 +109,7 @@ hide:
 === "Python API"
 
     ```python
-    from rl_training.core import PPO, TrainConfig
+    from axiomrl.core import PPO, TrainConfig
 
     config = TrainConfig(
         algo="PPO",
@@ -171,7 +171,7 @@ graph LR
 
 ## 稳定核心算法
 
-`rl_training.core` 提供经过充分验证的 10 个核心算法：
+`axiomrl.core` 提供经过充分验证的 10 个核心算法：
 
 | 算法 | 类型 | 动作空间 | 说明 |
 |------|------|----------|------|

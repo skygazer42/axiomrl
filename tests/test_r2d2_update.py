@@ -1,7 +1,7 @@
 import torch
 
-from rl_training.algorithms.r2d2 import R2D2, r2d2_loss
-from rl_training.models import LSTMQNetwork
+from axiomrl.algorithms.r2d2 import R2D2, r2d2_loss
+from axiomrl.models import LSTMQNetwork
 
 
 def _make_sequence_batch() -> dict[str, torch.Tensor]:

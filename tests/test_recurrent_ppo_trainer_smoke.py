@@ -1,8 +1,8 @@
 from pathlib import Path
 
-from rl_training.experiment.config import TrainConfig
-from rl_training.runtime.recurrent_ppo_trainer import train_recurrent_ppo
-from rl_training.runtime.workflows import evaluate_checkpoint
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.runtime.recurrent_ppo_trainer import train_recurrent_ppo
+from axiomrl.runtime.workflows import evaluate_checkpoint
 
 
 def test_train_recurrent_ppo_writes_checkpoint_and_metrics(tmp_path: Path) -> None:

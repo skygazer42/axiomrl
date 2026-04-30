@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from rl_training.api import (
+from axiomrl.api import (
     ARS,
     AWAC,
     AWR,
@@ -25,8 +25,8 @@ from rl_training.api import (
     OpenAIES,
     ReBRAC,
 )
-from rl_training.envs import POINT_GOAL_ENV_ID
-from rl_training.experiment.config import TrainConfig
+from axiomrl.envs import POINT_GOAL_ENV_ID
+from axiomrl.experiment.config import TrainConfig
 
 
 def test_bc_public_api_supports_learn_save_load_and_evaluate(tmp_path: Path) -> None:

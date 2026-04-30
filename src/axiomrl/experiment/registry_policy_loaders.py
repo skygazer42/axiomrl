@@ -2,35 +2,35 @@ from __future__ import annotations
 
 import torch
 
-from rl_training.algorithms.a2c import A2C as A2CAlgorithm
-from rl_training.algorithms.appo import APPO as APPOAlgorithm
-from rl_training.algorithms.ars import ARS as ARSAlgorithm
-from rl_training.algorithms.bc import BC as BCAlgorithm
-from rl_training.algorithms.decision_transformer import (
+from axiomrl.algorithms.a2c import A2C as A2CAlgorithm
+from axiomrl.algorithms.appo import APPO as APPOAlgorithm
+from axiomrl.algorithms.ars import ARS as ARSAlgorithm
+from axiomrl.algorithms.bc import BC as BCAlgorithm
+from axiomrl.algorithms.decision_transformer import (
     DecisionTransformer as DecisionTransformerAlgorithm,
 )
-from rl_training.algorithms.gail import GAIL as GAILAlgorithm
-from rl_training.algorithms.impala import IMPALA as IMPALAAlgorithm
-from rl_training.algorithms.openai_es import OpenAIES as OpenAIESAlgorithm
-from rl_training.algorithms.ppg import PPG as PPGAlgorithm
-from rl_training.algorithms.ppo import PPO as PPOAlgorithm
-from rl_training.algorithms.trpo import TRPO as TRPOAlgorithm
-from rl_training.experiment.checkpointing import CheckpointState
-from rl_training.experiment.config import TrainConfig
-from rl_training.experiment.registry_support import (
+from axiomrl.algorithms.gail import GAIL as GAILAlgorithm
+from axiomrl.algorithms.impala import IMPALA as IMPALAAlgorithm
+from axiomrl.algorithms.openai_es import OpenAIES as OpenAIESAlgorithm
+from axiomrl.algorithms.ppg import PPG as PPGAlgorithm
+from axiomrl.algorithms.ppo import PPO as PPOAlgorithm
+from axiomrl.algorithms.trpo import TRPO as TRPOAlgorithm
+from axiomrl.experiment.checkpointing import CheckpointState
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.experiment.registry_support import (
     _infer_continuous_env_spaces,
     _infer_discrete_env_spaces,
 )
-from rl_training.models.cnn import CNNActorCritic, CNNPPGModel
-from rl_training.models.decision_transformer import DecisionTransformerModel
-from rl_training.models.mlp_actor_critic import MLPActorCritic
-from rl_training.models.mlp_ars import MLPARSModel
-from rl_training.models.mlp_bc import MLPBCModel
-from rl_training.models.mlp_gail_discriminator import (
+from axiomrl.models.cnn import CNNActorCritic, CNNPPGModel
+from axiomrl.models.decision_transformer import DecisionTransformerModel
+from axiomrl.models.mlp_actor_critic import MLPActorCritic
+from axiomrl.models.mlp_ars import MLPARSModel
+from axiomrl.models.mlp_bc import MLPBCModel
+from axiomrl.models.mlp_gail_discriminator import (
     CNNGAILDiscriminator,
     MLPGAILDiscriminator,
 )
-from rl_training.models.mlp_ppg import MLPPPGModel
+from axiomrl.models.mlp_ppg import MLPPPGModel
 
 
 def _load_a2c_algorithm(

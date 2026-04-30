@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from rl_training.tuning.config import load_study_config
+from axiomrl.tuning.config import load_study_config
 
 
 def _write_base_train_config(tmp_path: Path) -> Path:

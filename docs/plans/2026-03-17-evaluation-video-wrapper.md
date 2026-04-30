@@ -4,7 +4,7 @@
 
 **Goal:** Add declarative evaluation-time video recording so Atari and other games can capture reproducible rollout videos directly from the env config.
 
-**Architecture:** Introduce a dedicated video wrapper resolver in `src/rl_training/envs/video.py` and wire it into `src/rl_training/envs/factory.py`. Users opt in via `env_kwargs.wrappers.video`, and mode-specific config already added in `env_kwargs.evaluation` keeps video capture isolated to evaluation by default. The wrapper should default to writing under `output_dir/videos/<mode>` and allow simple trigger configuration without affecting existing training code paths.
+**Architecture:** Introduce a dedicated video wrapper resolver in `src/axiomrl/envs/video.py` and wire it into `src/axiomrl/envs/factory.py`. Users opt in via `env_kwargs.wrappers.video`, and mode-specific config already added in `env_kwargs.evaluation` keeps video capture isolated to evaluation by default. The wrapper should default to writing under `output_dir/videos/<mode>` and allow simple trigger configuration without affecting existing training code paths.
 
 **Tech Stack:** Python 3.10+, Gymnasium `RecordVideo`, existing env factory/config system, pytest.
 
@@ -27,9 +27,9 @@
 ### Task 2: Implement video wrapper support
 
 **Files:**
-- Create: `src/rl_training/envs/video.py`
-- Modify: `src/rl_training/envs/factory.py`
-- Modify: `src/rl_training/envs/__init__.py`
+- Create: `src/axiomrl/envs/video.py`
+- Modify: `src/axiomrl/envs/factory.py`
+- Modify: `src/axiomrl/envs/__init__.py`
 
 **Step 1: Write minimal implementation**
 - Add a dataclass for video wrapper settings.

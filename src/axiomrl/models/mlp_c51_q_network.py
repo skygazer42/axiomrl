@@ -6,7 +6,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from rl_training.models.mlp_q_network import _build_mlp
+from axiomrl.models.mlp_q_network import _build_mlp
 
 
 class MLPC51QNetwork(nn.Module):
@@ -68,4 +68,3 @@ class MLPC51QNetwork(nn.Module):
         random_actions = torch.randint(0, self.action_dim, greedy_actions.shape, device=greedy_actions.device)
         explore_mask = torch.rand(greedy_actions.shape, device=greedy_actions.device) < epsilon
         return torch.where(explore_mask, random_actions, greedy_actions)
-

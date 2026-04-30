@@ -8,26 +8,26 @@ import gymnasium as gym
 import numpy as np
 import torch
 
-from rl_training.algorithms.dqn import DoubleDQN
-from rl_training.data.n_step import NStepAccumulator
-from rl_training.data.prioritized_replay_buffer import PrioritizedReplayBuffer
-from rl_training.envs.factory import make_vector_env
-from rl_training.experiment.checkpointing import CheckpointState
-from rl_training.experiment.config import TrainConfig
-from rl_training.models.cnn import CNNQNetwork
-from rl_training.models.mlp_q_network import MLPQNetwork
-from rl_training.runtime.callbacks import Callback, CallbackList
-from rl_training.runtime.collector import CollectResult
-from rl_training.runtime.controls import resolve_eval_interval, should_run_evaluation
-from rl_training.runtime.dqn_trainer import _evaluate_q_policy
-from rl_training.runtime.off_policy_trainer_utils import (
+from axiomrl.algorithms.dqn import DoubleDQN
+from axiomrl.data.n_step import NStepAccumulator
+from axiomrl.data.prioritized_replay_buffer import PrioritizedReplayBuffer
+from axiomrl.envs.factory import make_vector_env
+from axiomrl.experiment.checkpointing import CheckpointState
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.models.cnn import CNNQNetwork
+from axiomrl.models.mlp_q_network import MLPQNetwork
+from axiomrl.runtime.callbacks import Callback, CallbackList
+from axiomrl.runtime.collector import CollectResult
+from axiomrl.runtime.controls import resolve_eval_interval, should_run_evaluation
+from axiomrl.runtime.dqn_trainer import _evaluate_q_policy
+from axiomrl.runtime.off_policy_trainer_utils import (
     capture_replay_resume_context,
     restore_replay_training_state,
 )
-from rl_training.runtime.run_utils import save_training_checkpoint, should_save_periodic_checkpoint
-from rl_training.runtime.session import create_training_session
-from rl_training.runtime.trainer import TrainerState, TrainResult
-from rl_training.runtime.types import MetricDict
+from axiomrl.runtime.run_utils import save_training_checkpoint, should_save_periodic_checkpoint
+from axiomrl.runtime.session import create_training_session
+from axiomrl.runtime.trainer import TrainerState, TrainResult
+from axiomrl.runtime.types import MetricDict
 
 
 @dataclass(frozen=True)
@@ -126,9 +126,7 @@ def _select_actions(
 
     eps = actor_epsilons.to(device=device).reshape(-1)
     if eps.shape[0] != greedy_actions.shape[0]:
-        raise ValueError(
-            f"actor_epsilons must have shape ({greedy_actions.shape[0]},), got {tuple(eps.shape)!r}"
-        )
+        raise ValueError(f"actor_epsilons must have shape ({greedy_actions.shape[0]},), got {tuple(eps.shape)!r}")
     random_actions = torch.randint(0, int(action_dim), greedy_actions.shape, device=device)
     explore_mask = torch.rand(greedy_actions.shape, device=device) < eps
     return torch.where(explore_mask, random_actions, greedy_actions)
@@ -198,12 +196,16 @@ def _update_apex_dqn(
     update_count: int,
 ) -> tuple[MetricDict, int, float]:
     if len(replay_buffer) < batch_size:
-        return latest_update_metrics, update_count, _beta_at_step(
-            global_step,
-            total_timesteps=settings.total_timesteps,
-            beta_start=settings.beta_start,
-            beta_end=settings.beta_end,
-            beta_fraction=settings.beta_fraction,
+        return (
+            latest_update_metrics,
+            update_count,
+            _beta_at_step(
+                global_step,
+                total_timesteps=settings.total_timesteps,
+                beta_start=settings.beta_start,
+                beta_end=settings.beta_end,
+                beta_fraction=settings.beta_fraction,
+            ),
         )
 
     beta = _beta_at_step(

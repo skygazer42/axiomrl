@@ -5,8 +5,8 @@ from collections.abc import Sequence
 import torch
 from torch import nn
 
-from rl_training.models.cnn.nature import NatureCNN
-from rl_training.models.mlp_q_network import _build_mlp
+from axiomrl.models.cnn.nature import NatureCNN
+from axiomrl.models.mlp_q_network import _build_mlp
 
 
 def _build_rnd_encoder(

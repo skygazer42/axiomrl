@@ -5,9 +5,9 @@ from typing import Any
 import torch
 from torch.nn import functional as F
 
-from rl_training.algorithms.base import UpdateResult
-from rl_training.algorithms.dreamer import Dreamer
-from rl_training.models.eadream import EADreamModel
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.algorithms.dreamer import Dreamer
+from axiomrl.models.eadream import EADreamModel
 
 
 def _event_targets(
@@ -161,8 +161,12 @@ class EADream(Dreamer):
             "eadream_actor_loss": float(actor_loss.detach().cpu().item()),
             "eadream_critic_loss": float(critic_loss.detach().cpu().item()),
             "eadream_imagination_horizon": float(horizon),
-            "eadream_imagination_reward_mean": float(torch.stack(reward_terms, dim=0).mean().detach().cpu().item()) if reward_terms else 0.0,
-            "eadream_imagined_event_prob_mean": float(torch.stack(event_prob_terms, dim=0).mean().detach().cpu().item()) if event_prob_terms else 0.0,
+            "eadream_imagination_reward_mean": float(torch.stack(reward_terms, dim=0).mean().detach().cpu().item())
+            if reward_terms
+            else 0.0,
+            "eadream_imagined_event_prob_mean": float(torch.stack(event_prob_terms, dim=0).mean().detach().cpu().item())
+            if event_prob_terms
+            else 0.0,
             "eadream_event_scale": self.eadream_model.event_scale,
         }
         return UpdateResult(metrics=metrics, num_gradient_steps=1)

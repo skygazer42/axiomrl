@@ -5,9 +5,8 @@ from collections.abc import Iterator, Sequence
 import torch
 from torch import nn
 
-from rl_training.models.mlp_td3 import _build_mlp
-from rl_training.policies.base import PolicyOutput
-
+from axiomrl.models.mlp_td3 import _build_mlp
+from axiomrl.policies.base import PolicyOutput
 
 LATENT_LOG_STD_MIN = -4.0
 LATENT_LOG_STD_MAX = 4.0
@@ -114,9 +113,13 @@ class MLPBCQModel(nn.Module):
         return action_tensor
 
     def _repeat_observations(self, obs_tensor: torch.Tensor, num_action_samples: int) -> torch.Tensor:
-        return obs_tensor.unsqueeze(1).expand(-1, num_action_samples, -1).reshape(
-            obs_tensor.shape[0] * num_action_samples,
-            obs_tensor.shape[1],
+        return (
+            obs_tensor.unsqueeze(1)
+            .expand(-1, num_action_samples, -1)
+            .reshape(
+                obs_tensor.shape[0] * num_action_samples,
+                obs_tensor.shape[1],
+            )
         )
 
     def encode(self, obs: object, actions: object) -> tuple[torch.Tensor, torch.Tensor]:

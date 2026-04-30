@@ -69,7 +69,7 @@ algorithms that matter in practice:
 - d3rlpy remains a strong signal for offline demand with `BC`, `BCQ`, `BEAR`,
   `CRR`, `CQL`, `Cal-QL`, `IQL`, `AWR`, `AWAC`, `ReBRAC`, and related batch-RL baselines.
 
-This gives `rl_training` a practical target surface:
+This gives `axiomrl` a practical target surface:
 
 - `BCQ` and `BEAR` are now part of the current offline core wave
 - `TRPO` has now landed in a narrow vector-observation v1 release

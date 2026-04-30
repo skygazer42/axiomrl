@@ -2,9 +2,9 @@ from pathlib import Path
 
 import pytest
 
-from rl_training.experiment.config import TrainConfig
-from rl_training.runtime.appo_trainer import train_appo
-from rl_training.runtime.workflows import evaluate_checkpoint
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.runtime.appo_trainer import train_appo
+from axiomrl.runtime.workflows import evaluate_checkpoint
 
 
 def test_train_appo_writes_checkpoint_and_metrics(tmp_path: Path) -> None:

@@ -4,7 +4,7 @@
 
 **Goal:** Add configurable clipping-coefficient schedules to PPO-family trainers so the trust region can be widened early and annealed later without changing algorithm code.
 
-**Architecture:** Reuse the existing schedule machinery in `src/rl_training/runtime/schedules.py` and mirror the entropy-scheduling pattern already present in `src/rl_training/runtime/controls.py`. Add one shared resolver for `clip_coef` / `clip_range` aliases, then wire it into clipped-policy trainers by updating `algorithm.clip_coef` before each optimization phase and logging the active value.
+**Architecture:** Reuse the existing schedule machinery in `src/axiomrl/runtime/schedules.py` and mirror the entropy-scheduling pattern already present in `src/axiomrl/runtime/controls.py`. Add one shared resolver for `clip_coef` / `clip_range` aliases, then wire it into clipped-policy trainers by updating `algorithm.clip_coef` before each optimization phase and logging the active value.
 
 **Tech Stack:** Python 3.10+, PyTorch, Gymnasium, existing runtime trainer loops, pytest.
 
@@ -33,7 +33,7 @@
 ### Task 2: Implement shared clip resolver
 
 **Files:**
-- Modify: `src/rl_training/runtime/controls.py`
+- Modify: `src/axiomrl/runtime/controls.py`
 
 **Step 1: Write minimal implementation**
 - Add `resolve_clip_coefficient(...)`.
@@ -53,11 +53,11 @@
 ### Task 3: Wire clip schedules into trainer loops
 
 **Files:**
-- Modify: `src/rl_training/runtime/ppo_trainer.py`
-- Modify: `src/rl_training/runtime/appo_trainer.py`
-- Modify: `src/rl_training/runtime/ppg_trainer.py`
-- Modify: `src/rl_training/runtime/recurrent_ppo_trainer.py`
-- Modify: `src/rl_training/runtime/gail_trainer.py`
+- Modify: `src/axiomrl/runtime/ppo_trainer.py`
+- Modify: `src/axiomrl/runtime/appo_trainer.py`
+- Modify: `src/axiomrl/runtime/ppg_trainer.py`
+- Modify: `src/axiomrl/runtime/recurrent_ppo_trainer.py`
+- Modify: `src/axiomrl/runtime/gail_trainer.py`
 
 **Step 1: Minimal wiring**
 - Resolve the scheduled `clip_coef` from `global_step`.

@@ -3,8 +3,8 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from rl_training.contrib import RecurrentPPO
-from rl_training.experiment.config import TrainConfig
+from axiomrl.contrib import RecurrentPPO
+from axiomrl.experiment.config import TrainConfig
 
 
 def build_parser() -> argparse.ArgumentParser:

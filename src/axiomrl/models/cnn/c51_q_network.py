@@ -6,7 +6,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from rl_training.models.cnn.nature import NatureCNN
+from axiomrl.models.cnn.nature import NatureCNN
 
 
 def _build_head(
@@ -92,4 +92,3 @@ class CNNC51QNetwork(nn.Module):
         random_actions = torch.randint(0, self.action_dim, greedy_actions.shape, device=greedy_actions.device)
         explore_mask = torch.rand(greedy_actions.shape, device=greedy_actions.device) < epsilon
         return torch.where(explore_mask, random_actions, greedy_actions)
-

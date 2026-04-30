@@ -4,9 +4,8 @@ from dataclasses import replace
 from typing import Any
 
 import numpy as np
-import torch
 
-from rl_training.algorithms.muzero import MuZero, run_muzero_mcts
+from axiomrl.algorithms.muzero import MuZero, run_muzero_mcts
 
 
 def _sample_gumbel(shape: tuple[int, ...], *, scale: float) -> np.ndarray:

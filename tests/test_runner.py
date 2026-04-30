@@ -3,10 +3,10 @@ from pathlib import Path
 
 import pytest
 
-from rl_training.experiment.sweeps import SeedSweepPlan
-from rl_training.runtime import runner as runner_module
-from rl_training.runtime.runner import FunctionRunner
-from rl_training.runtime.trainer import TrainResult
+from axiomrl.experiment.sweeps import SeedSweepPlan
+from axiomrl.runtime import runner as runner_module
+from axiomrl.runtime.runner import FunctionRunner
+from axiomrl.runtime.trainer import TrainResult
 
 
 def test_function_runner_invokes_run_fn(tmp_path: Path) -> None:

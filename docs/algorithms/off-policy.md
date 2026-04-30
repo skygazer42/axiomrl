@@ -56,7 +56,7 @@ algo_kwargs:
 #### Python API 示例
 
 ```python
-from rl_training.core import SAC
+from axiomrl.core import SAC
 
 model = SAC(
     env_id="Ant-v4",
@@ -117,7 +117,7 @@ algo_kwargs:
 #### Python API 示例
 
 ```python
-from rl_training.core import TD3
+from axiomrl.core import TD3
 
 model = TD3(
     env_id="HalfCheetah-v4",
@@ -174,7 +174,7 @@ algo_kwargs:
 #### Python API 示例
 
 ```python
-from rl_training.experimental import DDPG
+from axiomrl.experimental import DDPG
 
 model = DDPG(
     env_id="Pendulum-v1",
@@ -234,7 +234,7 @@ algo_kwargs:
 #### Python API 示例
 
 ```python
-from rl_training.experimental import D4PG
+from axiomrl.experimental import D4PG
 
 model = D4PG(
     env_id="Humanoid-v4",
@@ -292,7 +292,7 @@ algo_kwargs:
 #### Python API 示例
 
 ```python
-from rl_training.experimental import TQC
+from axiomrl.experimental import TQC
 
 model = TQC(
     env_id="Ant-v4",
@@ -348,7 +348,7 @@ algo_kwargs:
 #### Python API 示例
 
 ```python
-from rl_training.experimental import CrossQ
+from axiomrl.experimental import CrossQ
 
 model = CrossQ(
     env_id="HalfCheetah-v4",
@@ -403,7 +403,7 @@ algo_kwargs:
 #### Python API 示例
 
 ```python
-from rl_training.experimental import REDQ
+from axiomrl.experimental import REDQ
 
 model = REDQ(
     env_id="Walker2d-v4",
@@ -459,7 +459,7 @@ algo_kwargs:
 #### Python API 示例
 
 ```python
-from rl_training.experimental import RLPD
+from axiomrl.experimental import RLPD
 
 model = RLPD(
     env_id="Ant-v4",
@@ -513,7 +513,7 @@ algo_kwargs:
 #### Python API 示例
 
 ```python
-from rl_training.experimental import NAF
+from axiomrl.experimental import NAF
 
 model = NAF(
     env_id="Pendulum-v1",
@@ -568,7 +568,7 @@ algo_kwargs:
 #### Python API 示例
 
 ```python
-from rl_training.experimental import CURL
+from axiomrl.experimental import CURL
 
 model = CURL(
     env_id="dm_control/cheetah-run",
@@ -624,7 +624,7 @@ algo_kwargs:
 #### Python API 示例
 
 ```python
-from rl_training.experimental import DrQ
+from axiomrl.experimental import DrQ
 
 model = DrQ(
     env_id="dm_control/walker-walk",
@@ -682,7 +682,7 @@ algo_kwargs:
 #### Python API 示例
 
 ```python
-from rl_training.experimental import DrQV2
+from axiomrl.experimental import DrQV2
 
 model = DrQV2(
     env_id="dm_control/humanoid-walk",
@@ -748,7 +748,7 @@ algo_kwargs:
 #### Python API 示例
 
 ```python
-from rl_training.core import DQN
+from axiomrl.core import DQN
 
 model = DQN(
     env_id="Breakout-v5",
@@ -806,7 +806,7 @@ algo_kwargs:
 #### Python API 示例
 
 ```python
-from rl_training.core import DiscreteSAC
+from axiomrl.core import DiscreteSAC
 
 model = DiscreteSAC(
     env_id="CartPole-v1",
@@ -860,7 +860,7 @@ algo_kwargs:
 #### Python API 示例
 
 ```python
-from rl_training.experimental import DoubleDQN
+from axiomrl.experimental import DoubleDQN
 
 model = DoubleDQN(
     env_id="Pong-v5",
@@ -912,7 +912,7 @@ algo_kwargs:
 #### Python API 示例
 
 ```python
-from rl_training.experimental import DuelingDQN
+from axiomrl.experimental import DuelingDQN
 
 model = DuelingDQN(
     env_id="SpaceInvaders-v5",
@@ -964,7 +964,7 @@ algo_kwargs:
 #### Python API 示例
 
 ```python
-from rl_training.experimental import NoisyDQN
+from axiomrl.experimental import NoisyDQN
 
 model = NoisyDQN(
     env_id="MontezumaRevenge-v5",
@@ -1017,7 +1017,7 @@ algo_kwargs:
 #### Python API 示例
 
 ```python
-from rl_training.experimental import NStepDQN
+from axiomrl.experimental import NStepDQN
 
 model = NStepDQN(
     env_id="Qbert-v5",
@@ -1072,7 +1072,7 @@ algo_kwargs:
 #### Python API 示例
 
 ```python
-from rl_training.experimental import PrioritizedDQN
+from axiomrl.experimental import PrioritizedDQN
 
 model = PrioritizedDQN(
     env_id="Breakout-v5",
@@ -1133,7 +1133,7 @@ algo_kwargs:
 #### Python API 示例
 
 ```python
-from rl_training.experimental import RainbowDQN
+from axiomrl.experimental import RainbowDQN
 
 model = RainbowDQN(
     env_id="Breakout-v5",
@@ -1189,7 +1189,7 @@ algo_kwargs:
 #### Python API 示例
 
 ```python
-from rl_training.experimental import C51DQN
+from axiomrl.experimental import C51DQN
 
 model = C51DQN(
     env_id="Pong-v5",
@@ -1242,7 +1242,7 @@ algo_kwargs:
 #### Python API 示例
 
 ```python
-from rl_training.experimental import QRDQN
+from axiomrl.experimental import QRDQN
 
 model = QRDQN(
     env_id="Asterix-v5",
@@ -1297,7 +1297,7 @@ algo_kwargs:
 #### Python API 示例
 
 ```python
-from rl_training.experimental import IQN
+from axiomrl.experimental import IQN
 
 model = IQN(
     env_id="Seaquest-v5",
@@ -1352,7 +1352,7 @@ algo_kwargs:
 #### Python API 示例
 
 ```python
-from rl_training.experimental import FQF
+from axiomrl.experimental import FQF
 
 model = FQF(
     env_id="BeamRider-v5",
@@ -1410,7 +1410,7 @@ algo_kwargs:
 #### Python API 示例
 
 ```python
-from rl_training.experimental import R2D2
+from axiomrl.experimental import R2D2
 
 model = R2D2(
     env_id="MontezumaRevenge-v5",
@@ -1465,7 +1465,7 @@ algo_kwargs:
 #### Python API 示例
 
 ```python
-from rl_training.experimental import DRQN
+from axiomrl.experimental import DRQN
 
 model = DRQN(
     env_id="FlickeringPong-v0",
@@ -1522,7 +1522,7 @@ algo_kwargs:
 #### Python API 示例
 
 ```python
-from rl_training.experimental import Agent57
+from axiomrl.experimental import Agent57
 
 model = Agent57(
     env_id="Pitfall-v5",
@@ -1579,7 +1579,7 @@ algo_kwargs:
 #### Python API 示例
 
 ```python
-from rl_training.experimental import SPR
+from axiomrl.experimental import SPR
 
 model = SPR(
     env_id="Pong-v5",

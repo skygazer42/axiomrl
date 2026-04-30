@@ -29,7 +29,7 @@ Expected: FAIL because the parser and CLI currently always return `0`.
 ### Task 2: Implement non-zero drift exit codes
 
 **Files:**
-- Modify: `src/rl_training/zoo_cli.py`
+- Modify: `src/axiomrl/zoo_cli.py`
 
 **Step 1: Write minimal implementation**
 - Add `--fail-on-manifest-drift` to the parser.
@@ -47,7 +47,7 @@ Expected: PASS.
 **Files:**
 - Modify: `README.md`
 - Modify: `zoo/README.md`
-- Modify: `src/rl_training/assets/zoo/README.md`
+- Modify: `src/axiomrl/assets/zoo/README.md`
 
 **Step 1: Add docs**
 - Note that `--fail-on-manifest-drift` makes report and leaderboard commands usable as CI guards while still emitting machine-readable artifacts.

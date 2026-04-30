@@ -1,7 +1,7 @@
 import torch
 
-from rl_training.algorithms.sac import SAC, sac_loss
-from rl_training.models.mlp_sac import MLPSACModel
+from axiomrl.algorithms.sac import SAC, sac_loss
+from axiomrl.models.mlp_sac import MLPSACModel
 
 
 def test_mlp_sac_model_samples_bounded_actions() -> None:

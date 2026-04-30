@@ -5,8 +5,7 @@ from collections.abc import Iterator, Sequence
 import torch
 from torch import nn
 
-from rl_training.models.mlp_td3 import _build_mlp
-
+from axiomrl.models.mlp_td3 import _build_mlp
 
 LOGVAR_MIN = -10.0
 LOGVAR_MAX = 2.0

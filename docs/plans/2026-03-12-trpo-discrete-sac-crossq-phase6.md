@@ -30,7 +30,7 @@ Current implementation status in the repository:
 
 ## Goal
 
-Move `rl_training` from the classical offline RL consolidation wave
+Move `axiomrl` from the classical offline RL consolidation wave
 (`BC` / `AWAC` / `BCQ` / `BEAR` / `HER`) into the next mainstream package
 gap set:
 
@@ -104,15 +104,15 @@ surface wiring pattern.
 
 **Files:**
 
-- Create: `src/rl_training/algorithms/trpo.py`
-- Create: `src/rl_training/runtime/trpo_trainer.py`
-- Modify: `src/rl_training/algorithms/__init__.py`
-- Modify: `src/rl_training/experiment/registry.py`
-- Modify: `src/rl_training/api/algorithms.py`
-- Modify: `src/rl_training/api/__init__.py`
-- Modify: `src/rl_training/__init__.py`
+- Create: `src/axiomrl/algorithms/trpo.py`
+- Create: `src/axiomrl/runtime/trpo_trainer.py`
+- Modify: `src/axiomrl/algorithms/__init__.py`
+- Modify: `src/axiomrl/experiment/registry.py`
+- Modify: `src/axiomrl/api/algorithms.py`
+- Modify: `src/axiomrl/api/__init__.py`
+- Modify: `src/axiomrl/__init__.py`
 - Create: `configs/trpo/cartpole.yaml`
-- Create: `src/rl_training/assets/configs/trpo/cartpole.yaml`
+- Create: `src/axiomrl/assets/configs/trpo/cartpole.yaml`
 - Create: `tests/test_trpo_update.py`
 - Create: `tests/test_trpo_trainer_smoke.py`
 
@@ -129,17 +129,17 @@ actor-critic baseline alongside value-based DQN-family baselines.
 
 **Files:**
 
-- Create: `src/rl_training/models/mlp_discrete_sac.py`
-- Create: `src/rl_training/algorithms/discrete_sac.py`
-- Create: `src/rl_training/runtime/discrete_sac_trainer.py`
-- Modify: `src/rl_training/models/__init__.py`
-- Modify: `src/rl_training/algorithms/__init__.py`
-- Modify: `src/rl_training/experiment/registry.py`
-- Modify: `src/rl_training/api/algorithms.py`
-- Modify: `src/rl_training/api/__init__.py`
-- Modify: `src/rl_training/__init__.py`
+- Create: `src/axiomrl/models/mlp_discrete_sac.py`
+- Create: `src/axiomrl/algorithms/discrete_sac.py`
+- Create: `src/axiomrl/runtime/discrete_sac_trainer.py`
+- Modify: `src/axiomrl/models/__init__.py`
+- Modify: `src/axiomrl/algorithms/__init__.py`
+- Modify: `src/axiomrl/experiment/registry.py`
+- Modify: `src/axiomrl/api/algorithms.py`
+- Modify: `src/axiomrl/api/__init__.py`
+- Modify: `src/axiomrl/__init__.py`
 - Create: `configs/discrete_sac/cartpole.yaml`
-- Create: `src/rl_training/assets/configs/discrete_sac/cartpole.yaml`
+- Create: `src/axiomrl/assets/configs/discrete_sac/cartpole.yaml`
 - Create: `tests/test_discrete_sac_update.py`
 - Create: `tests/test_discrete_sac_trainer_smoke.py`
 
@@ -158,15 +158,15 @@ choices explicit in config.
 
 **Files:**
 
-- Create: `src/rl_training/algorithms/crossq.py`
-- Create: `src/rl_training/runtime/crossq_trainer.py`
-- Modify: `src/rl_training/algorithms/__init__.py`
-- Modify: `src/rl_training/experiment/registry.py`
-- Modify: `src/rl_training/api/algorithms.py`
-- Modify: `src/rl_training/api/__init__.py`
-- Modify: `src/rl_training/__init__.py`
+- Create: `src/axiomrl/algorithms/crossq.py`
+- Create: `src/axiomrl/runtime/crossq_trainer.py`
+- Modify: `src/axiomrl/algorithms/__init__.py`
+- Modify: `src/axiomrl/experiment/registry.py`
+- Modify: `src/axiomrl/api/algorithms.py`
+- Modify: `src/axiomrl/api/__init__.py`
+- Modify: `src/axiomrl/__init__.py`
 - Create: `configs/crossq/pendulum.yaml`
-- Create: `src/rl_training/assets/configs/crossq/pendulum.yaml`
+- Create: `src/axiomrl/assets/configs/crossq/pendulum.yaml`
 - Create: `tests/test_crossq_update.py`
 - Create: `tests/test_crossq_trainer_smoke.py`
 

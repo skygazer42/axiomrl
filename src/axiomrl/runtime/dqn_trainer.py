@@ -9,8 +9,8 @@ import numpy as np
 import torch
 from torch import nn
 
-from rl_training.algorithms.c51_dqn import C51DQN
-from rl_training.algorithms.dqn import (
+from axiomrl.algorithms.c51_dqn import C51DQN
+from axiomrl.algorithms.dqn import (
     CQLDQN,
     DQN,
     AdvantageLearningDQN,
@@ -32,18 +32,18 @@ from rl_training.algorithms.dqn import (
     SoftDoubleDQN,
     SoftDQN,
 )
-from rl_training.algorithms.fqf import FQF
-from rl_training.algorithms.iqn import IQN
-from rl_training.algorithms.jowa import JOWA
-from rl_training.algorithms.qr_dqn import QRDQN
-from rl_training.algorithms.spr import SPR
-from rl_training.data.n_step import NStepAccumulator
-from rl_training.data.prioritized_replay_buffer import PrioritizedReplayBuffer
-from rl_training.data.replay_buffer import ReplayBuffer
-from rl_training.envs.factory import make_vector_env
-from rl_training.experiment.checkpointing import CheckpointState
-from rl_training.experiment.config import TrainConfig
-from rl_training.models.cnn import (
+from axiomrl.algorithms.fqf import FQF
+from axiomrl.algorithms.iqn import IQN
+from axiomrl.algorithms.jowa import JOWA
+from axiomrl.algorithms.qr_dqn import QRDQN
+from axiomrl.algorithms.spr import SPR
+from axiomrl.data.n_step import NStepAccumulator
+from axiomrl.data.prioritized_replay_buffer import PrioritizedReplayBuffer
+from axiomrl.data.replay_buffer import ReplayBuffer
+from axiomrl.envs.factory import make_vector_env
+from axiomrl.experiment.checkpointing import CheckpointState
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.models.cnn import (
     CNNC51QNetwork,
     CNNDuelingNoisyQNetwork,
     CNNDuelingQNetwork,
@@ -55,32 +55,32 @@ from rl_training.models.cnn import (
     CNNQRQNetwork,
     CNNSPRQNetwork,
 )
-from rl_training.models.mlp_c51_q_network import MLPC51QNetwork
-from rl_training.models.mlp_dueling_noisy_q_network import MLPDuelingNoisyQNetwork
-from rl_training.models.mlp_dueling_q_network import MLPDuelingQNetwork
-from rl_training.models.mlp_fqf_network import MLPFQFNetwork
-from rl_training.models.mlp_iqn_network import MLPIQNetwork
-from rl_training.models.mlp_noisy_q_network import MLPNoisyQNetwork
-from rl_training.models.mlp_q_network import MLPQNetwork
-from rl_training.models.mlp_qr_q_network import MLPQRQNetwork
-from rl_training.runtime.callbacks import Callback, CallbackList
-from rl_training.runtime.collector import CollectResult
-from rl_training.runtime.controls import (
+from axiomrl.models.mlp_c51_q_network import MLPC51QNetwork
+from axiomrl.models.mlp_dueling_noisy_q_network import MLPDuelingNoisyQNetwork
+from axiomrl.models.mlp_dueling_q_network import MLPDuelingQNetwork
+from axiomrl.models.mlp_fqf_network import MLPFQFNetwork
+from axiomrl.models.mlp_iqn_network import MLPIQNetwork
+from axiomrl.models.mlp_noisy_q_network import MLPNoisyQNetwork
+from axiomrl.models.mlp_q_network import MLPQNetwork
+from axiomrl.models.mlp_qr_q_network import MLPQRQNetwork
+from axiomrl.runtime.callbacks import Callback, CallbackList
+from axiomrl.runtime.collector import CollectResult
+from axiomrl.runtime.controls import (
     resolve_eval_interval,
     resolve_exploration_epsilon,
     should_run_evaluation,
 )
-from rl_training.runtime.evaluation_support import evaluate_discrete_episodes
-from rl_training.runtime.resume_state import (
+from axiomrl.runtime.evaluation_support import evaluate_discrete_episodes
+from axiomrl.runtime.resume_state import (
     capture_global_random_state,
     capture_vector_env_resume_state,
     restore_global_random_state,
     restore_vector_env_resume_state,
 )
-from rl_training.runtime.run_utils import save_training_checkpoint, should_save_periodic_checkpoint
-from rl_training.runtime.session import create_training_session
-from rl_training.runtime.trainer import TrainerState, TrainResult
-from rl_training.runtime.types import MetricDict
+from axiomrl.runtime.run_utils import save_training_checkpoint, should_save_periodic_checkpoint
+from axiomrl.runtime.session import create_training_session
+from axiomrl.runtime.trainer import TrainerState, TrainResult
+from axiomrl.runtime.types import MetricDict
 
 
 @dataclass(frozen=True)

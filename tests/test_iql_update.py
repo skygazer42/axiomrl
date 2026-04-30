@@ -1,8 +1,8 @@
 import pytest
 import torch
 
-from rl_training.algorithms.iql import IQL, iql_loss
-from rl_training.models.mlp_iql import MLPIQLModel
+from axiomrl.algorithms.iql import IQL, iql_loss
+from axiomrl.models.mlp_iql import MLPIQLModel
 
 
 def test_mlp_iql_model_samples_bounded_actions_and_returns_q_and_v() -> None:

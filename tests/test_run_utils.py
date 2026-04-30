@@ -5,9 +5,9 @@ from unittest.mock import patch
 import pytest
 from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
 
-from rl_training.experiment.checkpointing import load_checkpoint
-from rl_training.experiment.config import TrainConfig
-from rl_training.runtime.run_utils import (
+from axiomrl.experiment.checkpointing import load_checkpoint
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.runtime.run_utils import (
     create_training_run,
     resolve_device,
     save_training_checkpoint,
@@ -136,8 +136,8 @@ def test_save_training_checkpoint_writes_loadable_checkpoint(tmp_path: Path) -> 
 
 
 def test_resolve_device_auto_falls_back_to_cpu_when_cuda_probe_fails() -> None:
-    with patch("rl_training.runtime.run_utils.torch.cuda.is_available", return_value=True):
-        with patch("rl_training.runtime.run_utils.torch.empty", side_effect=RuntimeError("oom")):
+    with patch("axiomrl.runtime.run_utils.torch.cuda.is_available", return_value=True):
+        with patch("axiomrl.runtime.run_utils.torch.empty", side_effect=RuntimeError("oom")):
             device = resolve_device("auto")
 
     assert str(device) == "cpu"

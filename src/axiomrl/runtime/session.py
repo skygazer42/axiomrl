@@ -5,11 +5,11 @@ from dataclasses import dataclass
 
 import torch
 
-from rl_training.experiment.config import TrainConfig
-from rl_training.runtime.callbacks import Callback, CallbackList, merge_callbacks
-from rl_training.runtime.controls import build_control_callbacks
-from rl_training.runtime.run_utils import RunArtifacts, create_training_run, resolve_device
-from rl_training.runtime.trainer import TrainerState
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.runtime.callbacks import Callback, CallbackList, merge_callbacks
+from axiomrl.runtime.controls import build_control_callbacks
+from axiomrl.runtime.run_utils import RunArtifacts, create_training_run, resolve_device
+from axiomrl.runtime.trainer import TrainerState
 
 
 @dataclass(slots=True)

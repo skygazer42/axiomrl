@@ -1,16 +1,16 @@
 from __future__ import annotations
 
-from pathlib import Path
 import shutil
 from collections.abc import Sequence
+from pathlib import Path
 
-from rl_training.experiment.checkpointing import load_checkpoint
-from rl_training.experiment.config import TrainConfig
-from rl_training.experiment.default_manager import DefaultExperimentManager
-from rl_training.runtime.callbacks import Callback
-from rl_training.runtime.trainer import TrainResult
-from rl_training.runtime.types import MetricDict
-from rl_training.runtime.workflows import evaluate_checkpoint, predict_checkpoint
+from axiomrl.experiment.checkpointing import load_checkpoint
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.experiment.default_manager import DefaultExperimentManager
+from axiomrl.runtime.callbacks import Callback
+from axiomrl.runtime.trainer import TrainResult
+from axiomrl.runtime.types import MetricDict
+from axiomrl.runtime.workflows import evaluate_checkpoint, predict_checkpoint
 
 _NO_CHECKPOINT_ERROR = "no checkpoint available; call learn() or load() first"
 

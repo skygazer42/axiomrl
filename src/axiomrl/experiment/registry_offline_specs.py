@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from rl_training.experiment.registry_evaluators import (
+from axiomrl.experiment.registry_evaluators import (
     _evaluate_awac,
     _evaluate_awr,
     _evaluate_bc,
@@ -15,7 +15,7 @@ from rl_training.experiment.registry_evaluators import (
     _evaluate_rebrac,
     _evaluate_xql,
 )
-from rl_training.experiment.registry_predictors import (
+from axiomrl.experiment.registry_predictors import (
     _predict_awac,
     _predict_awr,
     _predict_bc,
@@ -30,20 +30,20 @@ from rl_training.experiment.registry_predictors import (
     _predict_rebrac,
     _predict_xql,
 )
-from rl_training.experiment.registry_types import AlgorithmSpec
-from rl_training.runtime.awac_trainer import train_awac
-from rl_training.runtime.awr_trainer import train_awr
-from rl_training.runtime.bc_trainer import train_bc
-from rl_training.runtime.bcq_trainer import train_bcq
-from rl_training.runtime.bear_trainer import train_bear
-from rl_training.runtime.cal_ql_trainer import train_cal_ql
-from rl_training.runtime.cql_trainer import train_cql
-from rl_training.runtime.crr_trainer import train_crr
-from rl_training.runtime.decision_transformer_trainer import train_decision_transformer
-from rl_training.runtime.iql_trainer import train_iql
-from rl_training.runtime.marwil_trainer import train_marwil
-from rl_training.runtime.rebrac_trainer import train_rebrac
-from rl_training.runtime.xql_trainer import train_xql
+from axiomrl.experiment.registry_types import AlgorithmSpec
+from axiomrl.runtime.awac_trainer import train_awac
+from axiomrl.runtime.awr_trainer import train_awr
+from axiomrl.runtime.bc_trainer import train_bc
+from axiomrl.runtime.bcq_trainer import train_bcq
+from axiomrl.runtime.bear_trainer import train_bear
+from axiomrl.runtime.cal_ql_trainer import train_cal_ql
+from axiomrl.runtime.cql_trainer import train_cql
+from axiomrl.runtime.crr_trainer import train_crr
+from axiomrl.runtime.decision_transformer_trainer import train_decision_transformer
+from axiomrl.runtime.iql_trainer import train_iql
+from axiomrl.runtime.marwil_trainer import train_marwil
+from axiomrl.runtime.rebrac_trainer import train_rebrac
+from axiomrl.runtime.xql_trainer import train_xql
 
 OFFLINE_SPECS: dict[str, AlgorithmSpec] = {
     "bc": AlgorithmSpec(

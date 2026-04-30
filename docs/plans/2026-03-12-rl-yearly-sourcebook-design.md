@@ -228,7 +228,7 @@ The correct move is to keep a watchlist:
 **Package meaning:** in 2026, the stability bottleneck is often tooling and
 reproducibility, not the lack of another trainer name.
 
-## What This Means For `rl_training`
+## What This Means For `axiomrl`
 
 From the package's current state on **March 13, 2026**, the immediate offline
 wave is no longer hypothetical. `AWR`, `MARWIL`, `BCQ`, `BEAR`, offline dataset mixing,

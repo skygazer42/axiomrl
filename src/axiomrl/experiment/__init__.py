@@ -2,21 +2,20 @@ from __future__ import annotations
 
 from importlib import import_module
 
-
 _EXPORTS: dict[str, tuple[str, str]] = {
-    "AlgorithmSpec": ("rl_training.experiment.registry", "AlgorithmSpec"),
-    "CheckpointState": ("rl_training.experiment.checkpointing", "CheckpointState"),
-    "DefaultExperimentManager": ("rl_training.experiment.default_manager", "DefaultExperimentManager"),
-    "JsonlLogger": ("rl_training.experiment.logging", "JsonlLogger"),
-    "Logger": ("rl_training.experiment.logging", "Logger"),
-    "RunLogger": ("rl_training.experiment.logging", "RunLogger"),
-    "RunContext": ("rl_training.experiment.runs", "RunContext"),
-    "TrainConfig": ("rl_training.experiment.config", "TrainConfig"),
-    "create_run_context": ("rl_training.experiment.runs", "create_run_context"),
-    "get_algorithm_spec": ("rl_training.experiment.registry", "get_algorithm_spec"),
-    "list_algorithm_specs": ("rl_training.experiment.registry", "list_algorithm_specs"),
-    "load_checkpoint": ("rl_training.experiment.checkpointing", "load_checkpoint"),
-    "save_checkpoint": ("rl_training.experiment.checkpointing", "save_checkpoint"),
+    "AlgorithmSpec": ("axiomrl.experiment.registry", "AlgorithmSpec"),
+    "CheckpointState": ("axiomrl.experiment.checkpointing", "CheckpointState"),
+    "DefaultExperimentManager": ("axiomrl.experiment.default_manager", "DefaultExperimentManager"),
+    "JsonlLogger": ("axiomrl.experiment.logging", "JsonlLogger"),
+    "Logger": ("axiomrl.experiment.logging", "Logger"),
+    "RunLogger": ("axiomrl.experiment.logging", "RunLogger"),
+    "RunContext": ("axiomrl.experiment.runs", "RunContext"),
+    "TrainConfig": ("axiomrl.experiment.config", "TrainConfig"),
+    "create_run_context": ("axiomrl.experiment.runs", "create_run_context"),
+    "get_algorithm_spec": ("axiomrl.experiment.registry", "get_algorithm_spec"),
+    "list_algorithm_specs": ("axiomrl.experiment.registry", "list_algorithm_specs"),
+    "load_checkpoint": ("axiomrl.experiment.checkpointing", "load_checkpoint"),
+    "save_checkpoint": ("axiomrl.experiment.checkpointing", "save_checkpoint"),
 }
 
 
@@ -32,4 +31,3 @@ def __getattr__(name: str):
 
 
 __all__ = list(_EXPORTS)
-

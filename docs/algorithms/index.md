@@ -15,7 +15,7 @@ AxiomRL 提供了超过 **80 种**强化学习算法的统一实现，涵盖 **6
 
     经过充分测试与验证的稳定算法，适合生产环境使用。
 
-    导入路径：`from rl_training.core import ...`
+    导入路径：`from axiomrl.core import ...`
 
 - :material-flask:{ .lg .middle } **Experimental（实验层）**
 
@@ -23,7 +23,7 @@ AxiomRL 提供了超过 **80 种**强化学习算法的统一实现，涵盖 **6
 
     功能完整但仍在持续优化中的算法，API 可能变更。
 
-    导入路径：`from rl_training.experimental import ...`
+    导入路径：`from axiomrl.experimental import ...`
 
 - :material-account-group:{ .lg .middle } **Contrib（社区层）**
 
@@ -31,7 +31,7 @@ AxiomRL 提供了超过 **80 种**强化学习算法的统一实现，涵盖 **6
 
     社区贡献的扩展算法，由社区维护。
 
-    导入路径：`from rl_training.contrib import ...`
+    导入路径：`from axiomrl.contrib import ...`
 
 </div>
 

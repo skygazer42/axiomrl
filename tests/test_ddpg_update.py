@@ -1,7 +1,7 @@
 import torch
 
-from rl_training.algorithms.ddpg import DDPG, ddpg_loss
-from rl_training.models.mlp_ddpg import MLPDDPGModel
+from axiomrl.algorithms.ddpg import DDPG, ddpg_loss
+from axiomrl.models.mlp_ddpg import MLPDDPGModel
 
 
 def test_mlp_ddpg_model_actor_outputs_bounded_actions() -> None:

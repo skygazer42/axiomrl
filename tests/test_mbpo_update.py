@@ -1,11 +1,11 @@
 import torch
 
-from rl_training.models.mlp_mopo import MLPMOPOEnsembleModel
-from rl_training.models.mlp_sac import MLPSACModel
+from axiomrl.models.mlp_mopo import MLPMOPOEnsembleModel
+from axiomrl.models.mlp_sac import MLPSACModel
 
 
 def test_mbpo_update_and_model_update_return_metrics() -> None:
-    from rl_training.algorithms.mbpo import MBPO
+    from axiomrl.algorithms.mbpo import MBPO
 
     torch.manual_seed(0)
 
@@ -47,4 +47,3 @@ def test_mbpo_update_and_model_update_return_metrics() -> None:
     assert policy_result.num_gradient_steps == 1
     assert "actor_loss" in policy_result.metrics
     assert "critic_loss" in policy_result.metrics
-

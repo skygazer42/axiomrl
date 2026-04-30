@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from rl_training.experiment.registry_evaluators import (
+from axiomrl.experiment.registry_evaluators import (
     _evaluate_crossq,
     _evaluate_curl,
     _evaluate_d4pg,
@@ -17,7 +17,7 @@ from rl_training.experiment.registry_evaluators import (
     _evaluate_td3_bc,
     _evaluate_tqc,
 )
-from rl_training.experiment.registry_predictors import (
+from axiomrl.experiment.registry_predictors import (
     _predict_crossq,
     _predict_curl,
     _predict_d4pg,
@@ -34,22 +34,22 @@ from rl_training.experiment.registry_predictors import (
     _predict_td3_bc,
     _predict_tqc,
 )
-from rl_training.experiment.registry_types import AlgorithmSpec
-from rl_training.runtime.crossq_trainer import train_crossq
-from rl_training.runtime.curl_trainer import train_curl
-from rl_training.runtime.d4pg_trainer import train_d4pg
-from rl_training.runtime.ddpg_trainer import train_ddpg
-from rl_training.runtime.discrete_sac_trainer import train_discrete_sac
-from rl_training.runtime.drq_trainer import train_drq
-from rl_training.runtime.drqv2_trainer import train_drqv2
-from rl_training.runtime.edac_trainer import train_edac
-from rl_training.runtime.naf_trainer import train_naf
-from rl_training.runtime.redq_trainer import train_redq
-from rl_training.runtime.rlpd_trainer import train_rlpd
-from rl_training.runtime.sac_trainer import train_sac
-from rl_training.runtime.td3_bc_trainer import train_td3_bc
-from rl_training.runtime.td3_trainer import train_td3
-from rl_training.runtime.tqc_trainer import train_tqc
+from axiomrl.experiment.registry_types import AlgorithmSpec
+from axiomrl.runtime.crossq_trainer import train_crossq
+from axiomrl.runtime.curl_trainer import train_curl
+from axiomrl.runtime.d4pg_trainer import train_d4pg
+from axiomrl.runtime.ddpg_trainer import train_ddpg
+from axiomrl.runtime.discrete_sac_trainer import train_discrete_sac
+from axiomrl.runtime.drq_trainer import train_drq
+from axiomrl.runtime.drqv2_trainer import train_drqv2
+from axiomrl.runtime.edac_trainer import train_edac
+from axiomrl.runtime.naf_trainer import train_naf
+from axiomrl.runtime.redq_trainer import train_redq
+from axiomrl.runtime.rlpd_trainer import train_rlpd
+from axiomrl.runtime.sac_trainer import train_sac
+from axiomrl.runtime.td3_bc_trainer import train_td3_bc
+from axiomrl.runtime.td3_trainer import train_td3
+from axiomrl.runtime.tqc_trainer import train_tqc
 
 ACTOR_CRITIC_SPECS: dict[str, AlgorithmSpec] = {
     "sac": AlgorithmSpec(

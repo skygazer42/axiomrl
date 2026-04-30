@@ -44,9 +44,9 @@ Expected:
 ### Task 2: Implement the Tennis event reward wrapper
 
 **Files:**
-- Create: `src/rl_training/envs/tennis_events.py`
-- Modify: `src/rl_training/envs/factory.py`
-- Modify: `src/rl_training/envs/__init__.py`
+- Create: `src/axiomrl/envs/tennis_events.py`
+- Modify: `src/axiomrl/envs/factory.py`
+- Modify: `src/axiomrl/envs/__init__.py`
 
 **Step 1: Implement a wrapper config dataclass**
 
@@ -89,9 +89,9 @@ Expected:
 
 **Files:**
 - Create: `configs/apex_dqn/tennis_event_shaped.yaml`
-- Create: `src/rl_training/assets/configs/apex_dqn/tennis_event_shaped.yaml`
+- Create: `src/axiomrl/assets/configs/apex_dqn/tennis_event_shaped.yaml`
 - Create: `zoo/atari/apex_dqn_tennis_event_shaped.yaml`
-- Create: `src/rl_training/assets/zoo/atari/apex_dqn_tennis_event_shaped.yaml`
+- Create: `src/axiomrl/assets/zoo/atari/apex_dqn_tennis_event_shaped.yaml`
 
 **Step 1: Base from the surviving control**
 
@@ -116,9 +116,9 @@ Expected:
 
 **Files:**
 - Create: `configs/rainbow_dqn/tennis_event_shaped.yaml`
-- Create: `src/rl_training/assets/configs/rainbow_dqn/tennis_event_shaped.yaml`
+- Create: `src/axiomrl/assets/configs/rainbow_dqn/tennis_event_shaped.yaml`
 - Create: `zoo/atari/rainbow_dqn_tennis_event_shaped.yaml`
-- Create: `src/rl_training/assets/zoo/atari/rainbow_dqn_tennis_event_shaped.yaml`
+- Create: `src/axiomrl/assets/zoo/atari/rainbow_dqn_tennis_event_shaped.yaml`
 
 **Step 1: Base from the surviving control**
 
@@ -143,7 +143,7 @@ Expected:
 
 **Files:**
 - Create: `zoo/atari/tennis_focus.yaml`
-- Create: `src/rl_training/assets/zoo/atari/tennis_focus.yaml`
+- Create: `src/axiomrl/assets/zoo/atari/tennis_focus.yaml`
 - Modify: `tests/test_zoo_presets.py`
 - Modify: `docs/plans/2026-04-06-tennis-stage1-comparison-template.md`
 
@@ -196,8 +196,8 @@ Leave any already-dead lines alone.
 Run:
 
 ```bash
-./.env/bin/python -s -m rl_training.cli train --config zoo/atari/apex_dqn_tennis_event_shaped.yaml --output-dir /data/ax/axiomrl/.worktrees/tennis-rainbow/runs/tennis-apex-event-shaped
-./.env/bin/python -s -m rl_training.cli train --config zoo/atari/rainbow_dqn_tennis_event_shaped.yaml --output-dir /data/ax/axiomrl/.worktrees/tennis-rainbow/runs/tennis-rainbow-event-shaped
+./.env/bin/python -s -m axiomrl.cli train --config zoo/atari/apex_dqn_tennis_event_shaped.yaml --output-dir /data/ax/axiomrl/.worktrees/tennis-rainbow/runs/tennis-apex-event-shaped
+./.env/bin/python -s -m axiomrl.cli train --config zoo/atari/rainbow_dqn_tennis_event_shaped.yaml --output-dir /data/ax/axiomrl/.worktrees/tennis-rainbow/runs/tennis-rainbow-event-shaped
 ```
 
 **Step 4: Verify startup**

@@ -29,10 +29,10 @@ Expected: FAIL because the tennis manifest/preset files do not exist yet.
 **Files:**
 - Create: `configs/apex_dqn/tennis_atari.yaml`
 - Create: `zoo/atari/apex_dqn_tennis.yaml`
-- Create: `src/rl_training/assets/configs/apex_dqn/tennis_atari.yaml`
-- Create: `src/rl_training/assets/zoo/atari/apex_dqn_tennis.yaml`
+- Create: `src/axiomrl/assets/configs/apex_dqn/tennis_atari.yaml`
+- Create: `src/axiomrl/assets/zoo/atari/apex_dqn_tennis.yaml`
 - Modify: `zoo/atari/tennis_benchmark.yaml`
-- Modify: `src/rl_training/assets/zoo/atari/tennis_benchmark.yaml`
+- Modify: `src/axiomrl/assets/zoo/atari/tennis_benchmark.yaml`
 
 **Step 1: Copy the Tennis protocol shape**
 
@@ -65,7 +65,7 @@ Expected: PASS
 Run:
 
 ```bash
-./.env/bin/python -s -m rl_training.cli train \
+./.env/bin/python -s -m axiomrl.cli train \
   --config zoo/atari/apex_dqn_tennis.yaml \
   --output-dir /data/ax/axiomrl/.worktrees/tennis-rainbow/runs/tennis-apex-main
 ```

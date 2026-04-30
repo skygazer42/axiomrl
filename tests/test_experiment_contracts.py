@@ -2,9 +2,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import patch
 
-from rl_training.experiment.checkpointing import CheckpointState, load_checkpoint, save_checkpoint
-from rl_training.experiment.config import TrainConfig
-from rl_training.experiment.runs import create_run_context
+from axiomrl.experiment.checkpointing import CheckpointState, load_checkpoint, save_checkpoint
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.experiment.runs import create_run_context
 
 
 def test_create_run_context_creates_expected_paths(tmp_path: Path) -> None:
@@ -71,7 +71,7 @@ def test_create_run_context_auto_suffix_retries_when_timestamp_collides(tmp_path
     )
     fixed_now = datetime(2026, 3, 19, 12, 34, 56, 123456, tzinfo=timezone.utc)
 
-    with patch("rl_training.experiment.runs.datetime") as mocked_datetime:
+    with patch("axiomrl.experiment.runs.datetime") as mocked_datetime:
         mocked_datetime.now.return_value = fixed_now
         first = create_run_context(config)
         second = create_run_context(config)
@@ -114,7 +114,7 @@ def test_load_checkpoint_uses_torch_weights_only_mode(tmp_path: Path) -> None:
     path = tmp_path / "checkpoint.pt"
     save_checkpoint(path, state)
 
-    with patch("rl_training.experiment.checkpointing.torch.load") as mocked_load:
+    with patch("axiomrl.experiment.checkpointing.torch.load") as mocked_load:
         mocked_load.return_value = {
             "algorithm_state": state.algorithm_state,
             "buffer_state": state.buffer_state,

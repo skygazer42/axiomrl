@@ -39,10 +39,10 @@ Expected: FAIL because the new algorithms, exports, and scripts do not exist yet
 ### Task 2: Implement reusable DQN variant support
 
 **Files:**
-- Modify: `src/rl_training/algorithms/dqn.py`
-- Modify: `src/rl_training/runtime/dqn_trainer.py`
-- Create: `src/rl_training/models/mlp_dueling_q_network.py`
-- Modify: `src/rl_training/models/__init__.py`
+- Modify: `src/axiomrl/algorithms/dqn.py`
+- Modify: `src/axiomrl/runtime/dqn_trainer.py`
+- Create: `src/axiomrl/models/mlp_dueling_q_network.py`
+- Modify: `src/axiomrl/models/__init__.py`
 
 **Step 1: Write minimal implementation**
 
@@ -60,11 +60,11 @@ Expected: PASS
 ### Task 3: Wire new variants into registry and public API
 
 **Files:**
-- Modify: `src/rl_training/experiment/registry.py`
-- Modify: `src/rl_training/api/algorithms.py`
-- Modify: `src/rl_training/api/__init__.py`
-- Modify: `src/rl_training/algorithms/__init__.py`
-- Modify: `src/rl_training/__init__.py`
+- Modify: `src/axiomrl/experiment/registry.py`
+- Modify: `src/axiomrl/api/algorithms.py`
+- Modify: `src/axiomrl/api/__init__.py`
+- Modify: `src/axiomrl/algorithms/__init__.py`
+- Modify: `src/axiomrl/__init__.py`
 
 **Step 1: Write minimal implementation**
 

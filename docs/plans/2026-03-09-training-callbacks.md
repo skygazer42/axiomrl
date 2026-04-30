@@ -13,8 +13,8 @@
 ### Task 1: Add shared callback dispatch helpers
 
 **Files:**
-- Modify: `src/rl_training/runtime/callbacks.py`
-- Modify: `src/rl_training/runtime/trainer.py`
+- Modify: `src/axiomrl/runtime/callbacks.py`
+- Modify: `src/axiomrl/runtime/trainer.py`
 - Create: `tests/test_callbacks.py`
 
 **Step 1: Write the failing test**
@@ -39,11 +39,11 @@ Expected: PASS
 ### Task 2: Wire callbacks through trainers and public entrypoints
 
 **Files:**
-- Modify: `src/rl_training/runtime/ppo_trainer.py`
-- Modify: `src/rl_training/runtime/dqn_trainer.py`
-- Modify: `src/rl_training/runtime/sac_trainer.py`
-- Modify: `src/rl_training/experiment/default_manager.py`
-- Modify: `src/rl_training/api/algorithms.py`
+- Modify: `src/axiomrl/runtime/ppo_trainer.py`
+- Modify: `src/axiomrl/runtime/dqn_trainer.py`
+- Modify: `src/axiomrl/runtime/sac_trainer.py`
+- Modify: `src/axiomrl/experiment/default_manager.py`
+- Modify: `src/axiomrl/api/algorithms.py`
 
 **Step 1: Use the failing callback test**
 

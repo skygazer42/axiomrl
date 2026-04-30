@@ -41,7 +41,7 @@ Expected:
 ### Task 2: Extend the Tennis event wrapper with offensive placement bonuses
 
 **Files:**
-- Modify: `src/rl_training/envs/tennis_events.py`
+- Modify: `src/axiomrl/envs/tennis_events.py`
 - Modify: `tests/test_atari_envs.py`
 
 **Step 1: Extend the config dataclass**
@@ -81,9 +81,9 @@ Expected:
 
 **Files:**
 - Create: `configs/apex_dqn/tennis_event_offense.yaml`
-- Create: `src/rl_training/assets/configs/apex_dqn/tennis_event_offense.yaml`
+- Create: `src/axiomrl/assets/configs/apex_dqn/tennis_event_offense.yaml`
 - Create: `zoo/atari/apex_dqn_tennis_event_offense.yaml`
-- Create: `src/rl_training/assets/zoo/atari/apex_dqn_tennis_event_offense.yaml`
+- Create: `src/axiomrl/assets/zoo/atari/apex_dqn_tennis_event_offense.yaml`
 
 **Step 1: Base from the current event-shaped control**
 
@@ -104,9 +104,9 @@ Do not change evaluation wrappers.
 
 **Files:**
 - Create: `configs/rainbow_dqn/tennis_event_offense.yaml`
-- Create: `src/rl_training/assets/configs/rainbow_dqn/tennis_event_offense.yaml`
+- Create: `src/axiomrl/assets/configs/rainbow_dqn/tennis_event_offense.yaml`
 - Create: `zoo/atari/rainbow_dqn_tennis_event_offense.yaml`
-- Create: `src/rl_training/assets/zoo/atari/rainbow_dqn_tennis_event_offense.yaml`
+- Create: `src/axiomrl/assets/zoo/atari/rainbow_dqn_tennis_event_offense.yaml`
 
 **Step 1: Base from the current event-shaped control**
 
@@ -125,7 +125,7 @@ Do not change evaluation wrappers.
 **Files:**
 - Modify: `tests/test_zoo_presets.py`
 - Create: `zoo/atari/tennis_offense_focus.yaml`
-- Create: `src/rl_training/assets/zoo/atari/tennis_offense_focus.yaml`
+- Create: `src/axiomrl/assets/zoo/atari/tennis_offense_focus.yaml`
 
 **Step 1: Add manifest tests**
 
@@ -186,8 +186,8 @@ Most likely:
 **Step 3: Launch**
 
 ```bash
-./.env/bin/python -s -m rl_training.cli train --config zoo/atari/apex_dqn_tennis_event_offense.yaml --output-dir /data/ax/axiomrl/.worktrees/tennis-rainbow/runs/tennis-apex-event-offense
-./.env/bin/python -s -m rl_training.cli train --config zoo/atari/rainbow_dqn_tennis_event_offense.yaml --output-dir /data/ax/axiomrl/.worktrees/tennis-rainbow/runs/tennis-rainbow-event-offense
+./.env/bin/python -s -m axiomrl.cli train --config zoo/atari/apex_dqn_tennis_event_offense.yaml --output-dir /data/ax/axiomrl/.worktrees/tennis-rainbow/runs/tennis-apex-event-offense
+./.env/bin/python -s -m axiomrl.cli train --config zoo/atari/rainbow_dqn_tennis_event_offense.yaml --output-dir /data/ax/axiomrl/.worktrees/tennis-rainbow/runs/tennis-rainbow-event-offense
 ```
 
 **Step 4: Verify startup**

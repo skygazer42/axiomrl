@@ -7,20 +7,20 @@ from functools import partial
 import gymnasium as gym
 from gymnasium.envs.registration import EnvSpec
 
-from rl_training.envs.atari import (
+from axiomrl.envs.atari import (
     apply_atari_wrappers,
     ensure_atari_env_registered,
     resolve_atari_wrapper_config,
     split_env_kwargs,
 )
-from rl_training.envs.goals import register_builtin_goal_envs
-from rl_training.envs.pixels import apply_pixel_wrappers, resolve_pixel_wrapper_config
-from rl_training.envs.rewards import apply_reward_wrappers, resolve_reward_wrapper_config
-from rl_training.envs.tennis_events import apply_tennis_event_wrapper, resolve_tennis_event_wrapper_config
-from rl_training.envs.video import apply_video_wrapper, resolve_video_wrapper_config
-from rl_training.experiment.config import TrainConfig
-from rl_training.runtime.resume_state import ResumeStateWrapper
-from rl_training.runtime.vector_envs import resolve_worker_backend
+from axiomrl.envs.goals import register_builtin_goal_envs
+from axiomrl.envs.pixels import apply_pixel_wrappers, resolve_pixel_wrapper_config
+from axiomrl.envs.rewards import apply_reward_wrappers, resolve_reward_wrapper_config
+from axiomrl.envs.tennis_events import apply_tennis_event_wrapper, resolve_tennis_event_wrapper_config
+from axiomrl.envs.video import apply_video_wrapper, resolve_video_wrapper_config
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.runtime.resume_state import ResumeStateWrapper
+from axiomrl.runtime.vector_envs import resolve_worker_backend
 
 EnvFactory = Callable[[], gym.Env]
 

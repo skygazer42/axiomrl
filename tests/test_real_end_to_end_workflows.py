@@ -3,8 +3,8 @@ from pathlib import Path
 import gymnasium as gym
 import numpy as np
 
-from rl_training import IQL, PPO, TrainConfig
-from rl_training.data import export_random_transition_dataset
+from axiomrl import IQL, PPO, TrainConfig
+from axiomrl.data import export_random_transition_dataset
 
 
 def test_ppo_real_env_training_save_load_and_inference_cycle(tmp_path: Path) -> None:

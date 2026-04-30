@@ -8,24 +8,24 @@ import gymnasium as gym
 import numpy as np
 import torch
 
-from rl_training.algorithms.sac import SAC
-from rl_training.data.replay_buffer import ReplayBuffer
-from rl_training.envs.factory import make_vector_env
-from rl_training.experiment.checkpointing import CheckpointState
-from rl_training.experiment.config import TrainConfig
-from rl_training.models.mlp_sac import MLPSACModel
-from rl_training.runtime.callbacks import Callback, CallbackList
-from rl_training.runtime.collector import CollectResult
-from rl_training.runtime.controls import resolve_eval_interval, should_run_periodic_eval
-from rl_training.runtime.evaluation_support import evaluate_continuous_episodes
-from rl_training.runtime.off_policy_trainer_utils import (
+from axiomrl.algorithms.sac import SAC
+from axiomrl.data.replay_buffer import ReplayBuffer
+from axiomrl.envs.factory import make_vector_env
+from axiomrl.experiment.checkpointing import CheckpointState
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.models.mlp_sac import MLPSACModel
+from axiomrl.runtime.callbacks import Callback, CallbackList
+from axiomrl.runtime.collector import CollectResult
+from axiomrl.runtime.controls import resolve_eval_interval, should_run_periodic_eval
+from axiomrl.runtime.evaluation_support import evaluate_continuous_episodes
+from axiomrl.runtime.off_policy_trainer_utils import (
     capture_replay_resume_context,
     restore_replay_training_state,
 )
-from rl_training.runtime.run_utils import save_training_checkpoint
-from rl_training.runtime.session import create_training_session
-from rl_training.runtime.trainer import TrainerState, TrainResult
-from rl_training.runtime.types import MetricDict
+from axiomrl.runtime.run_utils import save_training_checkpoint
+from axiomrl.runtime.session import create_training_session
+from axiomrl.runtime.trainer import TrainerState, TrainResult
+from axiomrl.runtime.types import MetricDict
 
 
 def _infer_spaces(envs: gym.vector.VectorEnv) -> tuple[int, int]:
@@ -69,6 +69,7 @@ def _evaluate_sac_policy(
 
     low, high = _action_bounds(action_space, device=device)
     try:
+
         def action_fn(obs_tensor: torch.Tensor) -> np.ndarray:
             with torch.no_grad():
                 normalized_action = model.sample_actions(obs_tensor, deterministic=True).actions

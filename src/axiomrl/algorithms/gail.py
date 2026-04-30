@@ -5,11 +5,11 @@ from typing import Any
 import torch
 from torch.nn import functional as F
 
-from rl_training.algorithms.base import UpdateResult
-from rl_training.algorithms.ppo import PPO
-from rl_training.models.cnn.actor_critic import CNNActorCritic
-from rl_training.models.mlp_actor_critic import MLPActorCritic
-from rl_training.models.mlp_gail_discriminator import CNNGAILDiscriminator, MLPGAILDiscriminator
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.algorithms.ppo import PPO
+from axiomrl.models.cnn.actor_critic import CNNActorCritic
+from axiomrl.models.mlp_actor_critic import MLPActorCritic
+from axiomrl.models.mlp_gail_discriminator import CNNGAILDiscriminator, MLPGAILDiscriminator
 
 
 class GAIL:
@@ -115,4 +115,3 @@ class GAIL:
     def set_eval_mode(self) -> None:
         self.ppo.set_eval_mode()
         self.discriminator.eval()
-

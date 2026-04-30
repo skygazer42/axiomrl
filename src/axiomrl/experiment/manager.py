@@ -4,15 +4,14 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Protocol
 
-from rl_training.experiment.config import TrainConfig
-from rl_training.runtime.callbacks import Callback
-from rl_training.runtime.runner import Runner
-from rl_training.runtime.trainer import Trainer
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.runtime.callbacks import Callback
+from axiomrl.runtime.runner import Runner
+from axiomrl.runtime.trainer import Trainer
 
 
 class ExperimentManager(Protocol):
-    def setup(self, config: TrainConfig, *, callbacks: Sequence[Callback] | None = None) -> Trainer:
-        ...
+    def setup(self, config: TrainConfig, *, callbacks: Sequence[Callback] | None = None) -> Trainer: ...
 
     def resume(
         self,
@@ -23,11 +22,9 @@ class ExperimentManager(Protocol):
         eval_episodes: int | None = None,
         run_suffix: str | None = None,
         callbacks: Sequence[Callback] | None = None,
-    ) -> Trainer:
-        ...
+    ) -> Trainer: ...
 
-    def setup_runner(self, config: TrainConfig, *, callbacks: Sequence[Callback] | None = None) -> Runner:
-        ...
+    def setup_runner(self, config: TrainConfig, *, callbacks: Sequence[Callback] | None = None) -> Runner: ...
 
     def resume_runner(
         self,
@@ -38,5 +35,4 @@ class ExperimentManager(Protocol):
         eval_episodes: int | None = None,
         run_suffix: str | None = None,
         callbacks: Sequence[Callback] | None = None,
-    ) -> Runner:
-        ...
+    ) -> Runner: ...

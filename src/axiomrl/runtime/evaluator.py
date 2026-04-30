@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Protocol
 
-from rl_training.runtime.types import MetricDict
+from axiomrl.runtime.types import MetricDict
 
 
 @dataclass(slots=True)
@@ -13,5 +13,4 @@ class EvalResult:
 
 
 class Evaluator(Protocol):
-    def evaluate(self, *, num_episodes: int) -> EvalResult:
-        ...
+    def evaluate(self, *, num_episodes: int) -> EvalResult: ...

@@ -6,8 +6,8 @@ import torch
 from torch import nn
 from torch.distributions import Categorical
 
-from rl_training.models.cnn.nature import NatureCNN
-from rl_training.policies.base import PolicyOutput
+from axiomrl.models.cnn.nature import NatureCNN
+from axiomrl.policies.base import PolicyOutput
 
 
 def _conv_output_size(size: int, *, kernel: int, stride: int) -> int:
@@ -154,4 +154,3 @@ class DreamerModel(nn.Module):
 
     def parameters_critic(self) -> Iterator[nn.Parameter]:
         yield from self.critic_head.parameters()
-

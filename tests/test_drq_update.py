@@ -1,7 +1,7 @@
 import torch
 
-from rl_training.algorithms.drq import DrQ, drq_loss
-from rl_training.models import CNNDrQModel
+from axiomrl.algorithms.drq import DrQ, drq_loss
+from axiomrl.models import CNNDrQModel
 
 
 def test_drq_loss_returns_named_metrics() -> None:

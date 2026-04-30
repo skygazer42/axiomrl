@@ -6,16 +6,20 @@ from typing import Any
 import torch
 from torch.nn import functional as F
 
-from rl_training.algorithms.base import UpdateResult
-from rl_training.models.mlp_iql import MLPIQLModel
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.models.mlp_iql import MLPIQLModel
 
 
 def _marwil_loss_terms(batch: dict[str, torch.Tensor | float]) -> dict[str, torch.Tensor]:
     value_predictions = torch.as_tensor(batch["value_predictions"], dtype=torch.float32)
     returns_to_go = torch.as_tensor(batch["returns_to_go"], dtype=torch.float32, device=value_predictions.device)
-    behavior_logprobs = torch.as_tensor(batch["behavior_logprobs"], dtype=torch.float32, device=value_predictions.device)
+    behavior_logprobs = torch.as_tensor(
+        batch["behavior_logprobs"], dtype=torch.float32, device=value_predictions.device
+    )
     advantages = torch.as_tensor(batch["advantages"], dtype=torch.float32, device=value_predictions.device)
-    advantage_weights = torch.as_tensor(batch["advantage_weights"], dtype=torch.float32, device=value_predictions.device)
+    advantage_weights = torch.as_tensor(
+        batch["advantage_weights"], dtype=torch.float32, device=value_predictions.device
+    )
     advantage_norm_scale = torch.as_tensor(
         batch.get("advantage_norm_scale", 1.0),
         dtype=torch.float32,
@@ -62,10 +66,7 @@ class MARWIL:
         if float(vf_coeff) < 0.0:
             raise ValueError(f"vf_coeff must be >= 0, got {vf_coeff}")
         if float(moving_average_sqd_adv_norm_start) <= 0.0:
-            raise ValueError(
-                "moving_average_sqd_adv_norm_start must be > 0, "
-                f"got {moving_average_sqd_adv_norm_start}"
-            )
+            raise ValueError(f"moving_average_sqd_adv_norm_start must be > 0, got {moving_average_sqd_adv_norm_start}")
         if not 0.0 < float(moving_average_sqd_adv_norm_update_rate) <= 1.0:
             raise ValueError(
                 "moving_average_sqd_adv_norm_update_rate must be in (0, 1], "
@@ -74,8 +75,12 @@ class MARWIL:
 
         self.model = model
         self.policy = model
-        self.actor_optimizer = torch.optim.Adam(self.model.actor_parameters(), lr=float(learning_rate), weight_decay=0.0)
-        self.value_optimizer = torch.optim.Adam(self.model.value_parameters(), lr=float(learning_rate), weight_decay=0.0)
+        self.actor_optimizer = torch.optim.Adam(
+            self.model.actor_parameters(), lr=float(learning_rate), weight_decay=0.0
+        )
+        self.value_optimizer = torch.optim.Adam(
+            self.model.value_parameters(), lr=float(learning_rate), weight_decay=0.0
+        )
         self.beta = float(beta)
         self.vf_coeff = float(vf_coeff)
         self.moving_average_sqd_adv_norm = float(moving_average_sqd_adv_norm_start)
@@ -109,9 +114,8 @@ class MARWIL:
             advantages = returns_to_go - self.model.value(obs)
             batch_sqd_adv_norm = float(advantages.pow(2).mean().detach().cpu().item())
             self.moving_average_sqd_adv_norm = (
-                (1.0 - self.moving_average_sqd_adv_norm_update_rate) * self.moving_average_sqd_adv_norm
-                + self.moving_average_sqd_adv_norm_update_rate * batch_sqd_adv_norm
-            )
+                1.0 - self.moving_average_sqd_adv_norm_update_rate
+            ) * self.moving_average_sqd_adv_norm + self.moving_average_sqd_adv_norm_update_rate * batch_sqd_adv_norm
             if math.isclose(self.beta, 0.0):
                 advantage_weights = torch.ones_like(advantages)
             else:

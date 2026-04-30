@@ -2,21 +2,21 @@ from __future__ import annotations
 
 import torch
 
-from rl_training.algorithms.awac import AWAC as AWACAlgorithm
-from rl_training.algorithms.bcq import BCQ as BCQAlgorithm
-from rl_training.algorithms.bear import BEAR as BEARAlgorithm
-from rl_training.algorithms.cal_ql import CalQL as CalQLAlgorithm
-from rl_training.algorithms.crr import CRR as CRRAlgorithm
-from rl_training.algorithms.rebrac import ReBRAC as ReBRACAlgorithm
-from rl_training.algorithms.xql import XQL as XQLAlgorithm
-from rl_training.experiment.checkpointing import CheckpointState
-from rl_training.experiment.config import TrainConfig
-from rl_training.experiment.registry_support import _infer_continuous_env_spaces
-from rl_training.models.mlp_bcq import MLPBCQModel
-from rl_training.models.mlp_bear import MLPBEARModel
-from rl_training.models.mlp_iql import MLPIQLModel
-from rl_training.models.mlp_sac import MLPSACModel
-from rl_training.models.mlp_td3 import MLPTD3Model
+from axiomrl.algorithms.awac import AWAC as AWACAlgorithm
+from axiomrl.algorithms.bcq import BCQ as BCQAlgorithm
+from axiomrl.algorithms.bear import BEAR as BEARAlgorithm
+from axiomrl.algorithms.cal_ql import CalQL as CalQLAlgorithm
+from axiomrl.algorithms.crr import CRR as CRRAlgorithm
+from axiomrl.algorithms.rebrac import ReBRAC as ReBRACAlgorithm
+from axiomrl.algorithms.xql import XQL as XQLAlgorithm
+from axiomrl.experiment.checkpointing import CheckpointState
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.experiment.registry_support import _infer_continuous_env_spaces
+from axiomrl.models.mlp_bcq import MLPBCQModel
+from axiomrl.models.mlp_bear import MLPBEARModel
+from axiomrl.models.mlp_iql import MLPIQLModel
+from axiomrl.models.mlp_sac import MLPSACModel
+from axiomrl.models.mlp_td3 import MLPTD3Model
 
 
 def _load_bcq_algorithm(

@@ -2,14 +2,13 @@ from pathlib import Path
 
 import pytest
 
-from rl_training.envs import POINT_GOAL_ENV_ID
-from rl_training.experiment.config import TrainConfig
-from rl_training.runtime.awac_trainer import train_awac
-from rl_training.runtime.bc_trainer import train_bc
-from rl_training.runtime.bear_trainer import train_bear
-from rl_training.runtime.bcq_trainer import train_bcq
-from rl_training.runtime.her_trainer import train_her
-from rl_training.runtime.controls import (
+from axiomrl.envs import POINT_GOAL_ENV_ID
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.runtime.awac_trainer import train_awac
+from axiomrl.runtime.bc_trainer import train_bc
+from axiomrl.runtime.bcq_trainer import train_bcq
+from axiomrl.runtime.bear_trainer import train_bear
+from axiomrl.runtime.controls import (
     EarlyStoppingCallback,
     EarlyStoppingConfig,
     build_control_callbacks,
@@ -20,8 +19,9 @@ from rl_training.runtime.controls import (
     resolve_root_exploration_fraction,
     resolve_temperature,
 )
-from rl_training.runtime.iql_trainer import train_iql
-from rl_training.runtime.trainer import TrainerState
+from axiomrl.runtime.her_trainer import train_her
+from axiomrl.runtime.iql_trainer import train_iql
+from axiomrl.runtime.trainer import TrainerState
 
 
 def test_early_stopping_callback_stops_when_target_is_reached(tmp_path: Path) -> None:

@@ -7,8 +7,8 @@ from pathlib import Path
 import pytest
 import yaml
 
-from rl_training.cli import load_config
-from rl_training.zoo_cli import main as zoo_main
+from axiomrl.cli import load_config
+from axiomrl.zoo_cli import main as zoo_main
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -94,9 +94,7 @@ def test_packaged_zoo_preset_can_be_loaded_outside_repo_root(monkeypatch, tmp_pa
     assert "atari" in config.tags
 
 
-def test_packaged_zoo_preset_inherits_manifest_benchmark_and_protocol_defaults(
-    monkeypatch, tmp_path: Path
-) -> None:
+def test_packaged_zoo_preset_inherits_manifest_benchmark_and_protocol_defaults(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.chdir(tmp_path)
 
     config = load_config("zoo/atari/dqn_breakout.yaml")
@@ -296,9 +294,7 @@ def test_packaged_tennis_event_v2_preset_has_stop_loss_and_v2_wrapper_defaults(
     assert tennis_events["emit_info_metrics"] is True
 
 
-def test_packaged_tennis_event_v5_preset_has_outcome_anchoring_and_fast_eval(
-    monkeypatch, tmp_path: Path
-) -> None:
+def test_packaged_tennis_event_v5_preset_has_outcome_anchoring_and_fast_eval(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.chdir(tmp_path)
 
     config = load_config("zoo/atari/apex_dqn_tennis_event_v5.yaml")
@@ -1219,9 +1215,7 @@ def test_zoo_cli_report_supports_preset_grouping_and_top_k_json(
     assert payload["aggregates"][0]["runs"] == 2
 
 
-def test_zoo_cli_report_json_includes_latest_vs_best_deltas(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_zoo_cli_report_json_includes_latest_vs_best_deltas(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     runs_dir = tmp_path / "runs"
     run_dir = runs_dir / "dqn__ALE-Breakout-v5__seed7__demo"
     run_dir.mkdir(parents=True)
@@ -1610,9 +1604,13 @@ def test_zoo_cli_report_json_aggregates_include_baseline_comparison_statistics(
     assert aggregates_by_preset["dqn_breakout"]["delta_vs_baseline_latest_eval_return_mean_mean"] == pytest.approx(0.0)
     assert aggregates_by_preset["dqn_breakout"]["ratio_vs_baseline_latest_eval_return_mean_mean"] == pytest.approx(1.0)
     assert aggregates_by_preset["ppo_breakout"]["baseline_latest_eval_return_mean_mean"] == pytest.approx(60.0)
-    assert aggregates_by_preset["ppo_breakout"]["baseline_latest_eval_human_normalized_score_mean"] == pytest.approx(33.0)
+    assert aggregates_by_preset["ppo_breakout"]["baseline_latest_eval_human_normalized_score_mean"] == pytest.approx(
+        33.0
+    )
     assert aggregates_by_preset["ppo_breakout"]["delta_vs_baseline_latest_eval_return_mean_mean"] == pytest.approx(12.0)
-    assert aggregates_by_preset["ppo_breakout"]["delta_vs_baseline_latest_eval_human_normalized_score_mean"] == pytest.approx(12.0)
+    assert aggregates_by_preset["ppo_breakout"][
+        "delta_vs_baseline_latest_eval_human_normalized_score_mean"
+    ] == pytest.approx(12.0)
     assert aggregates_by_preset["ppo_breakout"]["ratio_vs_baseline_latest_eval_return_mean_mean"] == pytest.approx(
         72.0 / 60.0
     )
@@ -1707,7 +1705,9 @@ def test_zoo_cli_report_json_includes_baseline_summary_top_movers_and_regression
         "ppg_breakout",
         "ppo_breakout",
     ]
-    assert summary["top_movers_by_return_delta"][0]["delta_vs_baseline_latest_eval_return_mean_mean"] == pytest.approx(12.0)
+    assert summary["top_movers_by_return_delta"][0]["delta_vs_baseline_latest_eval_return_mean_mean"] == pytest.approx(
+        12.0
+    )
     assert summary["top_regressions_by_normalized_delta"][0][
         "delta_vs_baseline_latest_eval_human_normalized_score_mean"
     ] == pytest.approx(-13.0)

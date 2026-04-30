@@ -36,7 +36,7 @@ graph LR
 === "Python API"
 
     ```python
-    from rl_training.core import PPO, TrainConfig
+    from axiomrl.core import PPO, TrainConfig
 
     config = TrainConfig(
         algo="PPO",
@@ -89,7 +89,7 @@ graph LR
 === "Python API"
 
     ```python
-    from rl_training.core import SAC, TrainConfig
+    from axiomrl.core import SAC, TrainConfig
 
     config = TrainConfig(
         algo="SAC",
@@ -154,7 +154,7 @@ graph LR
 === "Python API"
 
     ```python
-    from rl_training.core import IQL, TrainConfig
+    from axiomrl.core import IQL, TrainConfig
 
     config = TrainConfig(
         algo="IQL",

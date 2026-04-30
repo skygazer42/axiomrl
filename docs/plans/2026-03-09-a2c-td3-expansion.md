@@ -13,9 +13,9 @@
 ### Task 1: Add the A2C algorithm layer and smoke-tested trainer
 
 **Files:**
-- Create: `src/rl_training/algorithms/a2c.py`
-- Modify: `src/rl_training/algorithms/__init__.py`
-- Create: `src/rl_training/runtime/a2c_trainer.py`
+- Create: `src/axiomrl/algorithms/a2c.py`
+- Modify: `src/axiomrl/algorithms/__init__.py`
+- Create: `src/axiomrl/runtime/a2c_trainer.py`
 - Create: `tests/test_a2c_update.py`
 - Create: `tests/test_a2c_trainer_smoke.py`
 
@@ -44,11 +44,11 @@ Expected: PASS
 ### Task 2: Add the TD3 algorithm layer and smoke-tested trainer
 
 **Files:**
-- Create: `src/rl_training/models/mlp_td3.py`
-- Modify: `src/rl_training/models/__init__.py`
-- Create: `src/rl_training/algorithms/td3.py`
-- Modify: `src/rl_training/algorithms/__init__.py`
-- Create: `src/rl_training/runtime/td3_trainer.py`
+- Create: `src/axiomrl/models/mlp_td3.py`
+- Modify: `src/axiomrl/models/__init__.py`
+- Create: `src/axiomrl/algorithms/td3.py`
+- Modify: `src/axiomrl/algorithms/__init__.py`
+- Create: `src/axiomrl/runtime/td3_trainer.py`
 - Create: `tests/test_td3_update.py`
 - Create: `tests/test_td3_trainer_smoke.py`
 
@@ -80,9 +80,9 @@ Expected: PASS
 ### Task 3: Wire A2C and TD3 into registry, CLI, public API, configs, and reference scripts
 
 **Files:**
-- Modify: `src/rl_training/experiment/registry.py`
-- Modify: `src/rl_training/cli.py`
-- Modify: `src/rl_training/api/algorithms.py`
+- Modify: `src/axiomrl/experiment/registry.py`
+- Modify: `src/axiomrl/cli.py`
+- Modify: `src/axiomrl/api/algorithms.py`
 - Create: `configs/a2c/cartpole.yaml`
 - Create: `configs/td3/pendulum.yaml`
 - Create: `examples/a2c_cartpole_reference.py`

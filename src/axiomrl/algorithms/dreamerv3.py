@@ -6,10 +6,10 @@ import torch
 from torch.distributions import Categorical
 from torch.nn import functional as F
 
-from rl_training.algorithms.base import UpdateResult
-from rl_training.algorithms.dreamer import Dreamer
-from rl_training.models.dreamer import DreamerModel
-from rl_training.policies.base import PolicyOutput
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.algorithms.dreamer import Dreamer
+from axiomrl.models.dreamer import DreamerModel
+from axiomrl.policies.base import PolicyOutput
 
 
 def _symlog(values: torch.Tensor) -> torch.Tensor:
@@ -178,7 +178,9 @@ class DreamerV3(Dreamer):
             "dreamerv3_actor_loss": float(actor_loss.detach().cpu().item()),
             "dreamerv3_critic_loss": float(critic_loss.detach().cpu().item()),
             "dreamerv3_imagination_horizon": float(horizon),
-            "dreamerv3_imagination_reward_mean": float(torch.stack(reward_terms, dim=0).mean().detach().cpu().item()) if reward_terms else 0.0,
+            "dreamerv3_imagination_reward_mean": float(torch.stack(reward_terms, dim=0).mean().detach().cpu().item())
+            if reward_terms
+            else 0.0,
             "dreamerv3_unimix_ratio": self.unimix_ratio,
         }
         return UpdateResult(metrics=metrics, num_gradient_steps=1)

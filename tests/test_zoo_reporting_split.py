@@ -3,9 +3,9 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from rl_training.zoo.reporting_render import csv_report_rows, render_csv_report
-from rl_training.zoo.reporting_runs import filter_run_reports, iter_run_reports
-from rl_training.zoo.reporting_stats import aggregate_run_reports
+from axiomrl.zoo.reporting_render import csv_report_rows, render_csv_report
+from axiomrl.zoo.reporting_runs import filter_run_reports, iter_run_reports
+from axiomrl.zoo.reporting_stats import aggregate_run_reports
 
 
 def test_iter_run_reports_supports_nested_run_directories(tmp_path: Path) -> None:

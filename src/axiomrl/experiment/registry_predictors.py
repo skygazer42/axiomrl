@@ -5,10 +5,10 @@ from collections.abc import Mapping
 import numpy as np
 import torch
 
-from rl_training.envs.goals import flatten_goal_observation
-from rl_training.experiment.checkpointing import CheckpointState
-from rl_training.experiment.config import TrainConfig
-from rl_training.experiment.registry_core import (
+from axiomrl.envs.goals import flatten_goal_observation
+from axiomrl.experiment.checkpointing import CheckpointState
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.experiment.registry_core import (
     _load_a2c_algorithm,
     _load_agent57_algorithm,
     _load_appo_algorithm,
@@ -64,13 +64,13 @@ from rl_training.experiment.registry_core import (
     _load_trpo_algorithm,
     _load_xql_algorithm,
 )
-from rl_training.experiment.registry_support import (
+from axiomrl.experiment.registry_support import (
     _continuous_action_bounds,
     _format_action_output,
     _prepare_observation,
     _scale_continuous_actions,
 )
-from rl_training.runtime.decision_transformer_trainer import _build_autoregressive_window
+from axiomrl.runtime.decision_transformer_trainer import _build_autoregressive_window
 
 
 def _predict_a2c(

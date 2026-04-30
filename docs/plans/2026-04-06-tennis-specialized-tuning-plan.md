@@ -52,15 +52,15 @@ git commit -m "test: cover tennis tuning preset matrix"
 - Create: `configs/apex_dqn/tennis_stable_lr.yaml`
 - Create: `configs/apex_dqn/tennis_explore_tuned.yaml`
 - Create: `configs/apex_dqn/tennis_reward_lite.yaml`
-- Create: `src/rl_training/assets/configs/apex_dqn/tennis_stable_lr.yaml`
-- Create: `src/rl_training/assets/configs/apex_dqn/tennis_explore_tuned.yaml`
-- Create: `src/rl_training/assets/configs/apex_dqn/tennis_reward_lite.yaml`
+- Create: `src/axiomrl/assets/configs/apex_dqn/tennis_stable_lr.yaml`
+- Create: `src/axiomrl/assets/configs/apex_dqn/tennis_explore_tuned.yaml`
+- Create: `src/axiomrl/assets/configs/apex_dqn/tennis_reward_lite.yaml`
 - Create: `zoo/atari/apex_dqn_tennis_stable_lr.yaml`
 - Create: `zoo/atari/apex_dqn_tennis_explore_tuned.yaml`
 - Create: `zoo/atari/apex_dqn_tennis_reward_lite.yaml`
-- Create: `src/rl_training/assets/zoo/atari/apex_dqn_tennis_stable_lr.yaml`
-- Create: `src/rl_training/assets/zoo/atari/apex_dqn_tennis_explore_tuned.yaml`
-- Create: `src/rl_training/assets/zoo/atari/apex_dqn_tennis_reward_lite.yaml`
+- Create: `src/axiomrl/assets/zoo/atari/apex_dqn_tennis_stable_lr.yaml`
+- Create: `src/axiomrl/assets/zoo/atari/apex_dqn_tennis_explore_tuned.yaml`
+- Create: `src/axiomrl/assets/zoo/atari/apex_dqn_tennis_reward_lite.yaml`
 
 **Step 1: Write the failing test**
 
@@ -97,9 +97,9 @@ Add one thin zoo YAML per config so each preset is loadable through `load_config
 
 ```bash
 git add configs/apex_dqn/tennis_stable_lr.yaml configs/apex_dqn/tennis_explore_tuned.yaml configs/apex_dqn/tennis_reward_lite.yaml
-git add src/rl_training/assets/configs/apex_dqn/tennis_stable_lr.yaml src/rl_training/assets/configs/apex_dqn/tennis_explore_tuned.yaml src/rl_training/assets/configs/apex_dqn/tennis_reward_lite.yaml
+git add src/axiomrl/assets/configs/apex_dqn/tennis_stable_lr.yaml src/axiomrl/assets/configs/apex_dqn/tennis_explore_tuned.yaml src/axiomrl/assets/configs/apex_dqn/tennis_reward_lite.yaml
 git add zoo/atari/apex_dqn_tennis_stable_lr.yaml zoo/atari/apex_dqn_tennis_explore_tuned.yaml zoo/atari/apex_dqn_tennis_reward_lite.yaml
-git add src/rl_training/assets/zoo/atari/apex_dqn_tennis_stable_lr.yaml src/rl_training/assets/zoo/atari/apex_dqn_tennis_explore_tuned.yaml src/rl_training/assets/zoo/atari/apex_dqn_tennis_reward_lite.yaml
+git add src/axiomrl/assets/zoo/atari/apex_dqn_tennis_stable_lr.yaml src/axiomrl/assets/zoo/atari/apex_dqn_tennis_explore_tuned.yaml src/axiomrl/assets/zoo/atari/apex_dqn_tennis_reward_lite.yaml
 git commit -m "feat: add apex tennis tuning presets"
 ```
 
@@ -109,15 +109,15 @@ git commit -m "feat: add apex tennis tuning presets"
 - Create: `configs/rainbow_dqn/tennis_stable_lr.yaml`
 - Create: `configs/rainbow_dqn/tennis_no_early_stop.yaml`
 - Create: `configs/rainbow_dqn/tennis_reward_lite.yaml`
-- Create: `src/rl_training/assets/configs/rainbow_dqn/tennis_stable_lr.yaml`
-- Create: `src/rl_training/assets/configs/rainbow_dqn/tennis_no_early_stop.yaml`
-- Create: `src/rl_training/assets/configs/rainbow_dqn/tennis_reward_lite.yaml`
+- Create: `src/axiomrl/assets/configs/rainbow_dqn/tennis_stable_lr.yaml`
+- Create: `src/axiomrl/assets/configs/rainbow_dqn/tennis_no_early_stop.yaml`
+- Create: `src/axiomrl/assets/configs/rainbow_dqn/tennis_reward_lite.yaml`
 - Create: `zoo/atari/rainbow_dqn_tennis_stable_lr.yaml`
 - Create: `zoo/atari/rainbow_dqn_tennis_no_early_stop.yaml`
 - Create: `zoo/atari/rainbow_dqn_tennis_reward_lite.yaml`
-- Create: `src/rl_training/assets/zoo/atari/rainbow_dqn_tennis_stable_lr.yaml`
-- Create: `src/rl_training/assets/zoo/atari/rainbow_dqn_tennis_no_early_stop.yaml`
-- Create: `src/rl_training/assets/zoo/atari/rainbow_dqn_tennis_reward_lite.yaml`
+- Create: `src/axiomrl/assets/zoo/atari/rainbow_dqn_tennis_stable_lr.yaml`
+- Create: `src/axiomrl/assets/zoo/atari/rainbow_dqn_tennis_no_early_stop.yaml`
+- Create: `src/axiomrl/assets/zoo/atari/rainbow_dqn_tennis_reward_lite.yaml`
 
 **Step 1: Write the failing test**
 
@@ -153,9 +153,9 @@ Mirror the `apex_dqn` approach with thin zoo YAML files.
 
 ```bash
 git add configs/rainbow_dqn/tennis_stable_lr.yaml configs/rainbow_dqn/tennis_no_early_stop.yaml configs/rainbow_dqn/tennis_reward_lite.yaml
-git add src/rl_training/assets/configs/rainbow_dqn/tennis_stable_lr.yaml src/rl_training/assets/configs/rainbow_dqn/tennis_no_early_stop.yaml src/rl_training/assets/configs/rainbow_dqn/tennis_reward_lite.yaml
+git add src/axiomrl/assets/configs/rainbow_dqn/tennis_stable_lr.yaml src/axiomrl/assets/configs/rainbow_dqn/tennis_no_early_stop.yaml src/axiomrl/assets/configs/rainbow_dqn/tennis_reward_lite.yaml
 git add zoo/atari/rainbow_dqn_tennis_stable_lr.yaml zoo/atari/rainbow_dqn_tennis_no_early_stop.yaml zoo/atari/rainbow_dqn_tennis_reward_lite.yaml
-git add src/rl_training/assets/zoo/atari/rainbow_dqn_tennis_stable_lr.yaml src/rl_training/assets/zoo/atari/rainbow_dqn_tennis_no_early_stop.yaml src/rl_training/assets/zoo/atari/rainbow_dqn_tennis_reward_lite.yaml
+git add src/axiomrl/assets/zoo/atari/rainbow_dqn_tennis_stable_lr.yaml src/axiomrl/assets/zoo/atari/rainbow_dqn_tennis_no_early_stop.yaml src/axiomrl/assets/zoo/atari/rainbow_dqn_tennis_reward_lite.yaml
 git commit -m "feat: add rainbow tennis tuning presets"
 ```
 
@@ -163,7 +163,7 @@ git commit -m "feat: add rainbow tennis tuning presets"
 
 **Files:**
 - Create: `zoo/atari/tennis_tuning_stage1.yaml`
-- Create: `src/rl_training/assets/zoo/atari/tennis_tuning_stage1.yaml`
+- Create: `src/axiomrl/assets/zoo/atari/tennis_tuning_stage1.yaml`
 - Modify: `tests/test_zoo_presets.py`
 
 **Step 1: Write the failing test**
@@ -199,7 +199,7 @@ Expected:
 **Step 5: Commit**
 
 ```bash
-git add tests/test_zoo_presets.py zoo/atari/tennis_tuning_stage1.yaml src/rl_training/assets/zoo/atari/tennis_tuning_stage1.yaml
+git add tests/test_zoo_presets.py zoo/atari/tennis_tuning_stage1.yaml src/axiomrl/assets/zoo/atari/tennis_tuning_stage1.yaml
 git commit -m "feat: add tennis stage1 tuning manifest"
 ```
 
@@ -257,7 +257,7 @@ Use one output root per variant, for example:
 Start each with the package CLI:
 
 ```bash
-./.env/bin/python -s -m rl_training.cli train --config zoo/atari/<preset>.yaml --output-dir /data/ax/axiomrl/.worktrees/tennis-rainbow/runs/<variant-dir>
+./.env/bin/python -s -m axiomrl.cli train --config zoo/atari/<preset>.yaml --output-dir /data/ax/axiomrl/.worktrees/tennis-rainbow/runs/<variant-dir>
 ```
 
 **Step 3: Verify startup**

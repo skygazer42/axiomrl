@@ -4,10 +4,10 @@ from typing import Any
 
 import torch
 
-from rl_training.algorithms.base import UpdateResult
-from rl_training.algorithms.r2d2 import R2D2
-from rl_training.models.recurrent import LSTMQNetwork
-from rl_training.models.rnd import RNDModel
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.algorithms.r2d2 import R2D2
+from axiomrl.models.recurrent import LSTMQNetwork
+from axiomrl.models.rnd import RNDModel
 
 
 def _masked_mean(values: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:

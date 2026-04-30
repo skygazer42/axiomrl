@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from rl_training.runtime import (
+from axiomrl.runtime import (
     a2c_trainer,
     agent57_trainer,
     apex_dqn_trainer,

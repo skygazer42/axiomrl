@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 import torch
 
-from rl_training.runtime import (
+from axiomrl.runtime import (
     a2c_trainer,
     agent57_trainer,
     apex_dqn_trainer,

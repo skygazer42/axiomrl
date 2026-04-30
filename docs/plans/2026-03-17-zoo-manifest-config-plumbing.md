@@ -32,9 +32,9 @@
 ### Task 2: Implement score-reference resolution and manifest-aware config loading
 
 **Files:**
-- Modify: `src/rl_training/experiment/benchmarking.py`
-- Modify: `src/rl_training/zoo_cli.py`
-- Modify: `src/rl_training/cli.py`
+- Modify: `src/axiomrl/experiment/benchmarking.py`
+- Modify: `src/axiomrl/zoo_cli.py`
+- Modify: `src/axiomrl/cli.py`
 
 **Step 1: Write minimal implementation**
 - Add a small score-reference registry for named benchmark sources.
@@ -51,7 +51,7 @@
 ### Task 3: Extend zoo report output with aggregates
 
 **Files:**
-- Modify: `src/rl_training/zoo_cli.py`
+- Modify: `src/axiomrl/zoo_cli.py`
 
 **Step 1: Write minimal implementation**
 - Preserve the existing per-run report lines.
@@ -65,7 +65,7 @@
 **Files:**
 - Modify: `README.md`
 - Modify: `zoo/README.md`
-- Modify: `src/rl_training/assets/zoo/README.md`
+- Modify: `src/axiomrl/assets/zoo/README.md`
 
 **Step 1: Add docs**
 - Explain that `axiomrl train --config zoo/...` now inherits manifest benchmark defaults and train/eval protocol defaults.

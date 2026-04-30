@@ -1,7 +1,7 @@
 import torch
 
-from rl_training.algorithms.rlpd import RLPD, rlpd_loss
-from rl_training.models.mlp_sac import MLPSACModel
+from axiomrl.algorithms.rlpd import RLPD, rlpd_loss
+from axiomrl.models.mlp_sac import MLPSACModel
 
 
 def test_rlpd_loss_returns_named_metrics() -> None:
@@ -44,4 +44,3 @@ def test_rlpd_update_returns_named_metrics() -> None:
 
     assert result.num_gradient_steps == 1
     assert set(result.metrics) >= {"critic_loss", "actor_loss", "target_q_mean", "entropy_term"}
-

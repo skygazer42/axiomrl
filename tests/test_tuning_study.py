@@ -4,8 +4,8 @@ from pathlib import Path
 import pytest
 import yaml
 
-from rl_training.tuning.config import load_study_config, serialize_study_config
-from rl_training.tuning.study import (
+from axiomrl.tuning.config import load_study_config, serialize_study_config
+from axiomrl.tuning.study import (
     csv_study_report_rows,
     export_selected_study_configs,
     load_study_report,

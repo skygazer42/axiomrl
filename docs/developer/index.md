@@ -88,8 +88,8 @@ AxiomRL 采用三层架构，不同层级对代码质量和审查力度有不同
 
 | 层级 | 路径 | 审查标准 |
 |---|---|---|
-| **核心（Core）** | `rl_training.core` | 严格审查，需完整测试和文档 |
-| **社区扩展（Contrib）** | `rl_training.contrib` | 社区驱动，需基础测试 |
+| **核心（Core）** | `axiomrl.core` | 严格审查，需完整测试和文档 |
+| **社区扩展（Contrib）** | `axiomrl.contrib` | 社区驱动，需基础测试 |
 | **预设（Zoo）** | `zoo/` | 基准预设，需冒烟测试通过 |
 
 更多细节请参阅 [贡献指南](contributing.md) 和 [兼容性与版本策略](../compatibility.md)。

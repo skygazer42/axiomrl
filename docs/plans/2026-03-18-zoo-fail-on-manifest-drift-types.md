@@ -29,8 +29,8 @@ Expected: FAIL because the CLI does not yet accept or evaluate drift-type filter
 ### Task 2: Implement type-filtered exits
 
 **Files:**
-- Modify: `src/rl_training/zoo_cli.py`
-- Modify: `src/rl_training/cli.py`
+- Modify: `src/axiomrl/zoo_cli.py`
+- Modify: `src/axiomrl/cli.py`
 
 **Step 1: Write minimal implementation**
 - Add repeatable `--fail-on-manifest-drift-type {unknown-preset,protocol-mismatch}` flags to the zoo CLI and top-level `axiomrl zoo`.
@@ -48,7 +48,7 @@ Expected: PASS.
 **Files:**
 - Modify: `README.md`
 - Modify: `zoo/README.md`
-- Modify: `src/rl_training/assets/zoo/README.md`
+- Modify: `src/axiomrl/assets/zoo/README.md`
 
 **Step 1: Add docs**
 - Document that `--fail-on-manifest-drift-type unknown-preset` and `--fail-on-manifest-drift-type protocol-mismatch` target specific drift categories and can be repeated.

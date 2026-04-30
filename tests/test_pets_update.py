@@ -2,8 +2,8 @@ import pytest
 import torch
 from torch import nn
 
-from rl_training.algorithms.pets import PETS, pets_loss
-from rl_training.models.mlp_mopo import MLPMOPOEnsembleModel
+from axiomrl.algorithms.pets import PETS, pets_loss
+from axiomrl.models.mlp_mopo import MLPMOPOEnsembleModel
 
 
 class ToyPETSModel(nn.Module):

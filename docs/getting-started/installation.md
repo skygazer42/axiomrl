@@ -84,8 +84,8 @@ pip show axiomrl
 或在 Python 中获取：
 
 ```python
-import rl_training
-print(rl_training.__version__)
+import axiomrl
+print(axiomrl.__version__)
 ```
 
 ---
@@ -95,7 +95,7 @@ print(rl_training.__version__)
 ### 方法一：导入检查
 
 ```bash
-python -c "import rl_training; print(f'AxiomRL v{rl_training.__version__} 安装成功！')"
+python -c "import axiomrl; print(f'AxiomRL v{axiomrl.__version__} 安装成功！')"
 ```
 
 预期输出：
@@ -122,7 +122,7 @@ axiomrl doctor
 === "Python API"
 
     ```python
-    from rl_training.core import PPO, TrainConfig
+    from axiomrl.core import PPO, TrainConfig
 
     config = TrainConfig(
         algo="PPO",

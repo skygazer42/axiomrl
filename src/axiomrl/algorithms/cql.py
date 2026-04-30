@@ -6,8 +6,8 @@ from typing import Any
 import torch
 from torch.nn import functional as F
 
-from rl_training.algorithms.base import UpdateResult
-from rl_training.models.mlp_sac import MLPSACModel
+from axiomrl.algorithms.base import UpdateResult
+from axiomrl.models.mlp_sac import MLPSACModel
 
 
 def _cql_loss_terms(batch: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
@@ -82,7 +82,9 @@ class CQL:
         self.cql_alpha = float(cql_alpha)
         self.num_cql_samples = int(num_cql_samples)
 
-    def _cql_penalty(self, obs: torch.Tensor, current_q1: torch.Tensor, current_q2: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    def _cql_penalty(
+        self, obs: torch.Tensor, current_q1: torch.Tensor, current_q2: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         batch_size, action_dim = current_q1.shape[0], self.model.action_dim
         device = obs.device
 

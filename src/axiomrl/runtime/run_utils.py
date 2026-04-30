@@ -13,12 +13,12 @@ from typing import Any
 
 import torch
 
-from rl_training.experiment.benchmarking import augment_metrics_with_benchmark, resolve_best_checkpoint_config
-from rl_training.experiment.checkpointing import CheckpointState, save_checkpoint
-from rl_training.experiment.config import TrainConfig
-from rl_training.experiment.logging import RunLogger
-from rl_training.experiment.runs import RunContext, create_run_context
-from rl_training.runtime.types import MetricDict
+from axiomrl.experiment.benchmarking import augment_metrics_with_benchmark, resolve_best_checkpoint_config
+from axiomrl.experiment.checkpointing import CheckpointState, save_checkpoint
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.experiment.logging import RunLogger
+from axiomrl.experiment.runs import RunContext, create_run_context
+from axiomrl.runtime.types import MetricDict
 
 
 @dataclass(slots=True)
@@ -178,9 +178,8 @@ def save_training_checkpoint(
     if best_settings.metric_name in metrics:
         current_metric_value = float(metrics[best_settings.metric_name])
 
-    should_update_best = (
-        current_metric_value is not None
-        and _is_better_metric(current_metric_value, best_metric_value, mode=best_settings.metric_mode)
+    should_update_best = current_metric_value is not None and _is_better_metric(
+        current_metric_value, best_metric_value, mode=best_settings.metric_mode
     )
 
     if should_update_best:

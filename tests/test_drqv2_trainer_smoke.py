@@ -3,9 +3,9 @@ from pathlib import Path
 import gymnasium as gym
 import numpy as np
 
-from rl_training.experiment.config import TrainConfig
-from rl_training.runtime.drqv2_trainer import train_drqv2
-from rl_training.runtime.workflows import evaluate_checkpoint
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.runtime.drqv2_trainer import train_drqv2
+from axiomrl.runtime.workflows import evaluate_checkpoint
 
 
 class TinyRenderContinuousEnv(gym.Env):

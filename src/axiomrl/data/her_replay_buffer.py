@@ -8,7 +8,7 @@ import gymnasium as gym
 import numpy as np
 import torch
 
-from rl_training.envs.goals import (
+from axiomrl.envs.goals import (
     flatten_goal_observation,
     goal_env_compute_done,
     goal_env_compute_reward,
@@ -113,23 +113,41 @@ class HERReplayBuffer:
         episode_length = len(episode_lists["actions"])
         frozen_episode = {
             "observations": torch.stack(
-                [torch.as_tensor(item, dtype=self.obs_dtype, device=self.device) for item in episode_lists["observations"]]
+                [
+                    torch.as_tensor(item, dtype=self.obs_dtype, device=self.device)
+                    for item in episode_lists["observations"]
+                ]
             ),
             "actions": torch.stack(
-                [torch.as_tensor(item, dtype=self.action_dtype, device=self.device) for item in episode_lists["actions"]]
+                [
+                    torch.as_tensor(item, dtype=self.action_dtype, device=self.device)
+                    for item in episode_lists["actions"]
+                ]
             ),
             "rewards": torch.as_tensor(episode_lists["rewards"], dtype=torch.float32, device=self.device),
             "next_observations": torch.stack(
-                [torch.as_tensor(item, dtype=self.obs_dtype, device=self.device) for item in episode_lists["next_observations"]]
+                [
+                    torch.as_tensor(item, dtype=self.obs_dtype, device=self.device)
+                    for item in episode_lists["next_observations"]
+                ]
             ),
             "achieved_goals": torch.stack(
-                [torch.as_tensor(item, dtype=torch.float32, device=self.device) for item in episode_lists["achieved_goals"]]
+                [
+                    torch.as_tensor(item, dtype=torch.float32, device=self.device)
+                    for item in episode_lists["achieved_goals"]
+                ]
             ),
             "desired_goals": torch.stack(
-                [torch.as_tensor(item, dtype=torch.float32, device=self.device) for item in episode_lists["desired_goals"]]
+                [
+                    torch.as_tensor(item, dtype=torch.float32, device=self.device)
+                    for item in episode_lists["desired_goals"]
+                ]
             ),
             "next_achieved_goals": torch.stack(
-                [torch.as_tensor(item, dtype=torch.float32, device=self.device) for item in episode_lists["next_achieved_goals"]]
+                [
+                    torch.as_tensor(item, dtype=torch.float32, device=self.device)
+                    for item in episode_lists["next_achieved_goals"]
+                ]
             ),
             "terminateds": torch.as_tensor(episode_lists["terminateds"], dtype=torch.float32, device=self.device),
             "truncateds": torch.as_tensor(episode_lists["truncateds"], dtype=torch.float32, device=self.device),
@@ -167,7 +185,11 @@ class HERReplayBuffer:
             next_observation = episode["next_observations"][transition_index]
             desired_goal = episode["desired_goals"][transition_index]
             reward = float(episode["rewards"][transition_index].item())
-            done = float((episode["terminateds"][transition_index] + episode["truncateds"][transition_index]).clamp(max=1.0).item())
+            done = float(
+                (episode["terminateds"][transition_index] + episode["truncateds"][transition_index])
+                .clamp(max=1.0)
+                .item()
+            )
 
             if relabel:
                 future_index = int(self._rng.integers(transition_index, episode_length))
@@ -239,7 +261,10 @@ class HERReplayBuffer:
             ),
             "rewards": torch.as_tensor(episode["rewards"], dtype=torch.float32, device=self.device),
             "next_observations": torch.stack(
-                [torch.as_tensor(item, dtype=self.obs_dtype, device=self.device) for item in episode["next_observations"]]
+                [
+                    torch.as_tensor(item, dtype=self.obs_dtype, device=self.device)
+                    for item in episode["next_observations"]
+                ]
             ),
             "achieved_goals": torch.stack(
                 [torch.as_tensor(item, dtype=torch.float32, device=self.device) for item in episode["achieved_goals"]]
@@ -248,7 +273,10 @@ class HERReplayBuffer:
                 [torch.as_tensor(item, dtype=torch.float32, device=self.device) for item in episode["desired_goals"]]
             ),
             "next_achieved_goals": torch.stack(
-                [torch.as_tensor(item, dtype=torch.float32, device=self.device) for item in episode["next_achieved_goals"]]
+                [
+                    torch.as_tensor(item, dtype=torch.float32, device=self.device)
+                    for item in episode["next_achieved_goals"]
+                ]
             ),
             "terminateds": torch.as_tensor(episode["terminateds"], dtype=torch.float32, device=self.device),
             "truncateds": torch.as_tensor(episode["truncateds"], dtype=torch.float32, device=self.device),
@@ -291,10 +319,7 @@ class HERReplayBuffer:
             "num_transitions": self._num_transitions,
             "rng_state": deepcopy(self._rng.bit_generator.state),
             "episodes": [
-                {
-                    key: value.clone() if isinstance(value, torch.Tensor) else value
-                    for key, value in episode.items()
-                }
+                {key: value.clone() if isinstance(value, torch.Tensor) else value for key, value in episode.items()}
                 for episode in self._episodes
             ],
             "current_episodes": [self._freeze_partial_episode(episode) for episode in self._current_episodes],
@@ -314,7 +339,11 @@ class HERReplayBuffer:
                     for key, value in episode.items()
                 }
             )
-        self._current_episodes = [self._thaw_partial_episode(episode) for episode in state_dict.get("current_episodes", ())]
+        self._current_episodes = [
+            self._thaw_partial_episode(episode) for episode in state_dict.get("current_episodes", ())
+        ]
         if len(self._current_episodes) != self.num_envs:
             self._current_episodes = [self._empty_episode() for _ in range(self.num_envs)]
-        self._num_transitions = int(state_dict.get("num_transitions", sum(int(episode["length"]) for episode in self._episodes)))
+        self._num_transitions = int(
+            state_dict.get("num_transitions", sum(int(episode["length"]) for episode in self._episodes))
+        )

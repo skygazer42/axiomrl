@@ -1,7 +1,7 @@
 import torch
 
-from rl_training.algorithms.awac import AWAC
-from rl_training.models import MLPSACModel
+from axiomrl.algorithms.awac import AWAC
+from axiomrl.models import MLPSACModel
 
 
 def test_awac_update_returns_named_metrics() -> None:

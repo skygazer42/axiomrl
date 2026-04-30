@@ -10,21 +10,21 @@
 - `gail` layers a discriminator on top of the existing PPO-style rollout + update loop.
 - `dreamer` introduces a small world-model runtime (pixels + discrete actions) and a sequence replay buffer integration.
 
-**Tech Stack:** Python 3.10+, PyTorch, Gymnasium, existing `rl_training.runtime.*` trainers, existing checkpointing/workflows.
+**Tech Stack:** Python 3.10+, PyTorch, Gymnasium, existing `axiomrl.runtime.*` trainers, existing checkpointing/workflows.
 
 ---
 
 ### Task 1: FQF (Fully-parameterized Quantile Function)
 
 **Files:**
-- Create: `src/rl_training/models/mlp_fqf_network.py`
-- Create: `src/rl_training/algorithms/fqf.py`
-- Modify: `src/rl_training/runtime/dqn_trainer.py`
-- Modify: `src/rl_training/experiment/registry.py`
-- Modify: `src/rl_training/api/algorithms.py`
-- Modify: `src/rl_training/__init__.py`
+- Create: `src/axiomrl/models/mlp_fqf_network.py`
+- Create: `src/axiomrl/algorithms/fqf.py`
+- Modify: `src/axiomrl/runtime/dqn_trainer.py`
+- Modify: `src/axiomrl/experiment/registry.py`
+- Modify: `src/axiomrl/api/algorithms.py`
+- Modify: `src/axiomrl/__init__.py`
 - Create: `configs/fqf/cartpole.yaml`
-- Create: `src/rl_training/assets/configs/fqf/cartpole.yaml`
+- Create: `src/axiomrl/assets/configs/fqf/cartpole.yaml`
 - Create: `examples/fqf_cartpole_reference.py`
 - Test: `tests/test_fqf_update.py`
 - Test: `tests/test_fqf_reference_script.py`
@@ -56,20 +56,20 @@
 - Update `dqn_trainer` to build `fqf`.
 - Update `registry.py`:
   - add loader/eval/predict entries for `fqf`.
-- Update API exports so `from rl_training import FQF` (and `ManagedAlgorithm`) works.
+- Update API exports so `from axiomrl import FQF` (and `ManagedAlgorithm`) works.
 
 ---
 
 ### Task 2: MBPO (Model-Based Policy Optimization)
 
 **Files:**
-- Create: `src/rl_training/algorithms/mbpo.py`
-- Create: `src/rl_training/runtime/mbpo_trainer.py`
-- Modify: `src/rl_training/experiment/registry.py`
-- Modify: `src/rl_training/api/algorithms.py`
-- Modify: `src/rl_training/__init__.py`
+- Create: `src/axiomrl/algorithms/mbpo.py`
+- Create: `src/axiomrl/runtime/mbpo_trainer.py`
+- Modify: `src/axiomrl/experiment/registry.py`
+- Modify: `src/axiomrl/api/algorithms.py`
+- Modify: `src/axiomrl/__init__.py`
 - Create: `configs/mbpo/pendulum.yaml`
-- Create: `src/rl_training/assets/configs/mbpo/pendulum.yaml`
+- Create: `src/axiomrl/assets/configs/mbpo/pendulum.yaml`
 - Create: `examples/mbpo_pendulum_reference.py`
 - Test: `tests/test_mbpo_update.py`
 - Test: `tests/test_mbpo_trainer_smoke.py`
@@ -102,14 +102,14 @@
 ### Task 3: GAIL (Generative Adversarial Imitation Learning)
 
 **Files:**
-- Create: `src/rl_training/models/mlp_gail_discriminator.py`
-- Create: `src/rl_training/algorithms/gail.py`
-- Create: `src/rl_training/runtime/gail_trainer.py`
-- Modify: `src/rl_training/experiment/registry.py`
-- Modify: `src/rl_training/api/algorithms.py`
-- Modify: `src/rl_training/__init__.py`
+- Create: `src/axiomrl/models/mlp_gail_discriminator.py`
+- Create: `src/axiomrl/algorithms/gail.py`
+- Create: `src/axiomrl/runtime/gail_trainer.py`
+- Modify: `src/axiomrl/experiment/registry.py`
+- Modify: `src/axiomrl/api/algorithms.py`
+- Modify: `src/axiomrl/__init__.py`
 - Create: `configs/gail/cartpole.yaml`
-- Create: `src/rl_training/assets/configs/gail/cartpole.yaml`
+- Create: `src/axiomrl/assets/configs/gail/cartpole.yaml`
 - Create: `examples/gail_cartpole_reference.py`
 - Test: `tests/test_gail_trainer_smoke.py`
 - Test: `tests/test_gail_reference_script.py`
@@ -132,14 +132,14 @@
 ### Task 4: Dreamer (Pixels, Atari-style discrete actions)
 
 **Files:**
-- Create: `src/rl_training/models/dreamer.py`
-- Create: `src/rl_training/algorithms/dreamer.py`
-- Create: `src/rl_training/runtime/dreamer_trainer.py`
-- Modify: `src/rl_training/experiment/registry.py`
-- Modify: `src/rl_training/api/algorithms.py`
-- Modify: `src/rl_training/__init__.py`
+- Create: `src/axiomrl/models/dreamer.py`
+- Create: `src/axiomrl/algorithms/dreamer.py`
+- Create: `src/axiomrl/runtime/dreamer_trainer.py`
+- Modify: `src/axiomrl/experiment/registry.py`
+- Modify: `src/axiomrl/api/algorithms.py`
+- Modify: `src/axiomrl/__init__.py`
 - Create: `configs/dreamer/breakout_atari.yaml`
-- Create: `src/rl_training/assets/configs/dreamer/breakout_atari.yaml`
+- Create: `src/axiomrl/assets/configs/dreamer/breakout_atari.yaml`
 - Create: `examples/dreamer_atari_reference.py`
 - Test: `tests/test_dreamer_trainer_smoke.py`
 - Test: `tests/test_dreamer_reference_script.py`

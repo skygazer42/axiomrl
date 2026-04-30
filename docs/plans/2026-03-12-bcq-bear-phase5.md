@@ -2,7 +2,7 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Add the next serious offline RL wave to `rl_training` by landing `BCQ`, `BEAR`, richer offline data processing, reward preset loading, and schedule / budget controls that make the package usable for longer training runs.
+**Goal:** Add the next serious offline RL wave to `axiomrl` by landing `BCQ`, `BEAR`, richer offline data processing, reward preset loading, and schedule / budget controls that make the package usable for longer training runs.
 
 **Architecture:** Reuse the existing `offline_dataset + trainer + registry + managed API` surface instead of inventing a second runtime. Land the missing shared offline infrastructure first, then add `BCQ`, then `BEAR`, and only after that widen the public package surface. Keep the first release narrow: continuous-control offline RL first, flat vector observations first, and no distributed learners in this phase.
 
@@ -27,12 +27,12 @@ allows test execution.
 ### Task 1: Add offline dataset mixing, trajectory slicing, and reward preset loading
 
 **Files:**
-- Create: `src/rl_training/data/offline_mixers.py`
-- Modify: `src/rl_training/data/offline_dataset.py`
-- Modify: `src/rl_training/data/dataset_loaders.py`
-- Modify: `src/rl_training/data/__init__.py`
-- Modify: `src/rl_training/envs/rewards.py`
-- Modify: `src/rl_training/envs/__init__.py`
+- Create: `src/axiomrl/data/offline_mixers.py`
+- Modify: `src/axiomrl/data/offline_dataset.py`
+- Modify: `src/axiomrl/data/dataset_loaders.py`
+- Modify: `src/axiomrl/data/__init__.py`
+- Modify: `src/axiomrl/envs/rewards.py`
+- Modify: `src/axiomrl/envs/__init__.py`
 - Create: `tests/test_offline_mixers.py`
 - Modify: `tests/test_dataset_loaders.py`
 - Modify: `tests/test_reward_wrappers.py`
@@ -72,19 +72,19 @@ Use a focused commit after the shared offline data and reward surface lands.
 ### Task 2: Add schedule and budget controls for offline and off-policy trainers
 
 **Files:**
-- Create: `src/rl_training/runtime/schedules.py`
-- Modify: `src/rl_training/runtime/controls.py`
-- Modify: `src/rl_training/runtime/bc_trainer.py`
-- Modify: `src/rl_training/runtime/awac_trainer.py`
-- Modify: `src/rl_training/runtime/iql_trainer.py`
-- Modify: `src/rl_training/runtime/cql_trainer.py`
-- Modify: `src/rl_training/runtime/td3_bc_trainer.py`
-- Modify: `src/rl_training/runtime/ddpg_trainer.py`
-- Modify: `src/rl_training/runtime/sac_trainer.py`
-- Modify: `src/rl_training/runtime/td3_trainer.py`
-- Modify: `src/rl_training/runtime/redq_trainer.py`
-- Modify: `src/rl_training/runtime/tqc_trainer.py`
-- Modify: `src/rl_training/runtime/her_trainer.py`
+- Create: `src/axiomrl/runtime/schedules.py`
+- Modify: `src/axiomrl/runtime/controls.py`
+- Modify: `src/axiomrl/runtime/bc_trainer.py`
+- Modify: `src/axiomrl/runtime/awac_trainer.py`
+- Modify: `src/axiomrl/runtime/iql_trainer.py`
+- Modify: `src/axiomrl/runtime/cql_trainer.py`
+- Modify: `src/axiomrl/runtime/td3_bc_trainer.py`
+- Modify: `src/axiomrl/runtime/ddpg_trainer.py`
+- Modify: `src/axiomrl/runtime/sac_trainer.py`
+- Modify: `src/axiomrl/runtime/td3_trainer.py`
+- Modify: `src/axiomrl/runtime/redq_trainer.py`
+- Modify: `src/axiomrl/runtime/tqc_trainer.py`
+- Modify: `src/axiomrl/runtime/her_trainer.py`
 - Create: `tests/test_schedules.py`
 - Modify: `tests/test_training_controls.py`
 
@@ -122,17 +122,17 @@ Commit the schedule and trainer-control layer separately from the algorithm wave
 ### Task 3: Add `BCQ` as the first constrained offline actor baseline
 
 **Files:**
-- Create: `src/rl_training/models/mlp_bcq.py`
-- Modify: `src/rl_training/models/__init__.py`
-- Create: `src/rl_training/algorithms/bcq.py`
-- Create: `src/rl_training/runtime/bcq_trainer.py`
-- Modify: `src/rl_training/algorithms/__init__.py`
-- Modify: `src/rl_training/experiment/registry.py`
-- Modify: `src/rl_training/api/algorithms.py`
-- Modify: `src/rl_training/api/__init__.py`
-- Modify: `src/rl_training/__init__.py`
+- Create: `src/axiomrl/models/mlp_bcq.py`
+- Modify: `src/axiomrl/models/__init__.py`
+- Create: `src/axiomrl/algorithms/bcq.py`
+- Create: `src/axiomrl/runtime/bcq_trainer.py`
+- Modify: `src/axiomrl/algorithms/__init__.py`
+- Modify: `src/axiomrl/experiment/registry.py`
+- Modify: `src/axiomrl/api/algorithms.py`
+- Modify: `src/axiomrl/api/__init__.py`
+- Modify: `src/axiomrl/__init__.py`
 - Create: `configs/bcq/pendulum.yaml`
-- Create: `src/rl_training/assets/configs/bcq/pendulum.yaml`
+- Create: `src/axiomrl/assets/configs/bcq/pendulum.yaml`
 - Create: `tests/test_bcq_update.py`
 - Create: `tests/test_bcq_trainer_smoke.py`
 
@@ -169,17 +169,17 @@ Commit the first offline constrained baseline as its own unit.
 ### Task 4: Add `BEAR` as the support-matching offline baseline
 
 **Files:**
-- Create: `src/rl_training/models/mlp_bear.py`
-- Modify: `src/rl_training/models/__init__.py`
-- Create: `src/rl_training/algorithms/bear.py`
-- Create: `src/rl_training/runtime/bear_trainer.py`
-- Modify: `src/rl_training/algorithms/__init__.py`
-- Modify: `src/rl_training/experiment/registry.py`
-- Modify: `src/rl_training/api/algorithms.py`
-- Modify: `src/rl_training/api/__init__.py`
-- Modify: `src/rl_training/__init__.py`
+- Create: `src/axiomrl/models/mlp_bear.py`
+- Modify: `src/axiomrl/models/__init__.py`
+- Create: `src/axiomrl/algorithms/bear.py`
+- Create: `src/axiomrl/runtime/bear_trainer.py`
+- Modify: `src/axiomrl/algorithms/__init__.py`
+- Modify: `src/axiomrl/experiment/registry.py`
+- Modify: `src/axiomrl/api/algorithms.py`
+- Modify: `src/axiomrl/api/__init__.py`
+- Modify: `src/axiomrl/__init__.py`
 - Create: `configs/bear/pendulum.yaml`
-- Create: `src/rl_training/assets/configs/bear/pendulum.yaml`
+- Create: `src/axiomrl/assets/configs/bear/pendulum.yaml`
 - Create: `tests/test_bear_update.py`
 - Create: `tests/test_bear_trainer_smoke.py`
 

@@ -1,5 +1,5 @@
-from rl_training.envs.factory import build_env, make_env, make_vector_env
-from rl_training.envs.goals import (
+from axiomrl.envs.factory import build_env, make_env, make_vector_env
+from axiomrl.envs.goals import (
     ACHIEVED_GOAL_KEY,
     DESIRED_GOAL_KEY,
     GOAL_OBSERVATION_KEY,
@@ -14,25 +14,25 @@ from rl_training.envs.goals import (
     register_builtin_goal_envs,
     split_goal_observation,
 )
-from rl_training.envs.pixels import PixelObservationConfig, apply_pixel_wrappers, resolve_pixel_wrapper_config
-from rl_training.envs.rewards import (
+from axiomrl.envs.pixels import PixelObservationConfig, apply_pixel_wrappers, resolve_pixel_wrapper_config
+from axiomrl.envs.rewards import (
     RewardClipWrapper,
     RewardOutcomeWrapper,
-    RewardSignWrapper,
     RewardScaleWrapper,
     RewardShiftWrapper,
+    RewardSignWrapper,
     RewardTransformConfig,
     apply_reward_wrappers,
     resolve_reward_preset,
     resolve_reward_wrapper_config,
 )
-from rl_training.envs.tennis_events import (
+from axiomrl.envs.tennis_events import (
     TennisEventConfig,
     TennisEventRewardWrapper,
     apply_tennis_event_wrapper,
     resolve_tennis_event_wrapper_config,
 )
-from rl_training.envs.video import VideoWrapperConfig, apply_video_wrapper, resolve_video_wrapper_config
+from axiomrl.envs.video import VideoWrapperConfig, apply_video_wrapper, resolve_video_wrapper_config
 
 __all__ = [
     "RewardClipWrapper",

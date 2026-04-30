@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from rl_training.experiment.config import TrainConfig
-from rl_training.runtime.td3_bc_trainer import train_td3_bc
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.runtime.td3_bc_trainer import train_td3_bc
 
 
 def test_train_td3_bc_writes_checkpoint_and_metrics(tmp_path: Path) -> None:

@@ -29,8 +29,8 @@ Expected: FAIL because grouping is fixed to `(algo, env_id)`, benchmark metadata
 ### Task 2: Implement preset-aware grouping and top-k truncation
 
 **Files:**
-- Modify: `src/rl_training/zoo_cli.py`
-- Modify: `src/rl_training/cli.py`
+- Modify: `src/axiomrl/zoo_cli.py`
+- Modify: `src/axiomrl/cli.py`
 
 **Step 1: Write minimal implementation**
 - Parse benchmark metadata from run `metadata.json`.
@@ -50,7 +50,7 @@ Expected: PASS.
 **Files:**
 - Modify: `README.md`
 - Modify: `zoo/README.md`
-- Modify: `src/rl_training/assets/zoo/README.md`
+- Modify: `src/axiomrl/assets/zoo/README.md`
 
 **Step 1: Add docs**
 - Show `--group-by preset`.

@@ -1,7 +1,7 @@
 import torch
 
-from rl_training.algorithms.c51_dqn import C51DQN, c51_loss
-from rl_training.models.mlp_c51_q_network import MLPC51QNetwork
+from axiomrl.algorithms.c51_dqn import C51DQN, c51_loss
+from axiomrl.models.mlp_c51_q_network import MLPC51QNetwork
 
 
 def test_mlp_c51_q_network_forward_shape() -> None:

@@ -3,9 +3,9 @@ from pathlib import Path
 import pytest
 import torch
 
-import rl_training.runtime.td3_trainer as td3_trainer
-from rl_training.experiment.config import TrainConfig
-from rl_training.runtime.td3_trainer import train_td3
+import axiomrl.runtime.td3_trainer as td3_trainer
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.runtime.td3_trainer import train_td3
 
 
 def test_train_td3_writes_checkpoint_and_metrics(tmp_path: Path) -> None:
@@ -76,7 +76,9 @@ def test_train_td3_uses_exploration_noise(tmp_path: Path, monkeypatch: pytest.Mo
         obs_tensor = torch.as_tensor(obs, dtype=torch.float32)
         if obs_tensor.ndim == 1:
             obs_tensor = obs_tensor.unsqueeze(0)
-        return torch.zeros((int(obs_tensor.shape[0]), int(self.action_dim)), dtype=torch.float32, device=obs_tensor.device)
+        return torch.zeros(
+            (int(obs_tensor.shape[0]), int(self.action_dim)), dtype=torch.float32, device=obs_tensor.device
+        )
 
     monkeypatch.setattr(td3_trainer.MLPTD3Model, "actor", fake_actor)
 

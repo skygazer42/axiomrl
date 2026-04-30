@@ -13,7 +13,7 @@
 ### Task 1: Replace the replay buffer protocol with a concrete implementation
 
 **Files:**
-- Modify: `src/rl_training/data/replay_buffer.py`
+- Modify: `src/axiomrl/data/replay_buffer.py`
 - Create: `tests/test_replay_buffer.py`
 
 **Step 1: Write the failing test**
@@ -42,10 +42,10 @@ Expected: PASS
 ### Task 2: Add the DQN algorithm layer
 
 **Files:**
-- Create: `src/rl_training/models/mlp_q_network.py`
-- Modify: `src/rl_training/models/__init__.py`
-- Create: `src/rl_training/algorithms/dqn.py`
-- Modify: `src/rl_training/algorithms/__init__.py`
+- Create: `src/axiomrl/models/mlp_q_network.py`
+- Modify: `src/axiomrl/models/__init__.py`
+- Create: `src/axiomrl/algorithms/dqn.py`
+- Modify: `src/axiomrl/algorithms/__init__.py`
 - Create: `tests/test_dqn_update.py`
 
 **Step 1: Write the failing test**
@@ -73,9 +73,9 @@ Expected: PASS
 ### Task 3: Add a smoke-tested DQN training path
 
 **Files:**
-- Create: `src/rl_training/runtime/dqn_trainer.py`
+- Create: `src/axiomrl/runtime/dqn_trainer.py`
 - Create: `tests/test_dqn_trainer_smoke.py`
-- Modify: `src/rl_training/cli.py`
+- Modify: `src/axiomrl/cli.py`
 - Create: `configs/dqn/cartpole.yaml`
 
 **Step 1: Write the failing test**

@@ -4,14 +4,14 @@ title: 稳定核心 API
 
 # 稳定核心 API
 
-`rl_training.core` 是 AxiomRL 的稳定核心 API 模块，受语义版本控制（semver）管理。在整个 1.x 发布周期内，此模块的公开接口保证向后兼容。
+`axiomrl.core` 是 AxiomRL 的稳定核心 API 模块，受语义版本控制（semver）管理。在整个 1.x 发布周期内，此模块的公开接口保证向后兼容。
 
 ## 概览
 
 稳定核心 API 导出 **10 种算法** 和 **TrainConfig** 配置类：
 
 ```python
-from rl_training.core import (
+from axiomrl.core import (
     A2C, BC, CQL, DQN, DiscreteSAC,
     IQL, PPO, SAC, TD3, TRPO,
     TrainConfig,
@@ -22,7 +22,7 @@ from rl_training.core import (
 也可以从根包直接导入（等价方式）：
 
 ```python
-from rl_training import PPO, TrainConfig
+from axiomrl import PPO, TrainConfig
 ```
 
 ---
@@ -32,7 +32,7 @@ from rl_training import PPO, TrainConfig
 `STABLE_ALGORITHMS` 是一个元组常量，包含所有稳定核心算法的名称：
 
 ```python
-from rl_training.core import STABLE_ALGORITHMS
+from axiomrl.core import STABLE_ALGORITHMS
 
 print(STABLE_ALGORITHMS)
 # ('A2C', 'BC', 'CQL', 'DQN', 'DiscreteSAC', 'IQL', 'PPO', 'SAC', 'TD3', 'TRPO')
@@ -54,7 +54,7 @@ if algo_name in STABLE_ALGORITHMS:
 **Advantage Actor-Critic** -- 同步的优势演员-评论家算法，适用于离散和连续动作空间。
 
 ```python
-from rl_training.core import A2C
+from axiomrl.core import A2C
 ```
 
 ```yaml
@@ -77,7 +77,7 @@ algo_kwargs:
 **Behavioral Cloning** -- 行为克隆算法，从专家演示数据中学习策略的监督学习方法。
 
 ```python
-from rl_training.core import BC
+from axiomrl.core import BC
 ```
 
 ```yaml
@@ -98,7 +98,7 @@ algo_kwargs:
 **Conservative Q-Learning** -- 保守 Q 学习算法，通过惩罚分布外动作的 Q 值来缓解离线 RL 中的外推误差。
 
 ```python
-from rl_training.core import CQL
+from axiomrl.core import CQL
 ```
 
 ```yaml
@@ -120,7 +120,7 @@ algo_kwargs:
 **Deep Q-Network** -- 深度 Q 网络算法，使用经验回放和目标网络进行值函数逼近，适用于离散动作空间。
 
 ```python
-from rl_training.core import DQN
+from axiomrl.core import DQN
 ```
 
 ```yaml
@@ -144,7 +144,7 @@ algo_kwargs:
 **Discrete Soft Actor-Critic** -- 离散动作空间版本的 SAC 算法，结合最大熵强化学习框架。
 
 ```python
-from rl_training.core import DiscreteSAC
+from axiomrl.core import DiscreteSAC
 ```
 
 ```yaml
@@ -167,7 +167,7 @@ algo_kwargs:
 **Implicit Q-Learning** -- 隐式 Q 学习算法，通过期望回归避免对分布外动作进行查询，适用于离线 RL。
 
 ```python
-from rl_training.core import IQL
+from axiomrl.core import IQL
 ```
 
 ```yaml
@@ -190,7 +190,7 @@ algo_kwargs:
 **Proximal Policy Optimization** -- 近端策略优化算法，通过裁剪目标函数实现稳定的策略更新。AxiomRL 中最常用的算法之一。
 
 ```python
-from rl_training.core import PPO
+from axiomrl.core import PPO
 ```
 
 ```yaml
@@ -216,7 +216,7 @@ algo_kwargs:
 **Soft Actor-Critic** -- 柔性演员-评论家算法，最大熵框架下的离策略算法，在连续控制任务中表现优异。
 
 ```python
-from rl_training.core import SAC
+from axiomrl.core import SAC
 ```
 
 ```yaml
@@ -240,7 +240,7 @@ algo_kwargs:
 **Twin Delayed DDPG** -- 双延迟深度确定性策略梯度算法，通过双 Q 网络和延迟策略更新改进 DDPG。
 
 ```python
-from rl_training.core import TD3
+from axiomrl.core import TD3
 ```
 
 ```yaml
@@ -265,7 +265,7 @@ algo_kwargs:
 **Trust Region Policy Optimization** -- 信赖域策略优化算法，使用 KL 散度约束保证每次更新在信赖域内。
 
 ```python
-from rl_training.core import TRPO
+from axiomrl.core import TRPO
 ```
 
 ```yaml
@@ -286,10 +286,10 @@ algo_kwargs:
 
 ## TrainConfig
 
-`TrainConfig` 是训练配置的核心数据类，定义于 `rl_training.experiment.config`，并通过稳定核心 API 导出。
+`TrainConfig` 是训练配置的核心数据类，定义于 `axiomrl.experiment.config`，并通过稳定核心 API 导出。
 
 ```python
-from rl_training.core import TrainConfig
+from axiomrl.core import TrainConfig
 from pathlib import Path
 
 config = TrainConfig(
@@ -308,13 +308,13 @@ config = TrainConfig(
 ## 稳定性保证
 
 !!! success "版本兼容承诺"
-    `rl_training.core` 遵循[语义版本控制](https://semver.org/)：
+    `axiomrl.core` 遵循[语义版本控制](https://semver.org/)：
 
     - **补丁版本**（1.0.x）：修复缺陷，不改变 API。
     - **次要版本**（1.x.0）：可能新增功能，但不会破坏现有 API。
     - **主要版本**（x.0.0）：可能引入不兼容变更。
 
-    在整个 **1.x** 发布周期内，`rl_training.core` 中的所有公开名称保证可用且行为一致。
+    在整个 **1.x** 发布周期内，`axiomrl.core` 中的所有公开名称保证可用且行为一致。
 
 !!! warning "注意事项"
-    稳定性保证仅覆盖 `rl_training.core` 模块中的公开名称。算法内部实现细节、私有 API 和实验性模块不在保证范围内。
+    稳定性保证仅覆盖 `axiomrl.core` 模块中的公开名称。算法内部实现细节、私有 API 和实验性模块不在保证范围内。

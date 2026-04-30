@@ -1,8 +1,8 @@
 from pathlib import Path
 
-from rl_training.experiment.config import TrainConfig
-from rl_training.runtime.rlpd_trainer import train_rlpd
-from rl_training.runtime.workflows import evaluate_checkpoint
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.runtime.rlpd_trainer import train_rlpd
+from axiomrl.runtime.workflows import evaluate_checkpoint
 
 
 def test_train_rlpd_writes_checkpoint_and_metrics(tmp_path: Path) -> None:
@@ -45,4 +45,3 @@ def test_train_rlpd_writes_checkpoint_and_metrics(tmp_path: Path) -> None:
     assert result.metrics["online_batch_size"] >= 0
     assert "eval_return_mean" in result.metrics
     assert "eval_return_mean" in metrics
-

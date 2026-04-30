@@ -4,8 +4,8 @@ from pathlib import Path
 
 import numpy as np
 
-from rl_training.api import CURL, DRQN, R2D2, DrQ, DrQv2
-from rl_training.experiment.config import TrainConfig
+from axiomrl.api import CURL, DRQN, R2D2, DrQ, DrQv2
+from axiomrl.experiment.config import TrainConfig
 from tests.support.public_api import register_tiny_render_env
 
 

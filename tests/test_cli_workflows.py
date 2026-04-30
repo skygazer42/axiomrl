@@ -3,10 +3,10 @@ from pathlib import Path
 
 import pytest
 
-from rl_training.cli import main
-from rl_training.experiment.config import TrainConfig
-from rl_training.runtime.dqn_trainer import train_dqn
-from rl_training.runtime.ppo_trainer import train_ppo
+from axiomrl.cli import main
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.runtime.dqn_trainer import train_dqn
+from axiomrl.runtime.ppo_trainer import train_ppo
 
 
 def test_train_command_runs_with_overrides(tmp_path: Path) -> None:

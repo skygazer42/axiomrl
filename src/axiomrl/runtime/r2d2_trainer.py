@@ -9,22 +9,22 @@ import gymnasium as gym
 import numpy as np
 import torch
 
-from rl_training.algorithms.r2d2 import R2D2
-from rl_training.data.n_step import NStepAccumulator
-from rl_training.data.prioritized_recurrent_replay_buffer import PrioritizedRecurrentReplayBuffer
-from rl_training.envs.factory import make_vector_env
-from rl_training.experiment.checkpointing import CheckpointState
-from rl_training.experiment.config import TrainConfig
-from rl_training.models.recurrent import LSTMQNetwork
-from rl_training.runtime.callbacks import Callback, CallbackList
-from rl_training.runtime.collector import CollectResult
-from rl_training.runtime.controls import (
+from axiomrl.algorithms.r2d2 import R2D2
+from axiomrl.data.n_step import NStepAccumulator
+from axiomrl.data.prioritized_recurrent_replay_buffer import PrioritizedRecurrentReplayBuffer
+from axiomrl.envs.factory import make_vector_env
+from axiomrl.experiment.checkpointing import CheckpointState
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.models.recurrent import LSTMQNetwork
+from axiomrl.runtime.callbacks import Callback, CallbackList
+from axiomrl.runtime.collector import CollectResult
+from axiomrl.runtime.controls import (
     resolve_eval_interval,
     resolve_exploration_epsilon,
     should_run_evaluation,
 )
-from rl_training.runtime.evaluation_support import evaluate_discrete_episodes
-from rl_training.runtime.resume_state import (
+from axiomrl.runtime.evaluation_support import evaluate_discrete_episodes
+from axiomrl.runtime.resume_state import (
     capture_global_random_state,
     capture_resume_value,
     capture_vector_env_resume_state,
@@ -33,10 +33,10 @@ from rl_training.runtime.resume_state import (
     restore_resume_value,
     restore_vector_env_resume_state,
 )
-from rl_training.runtime.run_utils import save_training_checkpoint, should_save_periodic_checkpoint
-from rl_training.runtime.session import create_training_session
-from rl_training.runtime.trainer import TrainerState, TrainResult
-from rl_training.runtime.types import MetricDict
+from axiomrl.runtime.run_utils import save_training_checkpoint, should_save_periodic_checkpoint
+from axiomrl.runtime.session import create_training_session
+from axiomrl.runtime.trainer import TrainerState, TrainResult
+from axiomrl.runtime.types import MetricDict
 
 
 @dataclass(frozen=True)
@@ -56,10 +56,7 @@ def _infer_spaces(envs: gym.vector.VectorEnv) -> tuple[tuple[int, ...], int]:
     if not isinstance(action_space, gym.spaces.Discrete):
         raise TypeError(f"unsupported action space for R2D2 trainer: {type(action_space)!r}")
     if obs_space.shape is None or len(obs_space.shape) not in (1, 3):
-        raise ValueError(
-            "expected flat 1D or channel-first image observations, "
-            f"got shape={obs_space.shape!r}"
-        )
+        raise ValueError(f"expected flat 1D or channel-first image observations, got shape={obs_space.shape!r}")
 
     return tuple(int(dim) for dim in obs_space.shape), int(action_space.n)
 
@@ -214,9 +211,7 @@ def _restore_metadata_buffers(
             device=device,
         )
         if isinstance(restored_buffer, list):
-            restored_buffers[env_index] = deque(
-                item for item in restored_buffer if isinstance(item, dict)
-            )
+            restored_buffers[env_index] = deque(item for item in restored_buffer if isinstance(item, dict))
     return restored_buffers
 
 

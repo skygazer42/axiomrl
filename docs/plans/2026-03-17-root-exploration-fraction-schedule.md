@@ -4,7 +4,7 @@
 
 **Goal:** Add configurable root Dirichlet-noise fraction schedules to MuZero-family trainers so search-time exploration can be annealed over training from YAML config alone.
 
-**Architecture:** Reuse the existing scheduler pattern in `src/rl_training/runtime/controls.py`. Add a shared resolver for `root_exploration_fraction`, then thread the active value into MuZero-style planning calls on every environment step and log it in training metrics. Update `GumbelMuZero` to actually honor root-noise settings during planning so the trainer control has effect there too.
+**Architecture:** Reuse the existing scheduler pattern in `src/axiomrl/runtime/controls.py`. Add a shared resolver for `root_exploration_fraction`, then thread the active value into MuZero-style planning calls on every environment step and log it in training metrics. Update `GumbelMuZero` to actually honor root-noise settings during planning so the trainer control has effect there too.
 
 **Tech Stack:** Python 3.10+, PyTorch, Gymnasium, existing MuZero-family runtime/trainers, pytest.
 
@@ -33,7 +33,7 @@
 ### Task 2: Implement shared root-noise resolver
 
 **Files:**
-- Modify: `src/rl_training/runtime/controls.py`
+- Modify: `src/axiomrl/runtime/controls.py`
 
 **Step 1: Write minimal implementation**
 - Add `resolve_root_exploration_fraction(...)`.
@@ -50,10 +50,10 @@
 ### Task 3: Wire schedules into MuZero-family planning
 
 **Files:**
-- Modify: `src/rl_training/runtime/muzero_trainer.py`
-- Modify: `src/rl_training/runtime/efficientzero_trainer.py`
-- Modify: `src/rl_training/algorithms/muzero.py`
-- Modify: `src/rl_training/algorithms/gumbel_muzero.py`
+- Modify: `src/axiomrl/runtime/muzero_trainer.py`
+- Modify: `src/axiomrl/runtime/efficientzero_trainer.py`
+- Modify: `src/axiomrl/algorithms/muzero.py`
+- Modify: `src/axiomrl/algorithms/gumbel_muzero.py`
 
 **Step 1: Minimal wiring**
 - Resolve the scheduled root exploration fraction before each planning step.

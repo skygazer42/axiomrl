@@ -16,10 +16,10 @@ from typing import Any
 
 import yaml
 
-from rl_training.cli_config import serialize_train_config
-from rl_training.experiment.config import TrainConfig
-from rl_training.experiment.default_manager import DefaultExperimentManager
-from rl_training.tuning.config import SearchSpaceSpec, StudyConfig, deserialize_study_config, serialize_study_config
+from axiomrl.cli_config import serialize_train_config
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.experiment.default_manager import DefaultExperimentManager
+from axiomrl.tuning.config import SearchSpaceSpec, StudyConfig, deserialize_study_config, serialize_study_config
 
 
 @dataclass(frozen=True, slots=True)
@@ -148,11 +148,7 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
 def _load_trial_records(path: Path) -> list[dict[str, Any]]:
     if not path.exists():
         return []
-    return [
-        json.loads(line)
-        for line in path.read_text(encoding="utf-8").splitlines()
-        if line.strip()
-    ]
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
 
 
 def _append_trial_record(path: Path, record: dict[str, Any]) -> None:
@@ -584,9 +580,10 @@ def _objective_duration_dominates(
     else:
         objective_is_no_worse = candidate_objective_value >= other_objective_value
     duration_is_no_worse = candidate_duration_seconds <= other_duration_seconds
-    return objective_is_no_worse and duration_is_no_worse and (
-        candidate_objective_value != other_objective_value
-        or candidate_duration_seconds != other_duration_seconds
+    return (
+        objective_is_no_worse
+        and duration_is_no_worse
+        and (candidate_objective_value != other_objective_value or candidate_duration_seconds != other_duration_seconds)
     )
 
 
@@ -722,11 +719,7 @@ def _selected_incumbent_trace(
 def _selected_incumbent_update_summary(
     trace: list[dict[str, object]],
 ) -> dict[str, object]:
-    update_entries = [
-        entry
-        for entry in trace
-        if entry.get("selected_is_incumbent_update") is True
-    ]
+    update_entries = [entry for entry in trace if entry.get("selected_is_incumbent_update") is True]
     summary: dict[str, object] = {
         "incumbent_update_count": len(update_entries),
         "first_incumbent_trial_index": None,
@@ -782,8 +775,7 @@ def _selected_incumbent_staleness_summary(
     trial_ages = [
         int(value)
         for entry in trace
-        if isinstance((value := entry.get("selected_incumbent_age_trials")), int)
-        and not isinstance(value, bool)
+        if isinstance((value := entry.get("selected_incumbent_age_trials")), int) and not isinstance(value, bool)
     ]
     if trial_ages:
         summary["max_incumbent_age_trials"] = max(trial_ages)
@@ -849,7 +841,9 @@ def _selected_parameter_summaries(
                 summary["candidate_count"] = len(candidate_values)
                 if candidate_values:
                     summary["coverage_ratio"] = round(len(observed_values) / len(candidate_values), 10)
-        if completed_values and all(isinstance(value, int | float) and not isinstance(value, bool) for value in completed_values):
+        if completed_values and all(
+            isinstance(value, int | float) and not isinstance(value, bool) for value in completed_values
+        ):
             numeric_values = [float(value) for value in completed_values]
             summary["numeric_min"] = min(numeric_values)
             summary["numeric_max"] = max(numeric_values)
@@ -902,25 +896,15 @@ def _selected_parameter_value_summaries(
         for value in _sorted_unique_values(list(grouped_values.values())):
             value_key = json.dumps(value, sort_keys=True, ensure_ascii=False)
             value_trials = grouped_trials.get(value_key, [])
-            completed_trials = [
-                trial
-                for trial in value_trials
-                if trial.get("status") == "completed"
-            ]
-            failed_trials = [
-                trial
-                for trial in value_trials
-                if trial.get("status") == "failed"
-            ]
+            completed_trials = [trial for trial in value_trials if trial.get("status") == "completed"]
+            failed_trials = [trial for trial in value_trials if trial.get("status") == "failed"]
             completed_objective_values = [
                 float(trial["objective_value"])
                 for trial in completed_trials
                 if trial.get("objective_value") is not None
             ]
             incumbent_update_trial_indices = sorted(
-                _trial_index_key(trial)
-                for trial in value_trials
-                if bool(trial.get("selected_is_incumbent_update"))
+                _trial_index_key(trial) for trial in value_trials if bool(trial.get("selected_is_incumbent_update"))
             )
             durations = _duration_values_for_trials(value_trials)
             _, best_objective_value = _best_record_from_records(value_trials, mode=objective_mode)
@@ -935,9 +919,7 @@ def _selected_parameter_value_summaries(
                     "completion_rate": (
                         None if not value_trials else round(len(completed_trials) / len(value_trials), 10)
                     ),
-                    "failure_rate": (
-                        None if not value_trials else round(len(failed_trials) / len(value_trials), 10)
-                    ),
+                    "failure_rate": (None if not value_trials else round(len(failed_trials) / len(value_trials), 10)),
                     "best_objective_value": best_objective_value,
                     "mean_objective_value": (
                         None if not completed_objective_values else statistics.fmean(completed_objective_values)
@@ -982,8 +964,7 @@ def _selected_parameter_incumbent_summaries(
         contributing_entries = [
             entry
             for entry in entries
-            if isinstance(entry.get("incumbent_updates"), int)
-            and int(entry["incumbent_updates"]) > 0
+            if isinstance(entry.get("incumbent_updates"), int) and int(entry["incumbent_updates"]) > 0
         ]
         contributing_values = _sorted_unique_values([entry.get("value") for entry in contributing_entries])
         incumbent_update_count = sum(int(entry["incumbent_updates"]) for entry in contributing_entries)
@@ -994,11 +975,7 @@ def _selected_parameter_incumbent_summaries(
                 contributing_entries,
                 key=lambda entry: (
                     -int(entry["incumbent_updates"]),
-                    (
-                        0
-                        if isinstance(entry.get("latest_incumbent_trial_index"), int)
-                        else 1
-                    ),
+                    (0 if isinstance(entry.get("latest_incumbent_trial_index"), int) else 1),
                     (
                         0
                         if not isinstance(entry.get("latest_incumbent_trial_index"), int)
@@ -1010,11 +987,7 @@ def _selected_parameter_incumbent_summaries(
             latest_entry = min(
                 contributing_entries,
                 key=lambda entry: (
-                    (
-                        0
-                        if isinstance(entry.get("latest_incumbent_trial_index"), int)
-                        else 1
-                    ),
+                    (0 if isinstance(entry.get("latest_incumbent_trial_index"), int) else 1),
                     (
                         0
                         if not isinstance(entry.get("latest_incumbent_trial_index"), int)
@@ -1058,11 +1031,7 @@ def _selected_parameter_incumbent_leaderboard(
         key=lambda entry: (
             -int(entry["incumbent_update_count"]),
             -int(entry["contributing_value_count"]),
-            (
-                1
-                if entry.get("latest_incumbent_trial_index") is None
-                else -int(entry["latest_incumbent_trial_index"])
-            ),
+            (1 if entry.get("latest_incumbent_trial_index") is None else -int(entry["latest_incumbent_trial_index"])),
             str(entry["name"]),
         )
     )
@@ -1082,8 +1051,7 @@ def _selected_parameter_effect_leaderboard(
         scored_entries = [
             entry
             for entry in entries
-            if isinstance(entry.get(field), int | float)
-            and not isinstance(entry.get(field), bool)
+            if isinstance(entry.get(field), int | float) and not isinstance(entry.get(field), bool)
         ]
         if not scored_entries:
             return None, None, None
@@ -1105,8 +1073,7 @@ def _selected_parameter_effect_leaderboard(
         completed_value_count = sum(
             1
             for entry in entries
-            if isinstance(entry.get("completed_trials"), int)
-            and int(entry["completed_trials"]) > 0
+            if isinstance(entry.get("completed_trials"), int) and int(entry["completed_trials"]) > 0
         )
         top_best_entry, bottom_best_entry, best_spread = _extremes_for_field(
             entries,
@@ -1517,22 +1484,10 @@ def select_study_report(
             duration_at_least=normalized_duration_at_least,
             duration_at_most=normalized_duration_at_most,
         )
-        and (
-            normalized_param_filters is None
-            or _trial_matches_param_filters(trial, normalized_param_filters)
-        )
-        and (
-            normalized_error is None
-            or _trial_matches_error(trial, normalized_error)
-        )
-        and (
-            normalized_error_contains is None
-            or _trial_matches_error_contains(trial, normalized_error_contains)
-        )
-        and (
-            normalized_error_type is None
-            or _trial_matches_error_type(trial, normalized_error_type)
-        )
+        and (normalized_param_filters is None or _trial_matches_param_filters(trial, normalized_param_filters))
+        and (normalized_error is None or _trial_matches_error(trial, normalized_error))
+        and (normalized_error_contains is None or _trial_matches_error_contains(trial, normalized_error_contains))
+        and (normalized_error_type is None or _trial_matches_error_type(trial, normalized_error_type))
     ]
     for trial in selected_trials:
         trial["duration_seconds"] = _trial_duration_seconds(trial)
@@ -1544,11 +1499,7 @@ def select_study_report(
                 objective_mode=objective_mode,
             )
         }
-        selected_trials = [
-            trial
-            for trial in selected_trials
-            if _trial_index_key(trial) in frontier_trial_indices
-        ]
+        selected_trials = [trial for trial in selected_trials if _trial_index_key(trial) in frontier_trial_indices]
 
     if sort_by == "trial-index":
         selected_trials.sort(key=_trial_index_key, reverse=descending)
@@ -1565,13 +1516,9 @@ def select_study_report(
         with_duration = [trial for trial in selected_trials if trial.get("duration_seconds") is not None]
         without_duration = [trial for trial in selected_trials if trial.get("duration_seconds") is None]
         if descending:
-            with_duration.sort(
-                key=lambda trial: (-float(trial["duration_seconds"]), _trial_index_key(trial))
-            )
+            with_duration.sort(key=lambda trial: (-float(trial["duration_seconds"]), _trial_index_key(trial)))
         else:
-            with_duration.sort(
-                key=lambda trial: (float(trial["duration_seconds"]), _trial_index_key(trial))
-            )
+            with_duration.sort(key=lambda trial: (float(trial["duration_seconds"]), _trial_index_key(trial)))
         without_duration.sort(key=_trial_index_key)
         selected_trials = with_duration + without_duration
 
@@ -1596,9 +1543,7 @@ def select_study_report(
         selected_trials,
         objective_mode=objective_mode,
     )
-    selected_incumbent_trace_by_trial_index = {
-        int(entry["trial_index"]): entry for entry in selected_incumbent_trace
-    }
+    selected_incumbent_trace_by_trial_index = {int(entry["trial_index"]): entry for entry in selected_incumbent_trace}
     for trial in selected_trials:
         trace_entry = selected_incumbent_trace_by_trial_index.get(_trial_index_key(trial), {})
         trial["selected_incumbent_trial_index"] = trace_entry.get("selected_incumbent_trial_index")
@@ -1629,9 +1574,7 @@ def select_study_report(
     selected_payload["selected_objective_summary"] = _selected_objective_summary(selected_trials)
     selected_payload["selected_duration_summary"] = _selected_duration_summary(selected_trials)
     selected_payload["selected_incumbent_trace"] = selected_incumbent_trace
-    selected_payload["selected_incumbent_update_summary"] = _selected_incumbent_update_summary(
-        selected_incumbent_trace
-    )
+    selected_payload["selected_incumbent_update_summary"] = _selected_incumbent_update_summary(selected_incumbent_trace)
     selected_payload["selected_incumbent_staleness_summary"] = _selected_incumbent_staleness_summary(
         selected_incumbent_trace
     )
@@ -1727,8 +1670,7 @@ def render_text_study_report(payload: Mapping[str, Any]) -> str:
         f"objective_mode={objective.get('mode')}",
         f"trial_count={payload.get('trial_count')}",
         f"selected_trial_count={payload.get('selected_trial_count', payload.get('trial_count'))}",
-        "status_counts="
-        f"{json.dumps(payload.get('status_counts', {}), sort_keys=True, ensure_ascii=False)}",
+        f"status_counts={json.dumps(payload.get('status_counts', {}), sort_keys=True, ensure_ascii=False)}",
         "selected_status_counts="
         f"{json.dumps(payload.get('selected_status_counts', {}), sort_keys=True, ensure_ascii=False)}",
         "selected_objective_summary="
@@ -1753,16 +1695,13 @@ def render_text_study_report(payload: Mapping[str, Any]) -> str:
         f"{json.dumps(payload.get('selected_error_type_summaries', []), sort_keys=True, ensure_ascii=False)}",
         "search_efficiency_summary="
         f"{json.dumps(payload.get('search_efficiency_summary', {}), sort_keys=True, ensure_ascii=False)}",
-        "search_efficiency_selected_trials_until_best="
-        f"{search_efficiency_summary.get('selected_trials_until_best')}",
+        f"search_efficiency_selected_trials_until_best={search_efficiency_summary.get('selected_trials_until_best')}",
         "search_efficiency_selected_trial_share_until_best="
         f"{search_efficiency_summary.get('selected_trial_share_until_best')}",
-        "search_efficiency_completed_trials_until_best="
-        f"{search_efficiency_summary.get('completed_trials_until_best')}",
+        f"search_efficiency_completed_trials_until_best={search_efficiency_summary.get('completed_trials_until_best')}",
         "search_efficiency_completed_trial_share_until_best="
         f"{search_efficiency_summary.get('completed_trial_share_until_best')}",
-        "search_efficiency_time_to_best_seconds="
-        f"{search_efficiency_summary.get('time_to_best_seconds')}",
+        f"search_efficiency_time_to_best_seconds={search_efficiency_summary.get('time_to_best_seconds')}",
         f"selected_best_trial_index={payload.get('selected_best_trial_index')}",
         f"selected_best_objective_value={payload.get('selected_best_objective_value')}",
         f"best_trial_index={payload.get('best_trial_index')}",
@@ -1936,10 +1875,7 @@ def render_text_study_report(payload: Mapping[str, Any]) -> str:
             lines.append(f"objective_value={entry.get('objective_value')}")
             lines.append(f"duration_seconds={entry.get('duration_seconds')}")
             lines.append(f"selected_best_objective_delta={entry.get('selected_best_objective_delta')}")
-            lines.append(
-                "params="
-                f"{json.dumps(entry.get('params', {}), sort_keys=True, ensure_ascii=False)}"
-            )
+            lines.append(f"params={json.dumps(entry.get('params', {}), sort_keys=True, ensure_ascii=False)}")
     trials = payload.get("trials", [])
     if isinstance(trials, list):
         for trial in trials:
@@ -1953,10 +1889,7 @@ def render_text_study_report(payload: Mapping[str, Any]) -> str:
             lines.append(f"selected_best_objective_delta={trial.get('selected_best_objective_delta')}")
             lines.append(f"run_dir={trial.get('run_dir')}")
             lines.append(f"checkpoint_path={trial.get('checkpoint_path')}")
-            lines.append(
-                "params="
-                f"{json.dumps(trial.get('params', {}), sort_keys=True, ensure_ascii=False)}"
-            )
+            lines.append(f"params={json.dumps(trial.get('params', {}), sort_keys=True, ensure_ascii=False)}")
             if trial.get("error") is not None:
                 lines.append(f"error={trial.get('error')}")
     return "\n".join(lines) + "\n"
@@ -2096,9 +2029,7 @@ def csv_study_report_rows(payload: Mapping[str, Any]) -> list[dict[str, object]]
         "search_efficiency_selected_trial_share_until_best": search_efficiency_summary.get(
             "selected_trial_share_until_best"
         ),
-        "search_efficiency_completed_trials_until_best": search_efficiency_summary.get(
-            "completed_trials_until_best"
-        ),
+        "search_efficiency_completed_trials_until_best": search_efficiency_summary.get("completed_trials_until_best"),
         "search_efficiency_completed_trial_share_until_best": search_efficiency_summary.get(
             "completed_trial_share_until_best"
         ),
@@ -2307,7 +2238,9 @@ def render_csv_study_report(payload: Mapping[str, Any]) -> str:
     return buffer.getvalue()
 
 
-def _best_record_from_records(records: list[dict[str, Any]], *, mode: str) -> tuple[dict[str, Any] | None, float | None]:
+def _best_record_from_records(
+    records: list[dict[str, Any]], *, mode: str
+) -> tuple[dict[str, Any] | None, float | None]:
     best_record: dict[str, Any] | None = None
     best_value: float | None = None
     for record in records:
@@ -2379,7 +2312,9 @@ def _write_study_outputs(
     return study_payload
 
 
-def _run_native_study(config: StudyConfig, *, study_dir: Path, existing_records: list[dict[str, Any]] | None = None) -> StudyResult:
+def _run_native_study(
+    config: StudyConfig, *, study_dir: Path, existing_records: list[dict[str, Any]] | None = None
+) -> StudyResult:
     trials_jsonl_path = study_dir / "trials.jsonl"
     trials_dir = study_dir / "trials"
     trials_dir.mkdir(parents=True, exist_ok=True)
@@ -2458,7 +2393,7 @@ def run_study(config: StudyConfig) -> StudyResult:
         raise FileExistsError(f"study already exists at {study_dir}")
 
     if config.study.backend == "optuna":
-        from rl_training.tuning.optuna_backend import run_optuna_study
+        from axiomrl.tuning.optuna_backend import run_optuna_study
 
         return run_optuna_study(config)
     return _run_native_study(config, study_dir=study_dir)
@@ -2472,7 +2407,7 @@ def resume_study(study_dir: str | Path) -> StudyResult:
     config = deserialize_study_config(study_config_payload)
     trial_records = _load_trial_records(resolved_study_dir / "trials.jsonl")
     if config.study.backend == "optuna":
-        from rl_training.tuning.optuna_backend import resume_optuna_study
+        from axiomrl.tuning.optuna_backend import resume_optuna_study
 
         return resume_optuna_study(config, study_dir=resolved_study_dir, existing_records=trial_records)
     return _run_native_study(config, study_dir=resolved_study_dir, existing_records=trial_records)

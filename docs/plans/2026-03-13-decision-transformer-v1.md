@@ -6,7 +6,7 @@
 
 **Architecture:** Keep this release deliberately small and aligned with the current package shape. Reuse the existing offline dataset builder, reward / returns-to-go processing, checkpointing, managed API, and continuous-control evaluation path, but add a dedicated trajectory-window data utility, a compact causal transformer policy model, a simple supervised action-prediction learner, and an offline trainer that treats `total_timesteps` as gradient updates. Implement return-conditioned autoregressive action prediction over fixed-length windows with masks and timestep embeddings. Explicitly do not implement discrete-action Decision Transformer, image observations, online fine-tuning, or full token-triplet Atari-scale training in this batch.
 
-**Tech Stack:** Python 3.10, PyTorch, Gymnasium, pytest, existing `rl_training` offline dataset and experiment infrastructure.
+**Tech Stack:** Python 3.10, PyTorch, Gymnasium, pytest, existing `axiomrl` offline dataset and experiment infrastructure.
 
 ---
 
@@ -40,10 +40,10 @@ Expected: FAIL with missing `decision_transformer` modules / exports.
 ### Task 2: Implement trajectory-window data utility and transformer model
 
 **Files:**
-- Create: `src/rl_training/data/trajectory_windows.py`
-- Create: `src/rl_training/models/decision_transformer.py`
-- Modify: `src/rl_training/data/__init__.py`
-- Modify: `src/rl_training/models/__init__.py`
+- Create: `src/axiomrl/data/trajectory_windows.py`
+- Create: `src/axiomrl/models/decision_transformer.py`
+- Modify: `src/axiomrl/data/__init__.py`
+- Modify: `src/axiomrl/models/__init__.py`
 
 **Step 1: Write minimal implementation**
 - add a utility that converts `TransitionDataset` plus discounted returns-to-go into fixed-length windows with masks and per-step timesteps.
@@ -58,13 +58,13 @@ Expected: PASS.
 ### Task 3: Implement learner, trainer, and integration
 
 **Files:**
-- Create: `src/rl_training/algorithms/decision_transformer.py`
-- Create: `src/rl_training/runtime/decision_transformer_trainer.py`
-- Modify: `src/rl_training/experiment/registry.py`
-- Modify: `src/rl_training/api/algorithms.py`
-- Modify: `src/rl_training/api/__init__.py`
-- Modify: `src/rl_training/__init__.py`
-- Modify: `src/rl_training/algorithms/__init__.py`
+- Create: `src/axiomrl/algorithms/decision_transformer.py`
+- Create: `src/axiomrl/runtime/decision_transformer_trainer.py`
+- Modify: `src/axiomrl/experiment/registry.py`
+- Modify: `src/axiomrl/api/algorithms.py`
+- Modify: `src/axiomrl/api/__init__.py`
+- Modify: `src/axiomrl/__init__.py`
+- Modify: `src/axiomrl/algorithms/__init__.py`
 
 **Step 1: Write minimal implementation**
 - implement supervised masked action-prediction updates with MSE on valid timesteps only.
@@ -81,7 +81,7 @@ Expected: PASS.
 
 **Files:**
 - Create: `configs/decision_transformer/pendulum.yaml`
-- Create: `src/rl_training/assets/configs/decision_transformer/pendulum.yaml`
+- Create: `src/axiomrl/assets/configs/decision_transformer/pendulum.yaml`
 - Create: `examples/decision_transformer_pendulum_reference.py`
 - Modify: `README.md`
 - Modify: `docs/plans/2026-03-12-rl-yearly-sourcebook-design.md`

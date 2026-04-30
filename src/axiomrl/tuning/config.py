@@ -7,9 +7,9 @@ from typing import Any
 
 import yaml
 
-from rl_training.cli_config import load_config
-from rl_training.experiment.config import TrainConfig
-from rl_training.resources import find_packaged_asset
+from axiomrl.cli_config import load_config
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.resources import find_packaged_asset
 
 _ALLOWED_TOP_LEVEL_PATHS = {
     "total_timesteps",
@@ -98,14 +98,18 @@ def _study_config_from_mapping(payload: Mapping[str, Any], *, source_path: Path)
     base_config_raw = payload.get("base_config")
     if base_config_raw is None:
         raise ValueError(f"study config {source_path} missing required key 'base_config'")
-    base_config_path = _resolve_relative_path(source_path, _require_str(base_config_raw, "base_config", config_path=source_path))
+    base_config_path = _resolve_relative_path(
+        source_path, _require_str(base_config_raw, "base_config", config_path=source_path)
+    )
     base_train_config = load_config(base_config_path)
 
     output_dir_raw = payload.get("output_dir")
     if output_dir_raw is None:
         output_dir = (base_train_config.output_dir / "studies").resolve()
     else:
-        output_dir = _resolve_relative_path(source_path, _require_str(output_dir_raw, "output_dir", config_path=source_path))
+        output_dir = _resolve_relative_path(
+            source_path, _require_str(output_dir_raw, "output_dir", config_path=source_path)
+        )
 
     study_payload = _require_mapping(payload.get("study"), "study", config_path=source_path)
     objective_payload = _require_mapping(study_payload.get("objective"), "study.objective", config_path=source_path)
@@ -126,8 +130,10 @@ def _study_config_from_mapping(payload: Mapping[str, Any], *, source_path: Path)
         raise ValueError(f"study config {source_path} field 'study.sampler' must be 'random' or 'tpe'")
 
     num_trials_raw = study_payload.get("num_trials")
-    num_trials = None if num_trials_raw is None else _require_int(
-        num_trials_raw, "study.num_trials", config_path=source_path, minimum=1
+    num_trials = (
+        None
+        if num_trials_raw is None
+        else _require_int(num_trials_raw, "study.num_trials", config_path=source_path, minimum=1)
     )
     if backend == "native" and sampler == "grid" and num_trials is not None:
         raise ValueError(f"study config {source_path} field 'study.num_trials' is not allowed for native grid search")
@@ -288,7 +294,11 @@ def _parse_float_spec(payload: Mapping[str, Any], *, config_path: Path, path: st
     if low > high:
         raise ValueError(f"study config {config_path} search_space '{path}' low must be <= high")
     step_raw = payload.get("step")
-    step = None if step_raw is None else float(_require_number(step_raw, f"search_space.{path}.step", config_path=config_path))
+    step = (
+        None
+        if step_raw is None
+        else float(_require_number(step_raw, f"search_space.{path}.step", config_path=config_path))
+    )
     if step is not None and step <= 0:
         raise ValueError(f"study config {config_path} search_space '{path}' step must be > 0")
     log = bool(payload.get("log", False))

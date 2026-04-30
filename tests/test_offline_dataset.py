@@ -4,7 +4,7 @@ import torch
 
 
 def test_compute_discounted_returns_to_go_resets_at_episode_boundaries() -> None:
-    from rl_training.data.offline_dataset import compute_discounted_returns_to_go
+    from axiomrl.data.offline_dataset import compute_discounted_returns_to_go
 
     returns_to_go = compute_discounted_returns_to_go(
         rewards=np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32),
@@ -16,7 +16,7 @@ def test_compute_discounted_returns_to_go_resets_at_episode_boundaries() -> None
 
 
 def test_transition_dataset_len_and_sample_from_numpy() -> None:
-    from rl_training.data.offline_dataset import TransitionDataset
+    from axiomrl.data.offline_dataset import TransitionDataset
 
     obs = np.zeros((10, 4), dtype=np.float32)
     actions = (np.arange(10) % 2).astype(np.int64)
@@ -46,7 +46,7 @@ def test_transition_dataset_len_and_sample_from_numpy() -> None:
 
 
 def test_transition_dataset_sample_raises_when_empty() -> None:
-    from rl_training.data.offline_dataset import TransitionDataset
+    from axiomrl.data.offline_dataset import TransitionDataset
 
     dataset = TransitionDataset(
         obs=np.zeros((0, 4), dtype=np.float32),
@@ -61,7 +61,7 @@ def test_transition_dataset_sample_raises_when_empty() -> None:
 
 
 def test_transition_dataset_validates_lengths() -> None:
-    from rl_training.data.offline_dataset import TransitionDataset
+    from axiomrl.data.offline_dataset import TransitionDataset
 
     with pytest.raises(ValueError, match="same length"):
         TransitionDataset(
@@ -74,7 +74,7 @@ def test_transition_dataset_validates_lengths() -> None:
 
 
 def test_transition_dataset_preserves_continuous_action_shape() -> None:
-    from rl_training.data.offline_dataset import TransitionDataset
+    from axiomrl.data.offline_dataset import TransitionDataset
 
     dataset = TransitionDataset(
         obs=np.zeros((10, 4), dtype=np.float32),
@@ -91,7 +91,7 @@ def test_transition_dataset_preserves_continuous_action_shape() -> None:
 
 
 def test_transition_dataset_from_dict_accepts_terminations_without_dones() -> None:
-    from rl_training.data.offline_dataset import TransitionDataset
+    from axiomrl.data.offline_dataset import TransitionDataset
 
     dataset = TransitionDataset.from_dict(
         {
@@ -108,7 +108,7 @@ def test_transition_dataset_from_dict_accepts_terminations_without_dones() -> No
 
 
 def test_transition_dataset_preserves_optional_next_actions() -> None:
-    from rl_training.data.offline_dataset import TransitionDataset
+    from axiomrl.data.offline_dataset import TransitionDataset
 
     dataset = TransitionDataset(
         obs=np.zeros((5, 3), dtype=np.float32),
@@ -129,7 +129,7 @@ def test_transition_dataset_preserves_optional_next_actions() -> None:
 
 
 def test_transition_dataset_can_compute_and_recompute_returns_to_go() -> None:
-    from rl_training.data.offline_dataset import TransitionDataset
+    from axiomrl.data.offline_dataset import TransitionDataset
 
     dataset = TransitionDataset(
         obs=np.zeros((4, 2), dtype=np.float32),

@@ -1,8 +1,8 @@
 from pathlib import Path
 
-from rl_training.experiment.config import TrainConfig
-from rl_training.runtime.r2d2_trainer import train_r2d2
-from rl_training.runtime.workflows import evaluate_checkpoint
+from axiomrl.experiment.config import TrainConfig
+from axiomrl.runtime.r2d2_trainer import train_r2d2
+from axiomrl.runtime.workflows import evaluate_checkpoint
 
 
 def test_train_r2d2_writes_checkpoint_and_metrics(tmp_path: Path) -> None:

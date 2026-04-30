@@ -5,7 +5,7 @@ from collections.abc import Iterator, Sequence
 import torch
 from torch import nn
 
-from rl_training.models.dreamer import DreamerModel
+from axiomrl.models.dreamer import DreamerModel
 
 
 class MoWModel(DreamerModel):
@@ -80,7 +80,9 @@ class MoWModel(DreamerModel):
     def _compute_gate_probs(self, gate_network: nn.Module, features: torch.Tensor) -> torch.Tensor:
         return torch.softmax(gate_network(features), dim=-1)
 
-    def dynamics_step_with_gates(self, features: torch.Tensor, actions: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    def dynamics_step_with_gates(
+        self, features: torch.Tensor, actions: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         action_tensor = torch.as_tensor(actions, dtype=torch.int64, device=features.device)
         if action_tensor.ndim == 0:
             action_tensor = action_tensor.unsqueeze(0)

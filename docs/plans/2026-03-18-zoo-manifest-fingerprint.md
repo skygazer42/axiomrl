@@ -4,7 +4,7 @@
 
 **Goal:** Export a compact manifest identity block in zoo report and leaderboard outputs so benchmark results can be compared against the exact manifest snapshot that produced them.
 
-**Architecture:** Keep the change export-only inside `src/rl_training/zoo_cli.py`. Derive a deterministic manifest fingerprint from the loaded manifest payload, expose a small `manifest_metadata` object at the top level, and flatten the same fields into CSV outputs without changing benchmark behavior or duplicating the full manifest body in every export.
+**Architecture:** Keep the change export-only inside `src/axiomrl/zoo_cli.py`. Derive a deterministic manifest fingerprint from the loaded manifest payload, expose a small `manifest_metadata` object at the top level, and flatten the same fields into CSV outputs without changing benchmark behavior or duplicating the full manifest body in every export.
 
 **Tech Stack:** Python 3.10+, argparse, JSON/YAML serialization, existing zoo CLI serializers, pytest.
 
@@ -29,7 +29,7 @@ Expected: FAIL because the payloads do not expose manifest identity metadata yet
 ### Task 2: Implement manifest identity export
 
 **Files:**
-- Modify: `src/rl_training/zoo_cli.py`
+- Modify: `src/axiomrl/zoo_cli.py`
 
 **Step 1: Write minimal implementation**
 - Add a helper that builds deterministic manifest metadata from the loaded manifest.
@@ -47,7 +47,7 @@ Expected: PASS.
 **Files:**
 - Modify: `README.md`
 - Modify: `zoo/README.md`
-- Modify: `src/rl_training/assets/zoo/README.md`
+- Modify: `src/axiomrl/assets/zoo/README.md`
 
 **Step 1: Add docs**
 - Describe that machine-readable benchmark exports now include a compact manifest fingerprint block for downstream reproducibility checks.

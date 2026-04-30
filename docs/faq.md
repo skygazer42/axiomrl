@@ -162,7 +162,7 @@ title: 常见问题
 
     | 特性 | Stable（稳定） | Experimental（实验） |
     |---|---|---|
-    | 命名空间 | `rl_training.core` | `rl_training.experimental` |
+    | 命名空间 | `axiomrl.core` | `axiomrl.experimental` |
     | 版本约束 | 语义化版本严格约束 | 可能在次版本中变更 |
     | 破坏性变更 | 仅在主版本发布 | 可能在次版本发布 |
     | 弃用流程 | 至少提前一个次版本警告 | 不保证弃用过渡期 |
@@ -170,10 +170,10 @@ title: 常见问题
 
     ```python
     # 稳定 API — 受语义化版本保护
-    from rl_training.core import PPO, SAC
+    from axiomrl.core import PPO, SAC
 
     # 实验性 API — 可能在次版本中变更
-    from rl_training.experimental import some_new_feature
+    from axiomrl.experimental import some_new_feature
     ```
 
     详细说明请参阅 [兼容性与版本策略](compatibility.md)。
@@ -184,12 +184,12 @@ title: 常见问题
 
     **1. 确定贡献层级**
 
-    - 新算法通常先进入 **Contrib 层**（`rl_training.contrib`）
+    - 新算法通常先进入 **Contrib 层**（`axiomrl.contrib`）
     - 经过充分验证后可提升至实验层或稳定层
 
     **2. 实现要求**
 
-    - 在 `src/rl_training/contrib/` 或 `src/rl_training/algorithms/` 下创建算法模块
+    - 在 `src/axiomrl/contrib/` 或 `src/axiomrl/algorithms/` 下创建算法模块
     - 在 `configs/` 中提供默认配置
     - 在 `examples/` 中提供示例脚本
 

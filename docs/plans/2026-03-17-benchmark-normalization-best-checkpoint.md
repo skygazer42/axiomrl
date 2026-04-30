@@ -30,10 +30,10 @@
 ### Task 2: Implement benchmark config and normalization utilities
 
 **Files:**
-- Modify: `src/rl_training/experiment/config.py`
-- Create: `src/rl_training/experiment/benchmarking.py`
-- Modify: `src/rl_training/cli.py`
-- Modify: `src/rl_training/runtime/workflows.py`
+- Modify: `src/axiomrl/experiment/config.py`
+- Create: `src/axiomrl/experiment/benchmarking.py`
+- Modify: `src/axiomrl/cli.py`
+- Modify: `src/axiomrl/runtime/workflows.py`
 
 **Step 1: Write minimal implementation**
 - Add top-level `benchmark` config support to `TrainConfig`, config loading, serialization, and checkpoint restore.
@@ -46,8 +46,8 @@
 ### Task 3: Implement best checkpoint tracking in run utilities
 
 **Files:**
-- Modify: `src/rl_training/experiment/runs.py`
-- Modify: `src/rl_training/runtime/run_utils.py`
+- Modify: `src/axiomrl/experiment/runs.py`
+- Modify: `src/axiomrl/runtime/run_utils.py`
 
 **Step 1: Write minimal implementation**
 - Track best checkpoint according to `benchmark.best_metric` / `benchmark.best_metric_mode`, defaulting to `eval_return_mean` / `max`.

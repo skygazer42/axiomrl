@@ -1,11 +1,11 @@
-from rl_training.zoo.app import build_parser, main
-from rl_training.zoo.leaderboard import (
+from axiomrl.zoo.app import build_parser, main
+from axiomrl.zoo.leaderboard import (
     COMPARE_TO_CHOICES,
     LEADERBOARD_METRIC_CHOICES,
     SCORE_VIEW_CHOICES,
     build_leaderboard_payload,
 )
-from rl_training.zoo.manifests import (
+from axiomrl.zoo.manifests import (
     MANIFEST_DRIFT_TYPE_CHOICES,
     MANIFEST_DRIFT_TYPE_TO_SUMMARY_FIELD,
     apply_manifest_defaults_to_config_payload,
@@ -13,8 +13,7 @@ from rl_training.zoo.manifests import (
     load_manifest_with_source,
     resolve_manifest_source,
 )
-from rl_training.zoo.reporting import build_report_payload
-
+from axiomrl.zoo.reporting import build_report_payload
 
 __all__ = [
     "COMPARE_TO_CHOICES",

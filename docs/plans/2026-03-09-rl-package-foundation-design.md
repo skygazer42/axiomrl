@@ -187,7 +187,7 @@ Tianshou and RLlib both show the power of flexible data structures and generic o
 ## Recommended Package Layout
 
 ```text
-src/rl_training/
+src/axiomrl/
   api/
     __init__.py
   algorithms/
@@ -352,7 +352,7 @@ This layer is where RL Zoo should influence the package most strongly.
 The package should expose a simple user-facing API, even if the internals are modular:
 
 ```python
-from rl_training.algorithms import PPO
+from axiomrl.algorithms import PPO
 
 algo = PPO(config)
 algo.learn()
