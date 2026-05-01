@@ -50,6 +50,7 @@ experimental = []
 dev = [
   "build",
   "mypy",
+  "optuna",
   "types-PyYAML",
   "pre-commit",
   "pytest",
