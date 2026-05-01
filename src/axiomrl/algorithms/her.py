@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from axiomrl.algorithms.ddpg import DDPG, ddpg_loss
 
 

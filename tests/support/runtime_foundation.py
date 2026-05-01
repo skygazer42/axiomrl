@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from pathlib import Path
 
 from axiomrl.envs import POINT_GOAL_ENV_ID

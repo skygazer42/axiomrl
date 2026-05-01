@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from axiomrl.experiment.registry_evaluators import (
     _evaluate_awac,
     _evaluate_awr,

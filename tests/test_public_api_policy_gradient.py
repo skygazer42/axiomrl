@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from pathlib import Path
 
 from axiomrl.api import APPO, IMPALA, PPG, PPO, TRPO, DiscreteSAC

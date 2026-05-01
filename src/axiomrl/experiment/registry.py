@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from axiomrl.experiment.registry_core import AlgorithmSpec
 from axiomrl.experiment.registry_providers import ALL_SPEC_GROUPS
 

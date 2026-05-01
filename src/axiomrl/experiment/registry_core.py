@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from axiomrl.experiment.registry_continuous_loaders import (
     _load_awr_algorithm as _load_awr_algorithm,
 )

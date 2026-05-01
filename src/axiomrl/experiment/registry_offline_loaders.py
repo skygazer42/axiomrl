@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import torch
 
 from axiomrl.algorithms.awac import AWAC as AWACAlgorithm

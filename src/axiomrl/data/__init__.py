@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from importlib import import_module
 
 _EXPORTS: dict[str, tuple[str, str]] = {

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import torch
 
 from axiomrl.algorithms.agent57 import Agent57 as Agent57Algorithm

@@ -50,6 +50,7 @@ experimental = []
 dev = [
   "build",
   "mypy",
+  "types-PyYAML",
   "pre-commit",
   "pytest",
   "pytest-cov",

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import torch
 
 from axiomrl.algorithms.sac import SAC, sac_loss

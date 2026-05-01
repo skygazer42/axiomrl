@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import torch
 
 from axiomrl.algorithms.a2c import A2C as A2CAlgorithm

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 INTEGRATION_FILES = {
     "test_checkpoint_evaluate.py",
     "test_checkpoint_resume.py",
