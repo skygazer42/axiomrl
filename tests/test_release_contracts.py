@@ -7,10 +7,15 @@ def test_pyproject_declares_release_metadata_and_optional_installs() -> None:
     pyproject_text = (REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8")
 
     assert "setuptools>=77.0.3" in pyproject_text
-    assert 'version = "1.0.0"' in pyproject_text
+    assert 'dynamic = ["version"]' in pyproject_text
     assert "Development Status :: 4 - Beta" in pyproject_text
     assert "Intended Audience :: Developers" in pyproject_text
     assert "project.urls" in pyproject_text
+    assert '"setuptools-scm' in pyproject_text
+    assert "[tool.setuptools_scm]" in pyproject_text
+    assert 'version_scheme = "guess-next-dev"' in pyproject_text
+    assert 'local_scheme = "no-local-version"' in pyproject_text
+    assert 'version_file = "src/axiomrl/_version.py"' in pyproject_text
     assert "dev = [" in pyproject_text
     assert "tuning = [" in pyproject_text
     assert "experimental = [" in pyproject_text

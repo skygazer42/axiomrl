@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools>=77.0.3", "wheel"]
+requires = ["setuptools>=77.0.3", "setuptools-scm>=8", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "axiomrl"
-version = "1.0.0"
+dynamic = ["version"]
 description = "A stable-core reinforcement learning package with semver-governed APIs, experimental extensions, and benchmark workflows."
 readme = "README.md"
 license = "MIT"
@@ -51,6 +51,7 @@ dev = [
   "build",
   "mypy",
   "optuna",
+  "setuptools-scm>=8",
   "types-PyYAML",
   "pre-commit",
   "pytest",
@@ -79,6 +80,16 @@ axiomrl = [
   "assets/zoo/*/*.yaml",
   "assets/zoo/README.md",
 ]
+
+[tool.setuptools_scm]
+version_scheme = "guess-next-dev"
+local_scheme = "no-local-version"
+version_file = "src/axiomrl/_version.py"
+version_file_template = """
+version = "{version}"
+__version__ = version
+version_tuple = {version_tuple}
+"""
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -14,6 +14,7 @@ coverage.xml
 dist/
 build/
 *.egg-info/
+src/axiomrl/_version.py
 runs/
 .wheel-smoke/
 .worktrees/

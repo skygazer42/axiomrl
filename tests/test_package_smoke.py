@@ -1,3 +1,4 @@
+from importlib import metadata
 from pathlib import Path
 
 from axiomrl import __version__
@@ -8,7 +9,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_package_exports_version() -> None:
-    assert __version__ == "1.0.0"
+    assert __version__ == metadata.version("axiomrl")
 
 
 def test_package_exposes_contrib_namespace() -> None:

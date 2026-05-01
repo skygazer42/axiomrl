@@ -68,6 +68,9 @@ jobs:
     if: ${{ startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.repository == 'pypi') }}
     needs: build
     runs-on: ubuntu-latest
+    # For the existing `axiomrl` project on PyPI, configure a project-level
+    # trusted publisher on PyPI (not an account-level pending publisher) with:
+    # owner=`skygazer42`, repo=`axiomrl`, workflow=`publish.yml`, environment=`pypi`.
     environment: pypi
     permissions:
       contents: read
