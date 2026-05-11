@@ -174,6 +174,16 @@ from axiomrl import PPO, DQN, SAC, IQL, HER, TrainConfig   # Core
 from axiomrl.contrib import RecurrentPPO                    # Contrib
 ```
 
+## 🎬 Trained Agent Demo
+
+<p align="center">
+  <img src="docs/assets/images/axiomrl-trained-agent-demo.gif" alt="AxiomRL trained agent demo" width="420">
+</p>
+
+<p align="center">
+  <sub>Example GIF produced by training an agent with AxiomRL.</sub>
+</p>
+
 ## 📚 Algorithms
 
 AxiomRL implements **80+ algorithms** across six categories. Click to expand any category.
